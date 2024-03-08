@@ -83,7 +83,8 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "vscode-test"
+        "test": "vscode-test",
+        "generate-client": "openapi --input https://api.jutge.org/openapi.json --output ./src/client --client axios --useUnionTypes"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.6",
@@ -94,9 +95,11 @@
         "@vscode/test-cli": "^0.0.6",
         "@vscode/test-electron": "^2.3.9",
         "eslint": "^8.56.0",
-        "typescript": "^5.3.3"
+        "typescript": "^5.3.3",
+        "openapi-typescript-codegen": "^0.27.0"
     },
     "dependencies": {
-        "@vscode/webview-ui-toolkit": "^1.4.0"
+        "@vscode/webview-ui-toolkit": "^1.4.0",
+        "axios": "^1.6.7"
     }
 }

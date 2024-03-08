@@ -1,3 +1,12 @@
+# Install
+
+```bash
+npm install
+npm run generate-client
+```
+
+👇 The rest is boilerplate from the vscode extension generator.
+
 # jutge-vscode README
 
 This is the README for your extension "jutge-vscode". After writing up a brief description, we recommend including the following sections.
