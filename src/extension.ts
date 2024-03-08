@@ -20,6 +20,33 @@ export function activate(context: vscode.ExtensionContext) {
 	})
 
 	context.subscriptions.push(disposable)
+
+	disposable = vscode.commands.registerCommand('jutge-vscode.about', async () => {
+		const header = "Visual Studio Code extension for Jutge.org"
+
+		const detail = `
+		Alex Serrano
+		Pau Fernández
+		Jordi Petit
+		`
+
+		vscode.window.showInformationMessage(header, { detail: detail, modal: true })
+	})
+
+	context.subscriptions.push(disposable)
+
+	disposable = vscode.commands.registerCommand('jutge-vscode.statistics', async () => {
+		const response = await fetch('https://api.jutge.org/statistics/home')
+		const stats = await response.json() as any
+		const text = `
+		Users: ${stats.number_of_users}
+		Problems: ${stats.number_of_problems}
+		Submissions: ${stats.number_of_submissions}
+		`
+		vscode.window.showInformationMessage(text)
+	})
+
+	context.subscriptions.push(disposable)
 }
 
 // This method is called when your extension is deactivated

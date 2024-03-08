@@ -16,6 +16,14 @@
       {
         "command": "jutge-vscode.hello",
         "title": "Jutge.org: Hello World"
+      },
+      {
+        "command": "jutge-vscode.about",
+        "title": "Jutge.org: About"
+      },
+      {
+        "command": "jutge-vscode.statistics",
+        "title": "Jutge.org: Statistics"
       }
     ]
   },
