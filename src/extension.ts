@@ -137,6 +137,19 @@ export function activate(context: vscode.ExtensionContext) {
 	const logoutCmd = vscode.commands.registerCommand('jutge-vscode.logout',
 		async () => {
 
+			const token = await context.secrets.get("access_token")
+
+			if (!token) {
+				vscode.window.showErrorMessage('No token')
+				return
+			}
+
+			await fetch('https://api.jutge.org/auth/login', {
+				method: 'POST',
+				headers: new Headers({
+					'Authorization': `bearer ${token}`,
+				}),
+			})
 			await context.secrets.store("access_token", "")
 
 			vscode.window.showInformationMessage('Jutge.org: You have signed out.')
@@ -147,20 +160,75 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-	const showToken = vscode.commands.registerCommand('jutge-vscode.showToken',
+	const showTokenCmd = vscode.commands.registerCommand('jutge-vscode.showToken',
 		async () => {
 
 			const token = await context.secrets.get("access_token")
 
-			if (token) {
-				vscode.window.showInformationMessage(`Token: ${token}`)
-			} else {
+			if (!token) {
 				vscode.window.showErrorMessage('No token')
+				return
 			}
-
+			vscode.window.showInformationMessage(`Token: ${token}`)
 		})
 
-	context.subscriptions.push(showToken)
+	context.subscriptions.push(showTokenCmd)
+
+	const profileCmd = vscode.commands.registerCommand('jutge-vscode.profile',
+		async () => {
+
+			const token = await context.secrets.get("access_token")
+
+			if (!token) {
+				vscode.window.showErrorMessage('No token')
+				return
+			}
+
+			const response = await fetch('https://api.jutge.org/my/profile', { headers: new Headers({ 'Authorization': `bearer ${token}`, }), })
+			const profile = await response.json() as any
+
+			vscode.window.showInformationMessage(`Name: ${profile.name} Email: ${profile.email} Username: ${profile.username} `)
+		})
+
+	context.subscriptions.push(showTokenCmd)
+
+
+
+	const problemsCmd = vscode.commands.registerCommand('jutge-vscode.problems',
+		async () => {
+
+			const token = await context.secrets.get("access_token")
+			if (!token) {
+				vscode.window.showErrorMessage('No token')
+			}
+			const response = await fetch('https://api.jutge.org/my/problems', { headers: new Headers({ 'Authorization': `bearer ${token}`, }), })
+			const problems = await response.json() as any
+			console.log(problems)
+
+			let html = "<table>"
+			for (const [problem_nm, problem] of Object.entries(problems)) {
+				for (const [problem_id, abstract_problem] of Object.entries(problem.problems)) {
+					html += `
+						<tr>
+						<td>${problem_nm}</td>
+						<td>${problem_id}</td>
+						<td>${abstract_problem.title}</td>
+					</tr>`
+				}
+			}
+			const panel = vscode.window.createWebviewPanel(
+				'jutgeProblems',
+				'Jutge.org - Problems',
+				vscode.ViewColumn.One,
+				{} // Webview options.
+			)
+			panel.webview.html = html
+		})
+
+	context.subscriptions.push(problemsCmd)
+
+
+
 
 
 	const sidebarProvider = new SidebarProvider(context.extensionUri)

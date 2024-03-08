@@ -61,6 +61,16 @@
                 "category": "Jutge.org"
             },
             {
+                "command": "jutge-vscode.profile",
+                "title": "Show profile",
+                "category": "Jutge.org"
+            },
+            {
+                "command": "jutge-vscode.problems",
+                "title": "Problems",
+                "category": "Jutge.org"
+            },
+            {
                 "command": "jutge-vscode.hello",
                 "title": "Hello World",
                 "category": "Jutge.org"
