@@ -35,18 +35,54 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable)
 
-	disposable = vscode.commands.registerCommand('jutge-vscode.statistics', async () => {
-		const response = await fetch('https://api.jutge.org/statistics/home')
-		const stats = await response.json() as any
-		const text = `
-		Users: ${stats.number_of_users}
-		Problems: ${stats.number_of_problems}
-		Submissions: ${stats.number_of_submissions}
-		`
-		vscode.window.showInformationMessage(text)
+	disposable = vscode.commands.registerCommand('jutge-vscode.information', async () => {
+		const panel = vscode.window.createWebviewPanel(
+			'jutgeStatistics',
+			'Jutge.org - Statistics',
+			vscode.ViewColumn.One,
+			{} // Webview options.
+		)
+		panel.webview.html = await getWebviewContent()
 	})
 
 	context.subscriptions.push(disposable)
+
+	async function getWebviewContent() {
+		const response = await fetch('https://api.jutge.org/statistics/home')
+		const stats = await response.json() as any
+
+		return `
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>Jutge.org - Information</title>
+		</head>
+		<body>
+			<h1>Jutge.org</h1>
+			<p>The Virtual Learning Environment for Computer Programming</p>
+			<img src="https://jutge.org/ico/welcome/jutge.png" width="200" />
+
+			<h2>Statistics</h1>
+			<table>
+			<tr>
+				<td>Users</td>
+				<td>${stats.number_of_users}</td>
+			</tr>
+			<tr>
+				<td>Problems</td>
+				<td>${stats.number_of_problems}</td>
+			</tr>
+			<tr>
+				<td>Submissions</td>
+				<td>${stats.number_of_submissions}</td>
+			</tr>
+			</table>
+		</body>
+		</html>
+		`
+	}
 }
 
 // This method is called when your extension is deactivated
