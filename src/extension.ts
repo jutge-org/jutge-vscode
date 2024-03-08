@@ -42,12 +42,12 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.ViewColumn.One,
 			{} // Webview options.
 		)
-		panel.webview.html = await getWebviewContent()
+		panel.webview.html = await getInformationHtml()
 	})
 
 	context.subscriptions.push(disposable)
 
-	async function getWebviewContent() {
+	async function getInformationHtml() {
 		const response = await fetch('https://api.jutge.org/statistics/home')
 		const stats = await response.json() as any
 
@@ -83,6 +83,82 @@ export function activate(context: vscode.ExtensionContext) {
 		</html>
 		`
 	}
+
+
+	disposable = vscode.commands.registerCommand('jutge-vscode.login', async () => {
+
+		const email = await vscode.window.showInputBox({
+			placeHolder: "your email",
+			prompt: "Jutge.org email",
+			value: "",
+		})
+		if (!email) {
+			return
+		}
+
+		const password = await vscode.window.showInputBox({
+			placeHolder: "your password",
+			prompt: "Jutge.org password",
+			value: "",
+			password: true,
+		})
+		if (!password) {
+			return
+		}
+
+		let formData = new FormData()
+		formData.append('username', email)
+		formData.append('password', password)
+
+		const response = await fetch('https://api.jutge.org/auth/login', {
+			method: 'POST',
+			body: formData,
+		})
+
+		if (response.status !== 200) {
+			vscode.window.showErrorMessage('Jutge.org: Invalid credentials at sign in.')
+			return
+		}
+
+		const data = await response.json() as { access_token: string, token_type: string }
+		// vscode.window.showInformationMessage('token: ' + data.access_token)
+
+		await context.secrets.store("access_token", data.access_token)
+
+		vscode.window.showInformationMessage('Jutge.org: You have signed in.')
+
+	})
+
+	context.subscriptions.push(disposable)
+
+
+
+
+	disposable = vscode.commands.registerCommand('jutge-vscode.logout', async () => {
+
+		await context.secrets.store("access_token", "")
+
+		vscode.window.showInformationMessage('Jutge.org: You have signed out.')
+
+	})
+
+	context.subscriptions.push(disposable)
+
+
+
+	disposable = vscode.commands.registerCommand('jutge-vscode.showToken', async () => {
+
+		const token = await context.secrets.get("access_token")
+
+		if (token) {
+			vscode.window.showInformationMessage(`Token: ${token}`)
+		} else {
+			vscode.window.showErrorMessage('No token')
+		}
+
+	})
+
+	context.subscriptions.push(disposable)
 }
 
 // This method is called when your extension is deactivated

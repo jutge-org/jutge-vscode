@@ -14,16 +14,28 @@
   "contributes": {
     "commands": [
       {
-        "command": "jutge-vscode.hello",
-        "title": "Jutge.org: Hello World"
-      },
-      {
         "command": "jutge-vscode.about",
         "title": "Jutge.org: About"
       },
       {
         "command": "jutge-vscode.information",
         "title": "Jutge.org: Information"
+      },
+      {
+        "command": "jutge-vscode.login",
+        "title": "Jutge.org: Sign in"
+      },
+      {
+        "command": "jutge-vscode.logout",
+        "title": "Jutge.org: Sign out"
+      },
+      {
+        "command": "jutge-vscode.showToken",
+        "title": "Jutge.org: Show token (DEV)"
+      },
+      {
+        "command": "jutge-vscode.hello",
+        "title": "Jutge.org: Hello World"
       }
     ]
   },
