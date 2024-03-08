@@ -75,11 +75,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		'jutge-vscode.information',
 
 		async () => {
-			const stats = await StatisticsService.statisticsHomeViewStatisticsHomeGet()
+			const stats = await StatisticsService.statisticsHomeView()
 
 			let profileHtml = ""
 			if (await isAuthenticated()) {
-				const profile = await MyProfileService.profileViewMyProfileGet()
+				const profile = await MyProfileService.profileView()
 				profileHtml = `
 					<h2>Your Profile</h2>
 					<table>
@@ -187,7 +187,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		authenticated(
 			async () => {
-				await AuthService.discardAuthenticationTokenAuthLogoutPost()
+				await AuthService.discardAuthenticationToken()
 				await context.secrets.store("access_token", "")
 				delete axios.defaults.headers.common['Authorization']
 				vscode.window.showInformationMessage('Jutge.org: You have signed out.')
@@ -211,7 +211,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	addCommand('jutge-vscode.profile',
 		authenticated(
 			async () => {
-				const profile = await MyProfileService.profileViewMyProfileGet()
+				const profile = await MyProfileService.profileView()
 				vscode.window.showInformationMessage(`Name: ${profile.name} Email: ${profile.email} Username: ${profile.username} `)
 			}
 		)
@@ -223,7 +223,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		authenticated(
 			async () => {
-				const problems = await MyProblemsService.absproblemsIndexViewMyProblemsGet()
+				const problems = await MyProblemsService.absproblemsIndexView()
 
 				let html = "<table>"
 				for (const [problem_nm, problem] of Object.entries(problems)) {
