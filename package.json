@@ -1,61 +1,92 @@
 {
-  "name": "jutge-vscode",
-  "displayName": "jutge-vscode",
-  "description": "Visual Studio Code extension for Jutge.org",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.87.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "jutge-vscode.about",
-        "title": "Jutge.org: About"
-      },
-      {
-        "command": "jutge-vscode.information",
-        "title": "Jutge.org: Information"
-      },
-      {
-        "command": "jutge-vscode.login",
-        "title": "Jutge.org: Sign in"
-      },
-      {
-        "command": "jutge-vscode.logout",
-        "title": "Jutge.org: Sign out"
-      },
-      {
-        "command": "jutge-vscode.showToken",
-        "title": "Jutge.org: Show token (DEV)"
-      },
-      {
-        "command": "jutge-vscode.hello",
-        "title": "Jutge.org: Hello World"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.87.0",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "18.x",
-    "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
-    "eslint": "^8.56.0",
-    "typescript": "^5.3.3",
-    "@vscode/test-cli": "^0.0.6",
-    "@vscode/test-electron": "^2.3.9"
-  }
+    "name": "jutge-vscode",
+    "displayName": "jutge-vscode",
+    "description": "Visual Studio Code extension for Jutge.org",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.87.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "jutge",
+                    "title": "Jutge.org",
+                    "icon": "media/jutge.svg"
+                }
+            ]
+        },
+        "views": {
+            "jutge": [
+                {
+                    "type": "webview",
+                    "id": "sidebar",
+                    "name": "somename",
+                    "icon": "media/lightbulb-regular.svg",
+                    "contextualTitle": "Jutge.org"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "jutge-vscode.about",
+                "title": "About",
+                "category": "Jutge.org"
+            },
+            {
+                "command": "jutge-vscode.information",
+                "title": "Information",
+                "category": "Jutge.org"
+            },
+            {
+                "command": "jutge-vscode.login",
+                "title": "Sign in",
+                "category": "Jutge.org"
+            },
+            {
+                "command": "jutge-vscode.logout",
+                "title": "Sign out",
+                "category": "Jutge.org"
+            },
+            {
+                "command": "jutge-vscode.showToken",
+                "title": "Show token (DEV)",
+                "category": "Jutge.org"
+            },
+            {
+                "command": "jutge-vscode.hello",
+                "title": "Hello World",
+                "category": "Jutge.org"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.6",
+        "@types/node": "18.x",
+        "@types/vscode": "^1.87.0",
+        "@typescript-eslint/eslint-plugin": "^7.0.2",
+        "@typescript-eslint/parser": "^7.0.2",
+        "@vscode/test-cli": "^0.0.6",
+        "@vscode/test-electron": "^2.3.9",
+        "eslint": "^8.56.0",
+        "typescript": "^5.3.3"
+    },
+    "dependencies": {
+        "@vscode/webview-ui-toolkit": "^1.4.0"
+    }
 }
