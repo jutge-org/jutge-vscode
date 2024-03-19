@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 import axios from 'axios'
 
-import { AuthService, MyProblemsService, MyProfileService, ProfileOut, StatisticsService } from "./client"
+import { AuthService, MyProblemsService, MyProfileService, MiscService} from "./client"
+import { MiscService } from './client/services/MiscService'
 
 
 // This method is called when extension is activated
@@ -11,9 +12,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Initialize axios defaults (used by the API client)
 	{
 		axios.defaults.baseURL = "https://api.jutge.org"
-		const access_token = await context.secrets.get("access_token")
-		if (access_token) {
-			axios.defaults.headers.common['Authorization'] = 'Bearer ' + access_token
+		const token = await context.secrets.get("token")
+		if (token) {
+			axios.defaults.headers.common['Authorization'] = 'Bearer ' + token
 		}
 	}
 
@@ -38,7 +39,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// tells if the user is authenticated
 	async function isAuthenticated(): Promise<boolean> {
-		const token = await context.secrets.get("access_token")
+		const token = await context.secrets.get("token")
 		return !!token
 	}
 
@@ -47,7 +48,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		'jutge-vscode.hello',
 
 		async () => {
-			vscode.window.showInformationMessage('Hello from Jutge.org!')
+			const pong = await MiscService.getMiscPing(	)
+			vscode.window.showInformationMessage(`Hello from Jutge.org! ping:${pong.message}`)
 		}
 	)
 
@@ -75,11 +77,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		'jutge-vscode.information',
 
 		async () => {
-			const stats = await StatisticsService.statisticsHomeView()
+			const stats = await MiscService.getMiscHomepageStats()
 
 			let profileHtml = ""
 			if (await isAuthenticated()) {
-				const profile = await MyProfileService.profileView()
+				const profile = await MyProfileService.getMyProfile()
 				profileHtml = `
 					<h2>Your Profile</h2>
 					<table>
@@ -108,15 +110,15 @@ export async function activate(context: vscode.ExtensionContext) {
 				<table>
 				<tr>
 					<td>Users</td>
-					<td>${stats.number_of_users}</td>
+					<td>${stats.users}</td>
 				</tr>
 				<tr>
 					<td>Problems</td>
-					<td>${stats.number_of_problems}</td>
+					<td>${stats.problems}</td>
 				</tr>
 				<tr>
 					<td>Submissions</td>
-					<td>${stats.number_of_submissions}</td>
+					<td>${stats.submissions}</td>
 				</tr>
 				</table>
 			`
@@ -130,6 +132,29 @@ export async function activate(context: vscode.ExtensionContext) {
 			panel.webview.html = html
 		}
 	)
+
+
+
+	addCommand(
+		'jutge-vscode.statement',
+
+		async () => {
+			const statement = (await MyProblemsService.getMyProblemsByProblemNmByProblemIdHtml('P17681', 'P17681_en')) as unknown as string
+
+			console.log(statement)
+
+			const panel = vscode.window.createWebviewPanel(
+				'jutgeStament',
+				'P17681_en',
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true,
+				}
+			)
+			panel.webview.html = statement
+		}
+	)
+
 
 
 	addCommand(
@@ -148,7 +173,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			const password = await vscode.window.showInputBox({
 				placeHolder: "your password",
-				prompt: "Please write your password for Jutge.org. It will be used once and will not be stored.",
+				prompt: "Please write your password for Jutge.org.",
 				value: "",
 				password: true,
 			})
@@ -156,26 +181,19 @@ export async function activate(context: vscode.ExtensionContext) {
 				return
 			}
 
-			let formData = new FormData()
-			formData.append('username', email)
-			formData.append('password', password)
-
-			const response = await fetch('https://api.jutge.org/auth/login', {
-				method: 'POST',
-				body: formData,
-			})
-
-			if (response.status !== 200) {
+			let credentials = null
+			try {
+				credentials = await AuthService.postAuthLogin({ email, password })
+			} catch (error) {
 				vscode.window.showErrorMessage('Jutge.org: Invalid credentials to sign in.')
 				return
 			}
 
-			const data = await response.json() as { access_token: string, token_type: string }
-
-			await context.secrets.store("access_token", data.access_token)
+			await context.secrets.store("token", credentials.token)
 			await context.secrets.store("email", email)
+			await context.secrets.store("password", password)
 
-			axios.defaults.headers.common['Authorization'] = 'Bearer ' + data.access_token
+			axios.defaults.headers.common['Authorization'] = 'Bearer ' + credentials.token
 
 			vscode.window.showInformationMessage('Jutge.org: You have signed in.')
 		}
@@ -187,8 +205,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		authenticated(
 			async () => {
-				await AuthService.discardAuthenticationToken()
-				await context.secrets.store("access_token", "")
+				await AuthService.postAuthLogout()
+				await context.secrets.store("token", "")
 				delete axios.defaults.headers.common['Authorization']
 				vscode.window.showInformationMessage('Jutge.org: You have signed out.')
 			}
@@ -201,7 +219,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		authenticated(
 			async () => {
-				const token = await context.secrets.get("access_token")
+				const token = await context.secrets.get("token")
 				vscode.window.showInformationMessage(`Token: ${token}`)
 			}
 		)
@@ -249,7 +267,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 	console.log('Jutge.org extension is active!')
-	vscode.commands.executeCommand('jutge-vscode.information')
+//	vscode.commands.executeCommand('jutge-vscode.information')
 }
 
 

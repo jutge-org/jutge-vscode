@@ -71,6 +71,11 @@
                 "category": "Jutge.org"
             },
             {
+                "command": "jutge-vscode.statement",
+                "title": "Statement",
+                "category": "Jutge.org"
+            },
+            {
                 "command": "jutge-vscode.hello",
                 "title": "Hello World",
                 "category": "Jutge.org"
@@ -84,7 +89,7 @@
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
         "test": "vscode-test",
-        "generate-client": "openapi --input https://api.jutge.org/openapi.json --output ./src/client --client axios --useUnionTypes"
+        "generate-client": "openapi --input https://api.jutge.org/documentation/json --output ./src/client --client axios --useUnionTypes"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.6",
