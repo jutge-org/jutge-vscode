@@ -181,7 +181,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				return
 			}
 
-			let credentials = null
+			let credentials
 			try {
 				credentials = await AuthService.postAuthLogin({ email, password })
 			} catch (error) {
@@ -229,7 +229,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	addCommand('jutge-vscode.profile',
 		authenticated(
 			async () => {
-				const profile = await MyProfileService.profileView()
+				const profile = await MyProfileService.getMyProfile()
 				vscode.window.showInformationMessage(`Name: ${profile.name} Email: ${profile.email} Username: ${profile.username} `)
 			}
 		)
