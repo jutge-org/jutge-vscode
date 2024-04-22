@@ -1,38 +1,36 @@
 # `jutge-vscode` extension
 
-## Install
+## Install and compile
 
 ```bash
 npm install
-npm run generate-client
+npm run compile
+```
+
+## Run
+
+- Open the project in VSCode (or run `code .` from within the folder in the terminal).
+- Install the [esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) extension to run the tasks.
+- Run the extension with F5 or Run > Start Debugging.
+
+## Development Requirements
+
+```
+node v21.7.1
+npm v10.5.0
 ```
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Development Requirements
-
-node v21.7.1
-npm v10.5.0
+> [!NOTE]
+> WIP
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+> [!NOTE]
+> WIP
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+> [!NOTE]
+> WIP
