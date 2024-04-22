@@ -14,10 +14,6 @@
     "contributes": {
         "commands": [
             {
-                "command": "jutge-vscode.helloWorld",
-                "title": "Jutge - Hello World"
-            },
-            {
                 "command": "jutge-vscode.showProblem",
                 "title": "Jutge - Show Problem"
             },
@@ -28,10 +24,6 @@
             {
                 "command": "jutge-vscode.signOut",
                 "title": "Jutge - Sign Out"
-            },
-            {
-                "command": "jutge-vscode.runAllTestcases",
-                "title": "Jutge - Run All Testcases"
             }
         ],
         "configuration": {

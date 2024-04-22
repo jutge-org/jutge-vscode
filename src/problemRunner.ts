@@ -19,7 +19,7 @@ import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from './typ
 	* @param status Testcase status.
 	* @param output The output of the testcase run (if any).
 	*/
-function sendUpdateTestcaseMessage(problemNm: string, testcaseId: number, status: TestcaseStatus, output: string) {
+function sendUpdateTestcaseMessage(problemNm: string, testcaseId: number, status: TestcaseStatus, output: string | undefined) {
 	const message = {
 		command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
 		data: {
@@ -43,22 +43,49 @@ function sendUpdateTestcaseMessage(problemNm: string, testcaseId: number, status
 	* @throws If the language is not supported.
 	* @throws If the language runner fails.
 	*/
-export function runTestcase(testcase_input: string, filePath: string | undefined): string {
-	if (!filePath) {
-		vscode.window.showErrorMessage("No file is open to be run.");
-		return "";
+export function runTestcase(testcase_input: string, filePath: string): string | undefined {
+	if (!fs.existsSync(filePath)) {
+		vscode.window.showErrorMessage("File does not exist.");
+		return;
 	}
 
-	// WARN: TestcaseRunner - Filenames with multiple dots will break this.
 	const fileExtension = filePath.split('.').pop();
 	if (!fileExtension) {
 		vscode.window.showErrorMessage("File has no extension.");
-		return "";
+		return;
 	}
 
 	const languageRunner = getLanguageRunnerFromExtension(fileExtension);
-	const output = languageRunner.run(filePath, testcase_input);
-	return output;
+	try {
+		const output = languageRunner.run(filePath, testcase_input);
+		return output;
+	} catch (error) {
+		console.error("Error running testcase: ", error);
+		return;
+	}
+}
+
+
+/**
+	* Gets the testcases for a problem.
+	* If the problem already has testcases, it returns them.
+	* Otherwise, it fetches the testcases from Jutge.
+	*
+	* @param problem The problem for which to get the testcases.
+	* 
+	* @returns The testcases for the problem.
+	*/
+async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undefined> {
+	if (problem.testcases) {
+		return problem.testcases;
+	}
+	try {
+		const problemTestcases = await MyProblemsService.getSampleTestcases(problem.problem_nm, problem.problem_id) as Testcase[];
+		return problemTestcases;
+	} catch (error) {
+		console.error("Error getting problem testcases: ", error);
+		return;
+	}
 }
 
 /**
@@ -69,14 +96,18 @@ export function runTestcase(testcase_input: string, filePath: string | undefined
 	* 
 	* @returns True if the testcase passed, false otherwise.
 	*/
-export async function runSingleTestcase(testcaseId: number, problem: Problem): Promise<boolean> {
+export async function runSingleTestcase(testcaseId: number, problem: Problem, filePath: string): Promise<boolean> {
 	const testcaseNm = testcaseId - 1; // Testcases are 1-indexed to be consistent with the UI.
-	const testcases = problem.testcases || await MyProblemsService.getSampleTestcases(problem.problem_nm, problem.problem_id) as Testcase[];
+	const testcases = await getProblemTestcases(problem);
+	if (!testcases || testcases.length === 0) {
+		vscode.window.showErrorMessage("No testcases found for this problem.");
+		return false;
+	}
 	const input = Buffer.from(testcases[testcaseNm].input_b64, 'base64').toString('utf-8');
 	const expected = Buffer.from(testcases[testcaseNm].correct_b64, 'base64').toString('utf-8');
 
 	sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "");
-	const output = runTestcase(input, vscode.window.visibleTextEditors[0].document.fileName);
+	const output = runTestcase(input, filePath);
 	if (output === expected) {
 		sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.PASSED, output);
 		return true;
@@ -91,18 +122,25 @@ export async function runSingleTestcase(testcaseId: number, problem: Problem): P
 	* Runs all testcases for a problem on the currently open file.
 	*
 	* @param problem The problem to which the testcases belong.
+	* @param filePath Filepath of the file with the code
 	* 
 	* @returns True if all testcases passed, false otherwise.
 	*/
-export async function runAllTestcases(problem: Problem): Promise<boolean> {
+export async function runAllTestcases(problem: Problem, filePath: string): Promise<boolean> {
 	let allPassed = true;
-	const testcases = problem.testcases || await MyProblemsService.getSampleTestcases(problem.problem_nm, problem.problem_id) as Testcase[];
+
+	const testcases = await getProblemTestcases(problem);
+	if (!testcases || testcases.length === 0) {
+		vscode.window.showErrorMessage("No testcases found for this problem.");
+		return false;
+	}
+
 	for (let i = 0; i < testcases.length; i++) {
 		const input = Buffer.from(testcases[i].input_b64, 'base64').toString('utf-8');
 		const expected = Buffer.from(testcases[i].correct_b64, 'base64').toString('utf-8');
 
 		sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.RUNNING, "");
-		const output = runTestcase(input, vscode.window.visibleTextEditors[0].document.fileName);
+		const output = runTestcase(input, filePath);
 		if (output === expected) {
 			sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.PASSED, output);
 		} else {
@@ -122,17 +160,16 @@ export async function runAllTestcases(problem: Problem): Promise<boolean> {
 	* 
 	* @returns The id of the submission if successful, undefined otherwise.
 	*/
-export async function submitProblemToJutge(problem: Problem): Promise<string | undefined> {
+export async function submitProblemToJutge(problem: Problem, filePath: string): Promise<string | undefined> {
 	if (vscode.window.visibleTextEditors.length === 0) {
 		vscode.window.showErrorMessage("No file is open to be submitted.");
 		return;
 	}
 
-	const filePath = vscode.window.visibleTextEditors[0].document.fileName;
 	const fileExtension = filePath.split('.').pop() || "";
 	const compilerId = getCompilerIdFromExtension(fileExtension);
 
-	const allTestsPassed = await runAllTestcases(problem);
+	const allTestsPassed = await runAllTestcases(problem, filePath);
 	if (allTestsPassed) {
 		const request_body = new FormData();
 		request_body.append('compiler_id', compilerId);

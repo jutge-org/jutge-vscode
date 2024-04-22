@@ -8,9 +8,21 @@ import { getExtensionContext } from './extension';
 export async function isUserAuthenticated(): Promise<boolean> {
 	const context = getExtensionContext();
 	const token = await context.secrets.get('jutgeToken');
-	const tokenCheck = await AuthenticationService.check(); // No args because token is passed in headers
-	const isTokenValid = tokenCheck.success;
-	return token !== undefined && isTokenValid;
+	if (!token) {
+		return false;
+	}
+	try {
+		// If there is a token, check if it is valid.
+		// No args because token is passed in headers.
+		// FIXME: Returns 401 Unauthorized for expired tokens?
+		const tokenCheck = await AuthenticationService.check();
+		const isTokenValid = tokenCheck.success;
+		return isTokenValid;
+	}
+	catch (error) {
+		console.error('Error checking token:', error);
+		return false;
+	}
 }
 
 export async function signInToJutge() {

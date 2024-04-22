@@ -1,4 +1,4 @@
-import { Uri, Webview } from "vscode";
+import * as vscode from "vscode";
 import { MyProblemsService } from "./client";
 
 /**
@@ -12,8 +12,8 @@ import { MyProblemsService } from "./client";
  * @param pathList An array of strings representing the path to a file/resource
  * @returns A URI pointing to the file/resource
  */
-export function getUri(webview: Webview, extensionUri: Uri, pathList: string[]) {
-	return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
+export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathList: string[]) {
+	return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
 }
 
 /**
@@ -47,7 +47,7 @@ export function getCompilerIdFromExtension(extension: string): string {
 	switch (extension) {
 		case "cc":
 		case "cpp":
-			return "GPP";
+			return "GPP"; // TODO: Wrong
 		case "py":
 			return "Python3";
 		default:

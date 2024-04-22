@@ -27,6 +27,7 @@ export function registerWebviewCommands(context: vscode.ExtensionContext) {
 			return
 		}
 		const problemNm = await vscode.window.showInputBox({
+			title: "Jutge Problem",
 			placeHolder: "P12345",
 			prompt: "Please write the problem number.",
 			value: "",
@@ -64,12 +65,13 @@ export class WebviewPanelHandler {
 	 * @param problemNm The problem number.
 	 */
 	public static createOrShow(extensionUri: vscode.Uri, problemNm: string) {
+		// TODO: ProblemId needs to be set up in the config.
 		if (!isProblemValidAndAccessible(problemNm, problemNm + '_ca')) {
 			vscode.window.showErrorMessage("Problem not valid or accessible.");
 			return;
 		}
 
-		// TODO: Use same column as existing panels if there are
+		// TODO: Use same column as existing panels if there are.
 		const column = vscode.ViewColumn.Beside;
 
 		// If we already have a panel, show it.
@@ -102,6 +104,8 @@ export class WebviewPanelHandler {
 		const panel = this.createdPanels.get(problemNm);
 		if (panel) {
 			panel.panel.webview.postMessage(message);
+		} else {
+			console.error(`Panel ${problemNm} not found.`);
 		}
 	}
 }
@@ -182,6 +186,7 @@ export class ProblemWebviewPanel {
 			this.problem.language_id = problem.language_id;
 		}).catch((error) => {
 			console.error("Error getting problem info: ", error);
+			vscode.window.showErrorMessage("Error getting problem info.");
 		});
 	}
 
@@ -199,18 +204,28 @@ export class ProblemWebviewPanel {
 		if (this.problem.statementHtml) {
 			return this.problem.statementHtml;
 		}
-		const problemStatement = await MyProblemsService.getTextStatement(this.problem.problem_nm, this.problem.problem_id);
-		this.problem.statementHtml = problemStatement;
-		return problemStatement;
+		try {
+			const problemStatement = await MyProblemsService.getTextStatement(this.problem.problem_nm, this.problem.problem_id);
+			this.problem.statementHtml = problemStatement;
+			return problemStatement;
+		} catch (error) {
+			console.error("Error getting problem statement: ", error);
+			return "<p>Error getting problem statement.</p>";
+		}
 	}
 
 	private async _getProblemTestcases() {
 		if (this.problem.testcases) {
 			return this.problem.testcases;
 		}
-		const problemTestcases = await MyProblemsService.getSampleTestcases(this.problem.problem_nm, this.problem.problem_id) as Testcase[];
-		this.problem.testcases = problemTestcases;
-		return problemTestcases;
+		try {
+			const problemTestcases = await MyProblemsService.getSampleTestcases(this.problem.problem_nm, this.problem.problem_id) as Testcase[];
+			this.problem.testcases = problemTestcases;
+			return problemTestcases;
+		} catch (error) {
+			console.error("Error getting problem testcases: ", error);
+			return [];
+		}
 	}
 
 	/**
@@ -222,6 +237,7 @@ export class ProblemWebviewPanel {
 	private async _getHtmlForWebview(): Promise<string> {
 		const webview = this.panel.webview;
 		const scriptUri = getUri(webview, this._extensionUri, ['out', 'webview', 'main.js']);
+		// TODO: Move them to the out folder (automatically, esbuild-copy-plugin)
 		const styleUri = getUri(webview, this._extensionUri, ["src", "webview", "styles", "style.css"]);
 		const codiconUri = getUri(webview, this._extensionUri, ["src", "webview", "styles", "codicon.css"]);
 		const nonce = getNonce(); // Use a nonce to only allow specific scripts to be run
@@ -278,16 +294,23 @@ export class ProblemWebviewPanel {
 
 	private async _handleMessage(message: WebviewToVSCodeMessage) {
 		console.log("Received message from webview: ", message)
+
+		// TODO: Handle multiple open text editors
+		if (!vscode.window.visibleTextEditors) {
+			vscode.window.showErrorMessage("No open text editor.");
+			return;
+		}
+		const defaultEditor = vscode.window.visibleTextEditors[0];
+
 		switch (message.command) {
 			case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
-				runAllTestcases(this.problem);
+				runAllTestcases(this.problem, defaultEditor.document.uri.fsPath);
 				return;
 			case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
-				// WARN: Race condition if the user changes the file while the tests are running.
-				submitProblemToJutge(this.problem);
+				submitProblemToJutge(this.problem, defaultEditor.document.uri.fsPath);
 				return;
 			case WebviewToVSCodeCommand.RUN_TESTCASE:
-				runSingleTestcase(message.data.testcaseId, this.problem);
+				runSingleTestcase(message.data.testcaseId, this.problem, defaultEditor.document.uri.fsPath);
 				return;
 		}
 	}

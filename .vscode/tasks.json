@@ -9,7 +9,10 @@
 			"group": "build",
 			"problemMatcher": "$esbuild-watch",
 			"isBackground": true,
-			"label": "npm: watch"
+			"label": "npm: watch",
+			"options": {
+				"silent": true
+			}
 		},
 		{
 			"type": "npm",
