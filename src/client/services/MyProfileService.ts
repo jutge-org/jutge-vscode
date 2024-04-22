@@ -1,0 +1,50 @@
+/* generated using openapi-typescript-codegen -- do no edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { OpenAPI } from '../core/OpenAPI';
+import { request as __request } from '../core/request';
+export class MyProfileService {
+    /**
+     * Get my profile
+     * @returns any
+     * @throws ApiError
+     */
+    public static getProfile(): CancelablePromise<{
+        user_uid: string;
+        email: string;
+        name: string;
+        username: (null | string);
+        nickname: string;
+        webpage: (null | string);
+        description: (null | string);
+        affiliation: (null | string);
+        birth_year: number;
+        max_subsxhour: number;
+        max_subsxday: number;
+        administrator: number;
+        instructor: number;
+        parent_email: (null | string);
+        country_id: string;
+        timezone_id: string;
+        compiler_id: string;
+        language_id: string;
+    }> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/my/profile',
+        });
+    }
+    /**
+     * Get my avatar (PNG)
+     * @returns binary
+     * @throws ApiError
+     */
+    public static getAvatar(): CancelablePromise<Blob> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/my/profile/avatar',
+        });
+    }
+}
