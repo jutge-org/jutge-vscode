@@ -9,99 +9,85 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [
-        "*"
-    ],
+    "activationEvents": [],
     "main": "./out/extension.js",
     "contributes": {
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "jutge",
-                    "title": "Jutge.org",
-                    "icon": "media/jutge.svg"
-                }
-            ]
-        },
-        "views": {
-            "jutge": [
-                {
-                    "type": "webview",
-                    "id": "sidebar",
-                    "name": "somename",
-                    "icon": "media/lightbulb-regular.svg",
-                    "contextualTitle": "Jutge.org"
-                }
-            ]
-        },
         "commands": [
             {
-                "command": "jutge-vscode.about",
-                "title": "About",
-                "category": "Jutge.org"
+                "command": "jutge-vscode.showProblem",
+                "title": "Jutge - Show Problem"
             },
             {
-                "command": "jutge-vscode.information",
-                "title": "Information",
-                "category": "Jutge.org"
+                "command": "jutge-vscode.signIn",
+                "title": "Jutge - Sign In"
             },
             {
-                "command": "jutge-vscode.login",
-                "title": "Sign in",
-                "category": "Jutge.org"
-            },
-            {
-                "command": "jutge-vscode.logout",
-                "title": "Sign out",
-                "category": "Jutge.org"
-            },
-            {
-                "command": "jutge-vscode.showToken",
-                "title": "Show token (DEV)",
-                "category": "Jutge.org"
-            },
-            {
-                "command": "jutge-vscode.profile",
-                "title": "Show profile",
-                "category": "Jutge.org"
-            },
-            {
-                "command": "jutge-vscode.problems",
-                "title": "Problems",
-                "category": "Jutge.org"
-            },
-            {
-                "command": "jutge-vscode.statement",
-                "title": "Statement",
-                "category": "Jutge.org"
-            },
-            {
-                "command": "jutge-vscode.hello",
-                "title": "Hello World",
-                "category": "Jutge.org"
+                "command": "jutge-vscode.signOut",
+                "title": "Jutge - Sign Out"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Jutge.org",
+            "properties": {
+                "jutge-vscode.runner.python.command": {
+                    "type": "string",
+                    "default": "python3",
+                    "description": "The command to run Python scripts"
+                },
+                "jutge-vscode.runner.python.flags": {
+                    "type": "array",
+                    "default": [
+                        "-u"
+                    ],
+                    "description": "The flags to run Python scripts (by default, the flags jutge.org uses)"
+                },
+                "jutge-vscode.runner.cpp.command": {
+                    "type": "string",
+                    "default": "g++",
+                    "description": "The command to compile C++ programs"
+                },
+                "jutge-vscode.runner.cpp.flags": {
+                    "type": "array",
+                    "default": [
+                        "-std=c++17",
+                        "-O2",
+                        "-Wall",
+                        "-Wextra",
+                        "-Wshadow",
+                        "-pedantic"
+                    ],
+                    "description": "The flags to compile C++ programs (by default, the flags jutge.org uses)"
+                },
+                "jutge-vscode.runner.timeout": {
+                    "type": "number",
+                    "default": 5000,
+                    "description": "The maximum time in milliseconds to run a program before killing it."
+                }
+            }
+        }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
+        "vscode:prepublish": "npm run package",
+        "package": "NODE_ENV=production node ./esbuild.js",
+        "compile": "node ./esbuild.js",
+        "watch": "node ./esbuild.js --watch",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "vscode-test",
         "generate-client": "openapi --input https://api.jutge.org/documentation/json --output ./src/client --client axios --useUnionTypes"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.6",
         "@types/node": "18.x",
         "@types/vscode": "^1.87.0",
+        "@types/vscode-webview": "^1.57.5",
         "@typescript-eslint/eslint-plugin": "^7.0.2",
         "@typescript-eslint/parser": "^7.0.2",
         "@vscode/test-cli": "^0.0.6",
         "@vscode/test-electron": "^2.3.9",
+        "esbuild": "^0.16.17",
         "eslint": "^8.56.0",
-        "typescript": "^5.3.3",
-        "openapi-typescript-codegen": "^0.27.0"
+        "openapi-typescript-codegen": "^0.27.0",
+        "typescript": "^5.3.3"
     },
     "dependencies": {
         "@vscode/webview-ui-toolkit": "^1.4.0",
