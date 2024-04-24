@@ -21,19 +21,24 @@ import {
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export function registerWebviewCommands(context: vscode.ExtensionContext) {
-	context.subscriptions.push(vscode.commands.registerCommand('jutge-vscode.showProblem', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('jutge-vscode.showProblem', async (problemNm: string | undefined) => {
 		if (!await isUserAuthenticated()) {
 			vscode.window.showErrorMessage('You need to sign in to Jutge.org to use this feature.')
 			return
 		}
-		const problemNm = await vscode.window.showInputBox({
-			title: "Jutge Problem",
-			placeHolder: "P12345",
-			prompt: "Please write the problem number.",
-			value: "",
-		})
+
+		// If the command is called from the command palette, ask for the problem number.
 		if (!problemNm) {
-			return
+			const inputProblemNm = await vscode.window.showInputBox({
+				title: "Jutge Problem",
+				placeHolder: "P12345",
+				prompt: "Please write the problem number.",
+				value: "",
+			})
+			if (!inputProblemNm) {
+				return
+			}
+			problemNm = inputProblemNm
 		}
 		WebviewPanelHandler.createOrShow(context.extensionUri, problemNm);
 	}));
