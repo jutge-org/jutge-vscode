@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 import axios from 'axios'
 
-import { registerWebviewCommands } from './webviewProvider'
 import { registerAuthCommands } from './jutgeAuth'
+import { registerWebviewCommands } from './webviewProvider'
+import { registerTreeViewCommands } from './treeviewProvider'
 
 
 /**
@@ -37,6 +38,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	/* WebView */
 	registerWebviewCommands(context);
+
+	/* TreeView */
+	registerTreeViewCommands(context);
 
 	console.log("jutge-vscode is now active");
 }

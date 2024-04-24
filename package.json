@@ -12,6 +12,40 @@
     "activationEvents": [],
     "main": "./out/extension.js",
     "contributes": {
+        "viewsWelcome": [
+            {
+                "view": "jutgeTreeView",
+                "contents": "You have not signed in to jutge.org yet.\n[Sign-in to jutge.org](command:jutge-vscode.signIn)"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "jutge",
+                    "title": "Jutge.org",
+                    "icon": "resources/jutge.svg"
+                }
+            ]
+        },
+        "views": {
+            "jutge": [
+                {
+                    "id": "jutgeTreeView",
+                    "name": "jutge-vscode",
+                    "icon": "resources/lightbulb-regular.svg",
+                    "contextualTitle": "Jutge.org"
+                }
+            ]
+        },
+        "menus": {
+            "view/title": [
+                {
+                    "command": "jutge-vscode.refreshTree",
+                    "when": "view == jutgeTreeView",
+                    "group": "navigation"
+                }
+            ]
+        },
         "commands": [
             {
                 "command": "jutge-vscode.showProblem",
@@ -24,6 +58,14 @@
             {
                 "command": "jutge-vscode.signOut",
                 "title": "Jutge - Sign Out"
+            },
+            {
+                "command": "jutge-vscode.refreshTree",
+                "title": "Jutge - Refresh Tree",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
             }
         ],
         "configuration": {

@@ -30,6 +30,7 @@ export async function signInToJutge() {
 
 	const default_email = await context.secrets.get("email") || ''
 	const email = await vscode.window.showInputBox({
+		title: "Jutge Sign-In",
 		placeHolder: "your email",
 		prompt: "Please write your email for Jutge.org.",
 		value: default_email,
@@ -39,6 +40,7 @@ export async function signInToJutge() {
 	}
 
 	const password = await vscode.window.showInputBox({
+		title: "Jutge Sign-In",
 		placeHolder: "your password",
 		prompt: "Please write your password for Jutge.org.",
 		value: "",
@@ -61,6 +63,7 @@ export async function signInToJutge() {
 
 	axios.defaults.headers.common['Authorization'] = 'Bearer ' + credentials.token
 
+	vscode.commands.executeCommand('jutge-vscode.refreshTree')
 	vscode.window.showInformationMessage('Jutge.org: You have signed in.')
 }
 
