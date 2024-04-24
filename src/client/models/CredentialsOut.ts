@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type CredentialsOut = {
-    access_token: string;
-    token_type: string;
+  access_token: string;
+  token_type: string;
 };
-

@@ -3,6 +3,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TTimezone = {
-    timezone_id: string;
+  timezone_id: string;
 };
-

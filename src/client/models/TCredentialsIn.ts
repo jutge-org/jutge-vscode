@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TCredentialsIn = {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 };
-

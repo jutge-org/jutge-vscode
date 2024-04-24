@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TVerdict = {
-    verdict_id: string;
-    name: string;
-    description: string;
+  verdict_id: string;
+  name: string;
+  description: string;
 };
-

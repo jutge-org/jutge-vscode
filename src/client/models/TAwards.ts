@@ -2,6 +2,4 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type TAwards = {
-};
-
+export type TAwards = {};

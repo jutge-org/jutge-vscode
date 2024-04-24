@@ -3,11 +3,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TBasicCourseOut = {
-    course_nm: string;
-    title: (null | string);
-    description: (null | string);
-    annotation: (null | string);
-    public: number;
-    official: number;
+  course_nm: string;
+  title: null | string;
+  description: null | string;
+  annotation: null | string;
+  public: number;
+  official: number;
 };
-

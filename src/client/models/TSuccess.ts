@@ -3,6 +3,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TSuccess = {
-    success: boolean;
+  success: boolean;
 };
-

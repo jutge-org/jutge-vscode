@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TCountry = {
-    country_id: string;
-    eng_name: string;
+  country_id: string;
+  eng_name: string;
 };
-

@@ -3,6 +3,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TSubmissionPostOut = {
-    submission_id: string;
+  submission_id: string;
 };
-

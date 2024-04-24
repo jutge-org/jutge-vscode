@@ -2,26 +2,29 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type TDictAbstractProblemOut = Record<string, {
+export type TDictAbstractProblemOut = Record<
+  string,
+  {
     problem_nm: string;
-    author: (null | string);
-    author_email: (null | string);
-    public: (null | number);
-    official: (null | number);
-    deprecation: (null | string);
+    author: null | string;
+    author_email: null | string;
+    public: null | number;
+    official: null | number;
+    deprecation: null | string;
     owner: {
-        email: string;
-        name: string;
-        username: (null | string);
+      email: string;
+      name: string;
+      username: null | string;
     };
     problems: Array<{
-        problem_id: string;
-        problem_nm: string;
-        language_id: string;
-        title: string;
-        original_language_id: string;
-        translator: (null | string);
-        translator_email: (null | string);
-        checked: (null | number);
+      problem_id: string;
+      problem_nm: string;
+      language_id: string;
+      title: string;
+      original_language_id: string;
+      translator: null | string;
+      translator_email: null | string;
+      checked: null | number;
     }>;
-}>;
+  }
+>;

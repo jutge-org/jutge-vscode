@@ -2,11 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Date } from './Date';
+import type { Date } from "./Date";
 export type TCredentialsOAuth2Out = {
-    access_token: string;
-    token_type: string;
-    expiration: (Date | string);
-    user_uid: string;
+  access_token: string;
+  token_type: string;
+  expiration: Date | string;
+  user_uid: string;
 };
-

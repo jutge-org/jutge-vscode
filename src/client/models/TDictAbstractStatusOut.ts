@@ -2,7 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type TDictAbstractStatusOut = Record<string, {
+export type TDictAbstractStatusOut = Record<
+  string,
+  {
     problem_nm: string;
     nb_submissions: number;
     nb_pending_submissions: number;
@@ -10,4 +12,5 @@ export type TDictAbstractStatusOut = Record<string, {
     nb_rejected_submissions: number;
     nb_scored_submissions: number;
     status: string;
-}>;
+  }
+>;

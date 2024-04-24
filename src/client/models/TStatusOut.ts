@@ -3,13 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TStatusOut = {
-    problem_id: string;
-    problem_nm: string;
-    nb_submissions: number;
-    nb_pending_submissions: number;
-    nb_accepted_submissions: number;
-    nb_rejected_submissions: number;
-    nb_scored_submissions: number;
-    status: string;
+  problem_id: string;
+  problem_nm: string;
+  nb_submissions: number;
+  nb_pending_submissions: number;
+  nb_accepted_submissions: number;
+  nb_rejected_submissions: number;
+  nb_scored_submissions: number;
+  status: string;
 };
-

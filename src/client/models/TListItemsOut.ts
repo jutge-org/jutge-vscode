@@ -3,6 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TListItemsOut = Array<{
-    problem_nm: (null | string);
-    description: (null | string);
+  problem_nm: null | string;
+  description: null | string;
 }>;

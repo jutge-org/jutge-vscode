@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TSubmissionPostIn = {
-    compiler_id: string;
-    annotation?: string;
-    file: Blob;
+  compiler_id: string;
+  annotation?: string;
+  file: Blob;
 };
-

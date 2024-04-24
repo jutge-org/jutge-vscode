@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TPublicProfileOut = {
-    email: string;
-    name: string;
-    username: (null | string);
+  email: string;
+  name: string;
+  username: null | string;
 };
-

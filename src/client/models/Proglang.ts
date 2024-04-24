@@ -3,6 +3,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type Proglang = {
-    proglang_id: string;
+  proglang_id: string;
 };
-

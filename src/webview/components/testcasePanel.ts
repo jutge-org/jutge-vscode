@@ -1,11 +1,11 @@
-import { Testcase } from '../../types';
-
+import { Testcase } from "../../types";
 
 export function generateTestcasePanels(problemTestcases: Testcase[]): string {
-  const testcasePanels = problemTestcases.map((testcase, index) => {
-    const inputDecoded = Buffer.from(testcase.input_b64, 'base64').toString('utf-8');
-    const correctDecoded = Buffer.from(testcase.correct_b64, 'base64').toString('utf-8');
-    return /*html*/ `
+  const testcasePanels = problemTestcases
+    .map((testcase, index) => {
+      const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8");
+      const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8");
+      return /*html*/ `
       <div class="case" id="testcase-${index + 1}">
         <div class="testcase-metadata">
           <div class="toggle-minimize">
@@ -44,7 +44,8 @@ export function generateTestcasePanels(problemTestcases: Testcase[]): string {
       </div>
     </div>
         `;
-  }).join('')
+    })
+    .join("");
 
   return /*html*/ `
     <div class="testcase-panels">

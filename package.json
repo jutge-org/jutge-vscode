@@ -115,6 +115,7 @@
         "watch": "node ./esbuild.js --watch",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
+        "format": "prettier --write src/**/*",
         "generate-client": "openapi --input https://api.jutge.org/documentation/json --output ./src/client --client axios --useUnionTypes"
     },
     "devDependencies": {

@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TCredentialsOAuth2In = {
-    username: string;
-    password: string;
-    grant_type?: string;
+  username: string;
+  password: string;
+  grant_type?: string;
 };
-

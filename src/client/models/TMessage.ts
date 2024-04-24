@@ -3,6 +3,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TMessage = {
-    message: string;
+  message: string;
 };
-

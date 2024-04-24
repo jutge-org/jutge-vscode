@@ -3,10 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export type Time = {
-    full_time: string;
-    int_timestamp: number;
-    float_timestamp: number;
-    time: string;
-    date: string;
+  full_time: string;
+  int_timestamp: number;
+  float_timestamp: number;
+  time: string;
+  date: string;
 };
-

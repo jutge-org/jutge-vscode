@@ -3,6 +3,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TDriver = {
-    driver_id: string;
+  driver_id: string;
 };
-

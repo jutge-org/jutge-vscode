@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TTestcase = {
-    name: string;
-    input_b64: string;
-    correct_b64: string;
+  name: string;
+  input_b64: string;
+  correct_b64: string;
 };
-

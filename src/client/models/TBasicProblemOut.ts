@@ -3,13 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TBasicProblemOut = {
-    problem_id: string;
-    problem_nm: string;
-    language_id: string;
-    title: string;
-    original_language_id: string;
-    translator: (null | string);
-    translator_email: (null | string);
-    checked: (null | number);
+  problem_id: string;
+  problem_nm: string;
+  language_id: string;
+  title: string;
+  original_language_id: string;
+  translator: null | string;
+  translator_email: null | string;
+  checked: null | number;
 };
-

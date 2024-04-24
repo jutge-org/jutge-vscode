@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TLanguage = {
-    language_id: string;
-    eng_name: string;
-    own_name: string;
+  language_id: string;
+  eng_name: string;
+  own_name: string;
 };
-

@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type TAbstractProblemExtrasOut = {
-    compilers_with_ac: Array<string>;
-    proglangs_with_ac: Array<string>;
+  compilers_with_ac: Array<string>;
+  proglangs_with_ac: Array<string>;
 };
-

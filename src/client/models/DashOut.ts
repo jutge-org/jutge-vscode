@@ -3,9 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export type DashOut = {
-    number_of_accepted_problems: number;
-    number_of_rejected_problems: number;
-    number_of_submissions: number;
-    level: string;
+  number_of_accepted_problems: number;
+  number_of_rejected_problems: number;
+  number_of_submissions: number;
+  level: string;
 };
-

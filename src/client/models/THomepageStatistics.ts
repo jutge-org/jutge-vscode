@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type THomepageStatistics = {
-    users: number;
-    problems: number;
-    submissions: number;
+  users: number;
+  problems: number;
+  submissions: number;
 };
-

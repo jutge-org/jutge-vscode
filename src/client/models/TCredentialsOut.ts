@@ -2,10 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Date } from './Date';
+import type { Date } from "./Date";
 export type TCredentialsOut = {
-    token: string;
-    expiration: (Date | string);
-    user_uid: string;
+  token: string;
+  expiration: Date | string;
+  user_uid: string;
 };
-
