@@ -26,6 +26,8 @@ export function registerWebviewCommands(context: vscode.ExtensionContext) {
 			vscode.window.showErrorMessage('You need to sign in to Jutge.org to use this feature.')
 			return
 		}
+
+		// If the command is called from the command palette, ask for the problem number.
 		if (!problemNm) {
 			const inputProblemNm = await vscode.window.showInputBox({
 				title: "Jutge Problem",
