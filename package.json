@@ -116,7 +116,8 @@
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
         "format": "prettier --write src/**/*",
-        "generate-client": "openapi --input https://api.jutge.org/documentation/json --output ./src/client --client axios --useUnionTypes"
+        "generate-client": "openapi --input https://api.jutge.org/documentation/json --output ./src/client --client axios --useUnionTypes",
+        "prepare": "husky install"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.6",
@@ -129,6 +130,8 @@
         "@vscode/test-electron": "^2.3.9",
         "esbuild": "^0.16.17",
         "eslint": "^8.56.0",
+        "husky": "^9.0.11",
+        "lint-staged": "^15.2.2",
         "openapi-typescript-codegen": "^0.27.0",
         "prettier": "^3.2.5",
         "typescript": "^5.3.3"
@@ -136,5 +139,9 @@
     "dependencies": {
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "axios": "^1.6.7"
+    },
+    "lint-staged": {
+        "*.ts": "eslint --cache --fix",
+        "*.src/**/*": "prettier --write"
     }
 }
