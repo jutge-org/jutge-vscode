@@ -14,7 +14,18 @@ export function registerTreeViewCommands(context: vscode.ExtensionContext) {
 }
 
 class JutgeTreeItem extends vscode.TreeItem {
-	public itemKey?: string // Object-dependent key related to API calls.
+	// API-related ID for the tree item (courseKey, listKey, or problemNm).
+	public itemKey?: string
+
+	// Context value of the tree item. Used to determine the icon and behavior of the tree item.
+	public contextValue?: string
+
+	// The vscode.Command that should be executed when the tree item is selected.
+	public command?: vscode.Command
+
+	constructor(label: string, collapsibleState: vscode.TreeItemCollapsibleState) {
+		super(label, collapsibleState);
+	}
 }
 
 export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
@@ -25,10 +36,16 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 		this._onDidChangeTreeData.fire();
 	}
 
+	// Get TreeItem representation of the element (part of the TreeDataProvider interface).
 	getTreeItem(element: JutgeTreeItem): JutgeTreeItem {
 		return element;
 	}
 
+	/** 
+	 * Get children of an element. 
+	 * If an empty list is returned, a welcome view is shown.
+	 * viewsWelcome are defined in `package.json`.
+	 */
 	async getChildren(element?: JutgeTreeItem): Promise<JutgeTreeItem[]> {
 		if (await isUserAuthenticated() === false) {
 			return Promise.resolve([]);
@@ -44,45 +61,63 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 	}
 
 	private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
-		const courses = await MyCoursesService.getAllEnrolledCourses();
-		console.log(courses);
-		return Object.keys(courses).map(courseKey => {
-			const course = courses[courseKey];
-			const courseItem = new JutgeTreeItem(course.course_nm, vscode.TreeItemCollapsibleState.Collapsed);
-			courseItem.contextValue = 'course';
-			courseItem.itemKey = courseKey;
-			return courseItem;
-		});
+		try {
+			const courses = await MyCoursesService.getAllEnrolledCourses();
+			return Object.keys(courses).map(courseKey => {
+				const course = courses[courseKey];
+				const courseItem = new JutgeTreeItem(course.course_nm, vscode.TreeItemCollapsibleState.Collapsed);
+				courseItem.contextValue = 'course';
+				courseItem.itemKey = courseKey;
+				return courseItem;
+			});
+		} catch (error) {
+			console.error(error);
+			vscode.window.showErrorMessage('Failed to get enrolled courses');
+			return [];
+		}
 	}
 
 	private async _getListsFromCourseNm(courseKey: string): Promise<JutgeTreeItem[]> {
-		const course_info = await MyCoursesService.getEnrolledCourse(courseKey);
-		const lists = course_info.lists;
-		return Object.keys(lists).map(listKey => {
-			const list = lists[listKey];
-			const listItem = new JutgeTreeItem(list.list_nm, vscode.TreeItemCollapsibleState.Collapsed);
-			listItem.contextValue = 'list';
-			listItem.itemKey = listKey;
-			return listItem;
-		});
+		try {
+			const course_info = await MyCoursesService.getEnrolledCourse(courseKey);
+			const lists = course_info.lists;
+			return Object.keys(lists).map(listKey => {
+				const list = lists[listKey];
+				const listItem = new JutgeTreeItem(list.list_nm, vscode.TreeItemCollapsibleState.Collapsed);
+				listItem.contextValue = 'list';
+				listItem.itemKey = listKey;
+				return listItem;
+			});
+		} catch (error) {
+			console.error(error);
+			vscode.window.showErrorMessage('Failed to get lists from course: ' + courseKey);
+			return [];
+		}
 	}
 
 	private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
-		const list_info = await MyListsService.getList(listKey);
-		const problems = list_info.items;
-		return problems.map(problem => {
-			if (problem.problem_nm === null) {
-				return new JutgeTreeItem('No problems found', vscode.TreeItemCollapsibleState.None);
-			}
-			const problemItem = new JutgeTreeItem(problem.problem_nm, vscode.TreeItemCollapsibleState.None);
-			problemItem.contextValue = 'problem';
-			problemItem.itemKey = problem.problem_nm;
-			problemItem.command = {
-				command: 'jutge-vscode.showProblem',
-				title: 'Open Problem',
-				arguments: [problem.problem_nm]
-			};
-			return problemItem;
-		});
+		try {
+			const list_info = await MyListsService.getList(listKey);
+			const problems = list_info.items;
+			return problems.map(problem => {
+				if (problem.problem_nm === null) {
+					return new JutgeTreeItem('Problem name unavailable', vscode.TreeItemCollapsibleState.None);
+				}
+				const problemItem = new JutgeTreeItem(problem.problem_nm, vscode.TreeItemCollapsibleState.None);
+				// TODO: Maybe we should set up a JutgeTreeItemBuilder class to make this easier.
+				problemItem.contextValue = 'problem';
+				problemItem.itemKey = problem.problem_nm;
+				problemItem.command = {
+					command: 'jutge-vscode.showProblem',
+					title: 'Open Problem',
+					arguments: [problem.problem_nm]
+				};
+				return problemItem;
+			});
+		} catch (error) {
+			console.error(error);
+			vscode.window.showErrorMessage('Failed to get problems from list: ' + listKey);
+			return [];
+		}
 	}
 }
