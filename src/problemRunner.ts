@@ -176,8 +176,14 @@ export async function submitProblemToJutge(problem: Problem, filePath: string): 
 		request_body.append('annotation', "")
 		request_body.append('file', fs.createReadStream(filePath));
 
-		vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...");
 		const response = await MySubmissionsService.submit(problem.problem_nm, problem.problem_id, request_body);
+		vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...", "View in jutge.org", "Dismiss").then((selection) => {
+			if (selection === "View in jutge.org") {
+				vscode.env.openExternal(vscode.Uri.parse(`https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`));
+			} else if (selection === "Dismiss") {
+				return;
+			}
+		});
 		return response.submission_id;
 	} else {
 		vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.");

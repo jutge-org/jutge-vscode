@@ -47,7 +47,7 @@ export function getCompilerIdFromExtension(extension: string): string {
 	switch (extension) {
 		case "cc":
 		case "cpp":
-			return "GPP"; // TODO: Wrong
+			return "G++"; // TODO: Give more options
 		case "py":
 			return "Python3";
 		default:
