@@ -1,10 +1,9 @@
-import * as vscode from 'vscode'
-import axios from 'axios'
+import * as vscode from "vscode";
+import axios from "axios";
 
-import { registerAuthCommands } from './jutgeAuth'
-import { registerWebviewCommands } from './webviewProvider'
-import { registerTreeViewCommands } from './treeviewProvider'
-
+import { registerAuthCommands } from "./jutgeAuth";
+import { registerWebviewCommands } from "./webviewProvider";
+import { registerTreeViewCommands } from "./treeviewProvider";
 
 /**
  *	Wraps the extension context into an exported function.
@@ -14,7 +13,7 @@ import { registerTreeViewCommands } from './treeviewProvider'
  */
 let _context: vscode.ExtensionContext;
 export function getExtensionContext(): vscode.ExtensionContext {
-	return _context;
+  return _context;
 }
 
 /**
@@ -24,25 +23,23 @@ export function getExtensionContext(): vscode.ExtensionContext {
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
-	_context = context; // Allows access to the extension context from other modules
+  _context = context; // Allows access to the extension context from other modules
 
-	/* Axios setup */
-	axios.defaults.baseURL = 'https://api.jutge.org';
-	const token = await context.secrets.get('jutgeToken');
-	if (token) {
-		axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-	}
+  /* Axios setup */
+  axios.defaults.baseURL = "https://api.jutge.org";
+  const token = await context.secrets.get("jutgeToken");
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
 
-	/* Authentication */
-	registerAuthCommands(context);
+  /* Authentication */
+  registerAuthCommands(context);
 
-	/* WebView */
-	registerWebviewCommands(context);
+  /* WebView */
+  registerWebviewCommands(context);
 
-	/* TreeView */
-	registerTreeViewCommands(context);
+  /* TreeView */
+  registerTreeViewCommands(context);
 
-	console.log("jutge-vscode is now active");
+  console.log("jutge-vscode is now active");
 }
-
-

@@ -13,7 +13,7 @@ import { MyProblemsService } from "./client";
  * @returns A URI pointing to the file/resource
  */
 export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathList: string[]) {
-	return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
+  return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
 }
 
 /**
@@ -25,12 +25,12 @@ export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathLi
  * @returns A nonce
  */
 export function getNonce() {
-	let text = "";
-	const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
+  let text = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
 }
 
 /**
@@ -43,25 +43,24 @@ export function getNonce() {
  * @returns The compiler id
  */
 export function getCompilerIdFromExtension(extension: string): string {
-	// TODO: Dump from jutge api or set up as config
-	switch (extension) {
-		case "cc":
-		case "cpp":
-			return "G++"; // TODO: Give more options
-		case "py":
-			return "Python3";
-		default:
-			return "";
-	}
+  // TODO: Dump from jutge api or set up as config
+  switch (extension) {
+    case "cc":
+    case "cpp":
+      return "G++"; // TODO: Give more options
+    case "py":
+      return "Python3";
+    default:
+      return "";
+  }
 }
 
 export function isProblemValidAndAccessible(problemNm: string, problemId: string) {
-	try {
-		const response = MyProblemsService.getProblem(problemNm, problemId);
-		return response !== undefined;
-	}
-	catch (error) {
-		// TODO: Filter errors.
-		return false;
-	}
+  try {
+    const response = MyProblemsService.getProblem(problemNm, problemId);
+    return response !== undefined;
+  } catch (error) {
+    // TODO: Filter errors.
+    return false;
+  }
 }

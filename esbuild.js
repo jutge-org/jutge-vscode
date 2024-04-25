@@ -42,8 +42,8 @@ const watchConfig = {
       if (error) {
         error.errors.forEach((error) =>
           console.error(
-            `> ${error.location.file}:${error.location.line}:${error.location.column}: error: ${error.text}`,
-          ),
+            `> ${error.location.file}:${error.location.line}:${error.location.column}: error: ${error.text}`
+          )
         );
       } else {
         console.log("[watch] build finished");
