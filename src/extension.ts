@@ -4,7 +4,7 @@ import axios from "axios";
 import { registerAuthCommands } from "./jutgeAuth";
 import { registerWebviewCommands } from "./webviewProvider";
 import { registerTreeViewCommands } from "./treeviewProvider";
-import { removeExtensionContext, setExtensionContext } from './context';
+import { removeExtensionContext, setExtensionContext } from "./context";
 
 /**
  * Works as entrypoint when the extension is activated.

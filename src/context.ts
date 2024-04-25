@@ -10,7 +10,6 @@ export function getExtensionUri() {
   return _context?.extensionUri!;
 }
 
-
 export function getExtensionContext() {
   return _context!;
 }
