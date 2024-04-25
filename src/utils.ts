@@ -64,3 +64,23 @@ export function isProblemValidAndAccessible(problemNm: string, problemId: string
     return false;
   }
 }
+
+export async function chooseFromEditorList(
+  editors: readonly vscode.TextEditor[]
+): Promise<vscode.TextEditor | undefined> {
+  if (editors.length === 0) {
+    return undefined;
+  }
+  if (editors.length === 1) {
+    return editors[0];
+  } else {
+    const selectedEditor = await vscode.window.showQuickPick(
+      editors.map((editor) => ({
+        label: editor.document.fileName,
+        description: editor.document.languageId,
+        editor,
+      }))
+    );
+    return selectedEditor?.editor;
+  }
+}

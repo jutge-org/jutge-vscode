@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import { MyProblemsService } from "./client/services/MyProblemsService";
 
-import { getNonce, getUri, isProblemValidAndAccessible } from "./utils";
+import { getNonce, getUri, isProblemValidAndAccessible, chooseFromEditorList } from "./utils";
 import { generateTestcasePanels } from "./webview/components/testcasePanel";
 import { runSingleTestcase, runAllTestcases } from "./problemRunner";
 import { submitProblemToJutge } from "./jutgeSubmission";
@@ -15,7 +15,6 @@ import {
   WebviewToVSCodeCommand,
   WebviewToVSCodeMessage,
 } from "./types";
-import { MySubmissionsService } from "./client";
 
 /**
  * Registers commands to control the webview.
@@ -331,13 +330,12 @@ export class ProblemWebviewPanel {
   private async _handleMessage(message: WebviewToVSCodeMessage) {
     console.log("Received message from webview: ", message);
 
-    // TODO: Handle multiple open text editors
-    if (!vscode.window.visibleTextEditors) {
-      vscode.window.showErrorMessage("No open text editor.");
+    // TODO: Remember default if editors are the same as last time.
+    const defaultEditor = await chooseFromEditorList(vscode.window.visibleTextEditors);
+    if (!defaultEditor) {
+      vscode.window.showErrorMessage("No text editor open.");
       return;
     }
-    const defaultEditor = vscode.window.visibleTextEditors[0];
-
     switch (message.command) {
       case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
         runAllTestcases(this.problem, defaultEditor.document.uri.fsPath);
