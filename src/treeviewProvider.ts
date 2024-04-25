@@ -3,8 +3,6 @@ import * as vscode from "vscode";
 import { MyCoursesService, MyListsService } from "./client";
 
 import { isUserAuthenticated } from "./jutgeAuth";
-import { WebviewPanelHandler } from "./webviewProvider";
-import { getExtensionContext } from "./extension";
 
 export function registerTreeViewCommands(context: vscode.ExtensionContext) {
   const treeViewProvider = new TreeViewProvider();

@@ -4,17 +4,7 @@ import axios from "axios";
 import { registerAuthCommands } from "./jutgeAuth";
 import { registerWebviewCommands } from "./webviewProvider";
 import { registerTreeViewCommands } from "./treeviewProvider";
-
-/**
- *	Wraps the extension context into an exported function.
- *	Allows access to the extension context from other modules.
- *
- *	@returns The extension context.
- */
-let _context: vscode.ExtensionContext;
-export function getExtensionContext(): vscode.ExtensionContext {
-  return _context;
-}
+import { removeExtensionContext, setExtensionContext } from './context';
 
 /**
  * Works as entrypoint when the extension is activated.
@@ -23,7 +13,7 @@ export function getExtensionContext(): vscode.ExtensionContext {
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
-  _context = context; // Allows access to the extension context from other modules
+  setExtensionContext(context);
 
   /* Axios setup */
   axios.defaults.baseURL = "https://api.jutge.org";
@@ -42,4 +32,12 @@ export async function activate(context: vscode.ExtensionContext) {
   registerTreeViewCommands(context);
 
   console.log("jutge-vscode is now active");
+}
+
+/**
+ * Works as entrypoint when the extension is deactivated.
+ * It is responsible for cleaning up the extension's resources.
+ */
+export function deactivate() {
+  removeExtensionContext();
 }

@@ -3,7 +3,7 @@ import axios from "axios";
 
 import { AuthenticationService } from "./client/services/AuthenticationService";
 
-import { getExtensionContext } from "./extension";
+import { getExtensionContext } from "./context";
 
 export async function isUserAuthenticated(): Promise<boolean> {
   const context = getExtensionContext();
