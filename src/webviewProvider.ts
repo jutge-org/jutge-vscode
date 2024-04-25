@@ -86,8 +86,7 @@ export class WebviewPanelHandler {
       return;
     }
 
-    // TODO: Use same column as existing panels if there are.
-    const column = vscode.ViewColumn.Beside;
+    const column = this._getColumn();
 
     // If we already have a panel, show it.
     if (this.createdPanels.has(problemNm)) {
@@ -105,6 +104,15 @@ export class WebviewPanelHandler {
 
     this.createdPanels.set(problemNm, new ProblemWebviewPanel(panel, extensionUri, problemNm));
     return this.createdPanels.get(problemNm);
+  }
+
+  // Returns column beside or the column of an existing panel.
+  private static _getColumn() {
+    if (WebviewPanelHandler.createdPanels.size === 0) {
+      return vscode.ViewColumn.Beside;
+    } else {
+      return WebviewPanelHandler.createdPanels.values().next().value.panel.viewColumn;
+    }
   }
 
   public static getPanel(problemNm: string) {
