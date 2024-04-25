@@ -4,7 +4,8 @@ import { MyProblemsService } from "./client/services/MyProblemsService";
 
 import { getNonce, getUri, isProblemValidAndAccessible } from "./utils";
 import { generateTestcasePanels } from "./webview/components/testcasePanel";
-import { runSingleTestcase, runAllTestcases, submitProblemToJutge } from "./problemRunner";
+import { runSingleTestcase, runAllTestcases } from "./problemRunner";
+import { submitProblemToJutge } from "./jutgeSubmission";
 import { isUserAuthenticated } from "./jutgeAuth";
 
 import {
@@ -14,6 +15,7 @@ import {
   WebviewToVSCodeCommand,
   WebviewToVSCodeMessage,
 } from "./types";
+import { MySubmissionsService } from "./client";
 
 /**
  * Registers commands to control the webview.
@@ -285,7 +287,7 @@ export class ProblemWebviewPanel {
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; font-src ${webview.cspSource};">
 
 				<link rel="stylesheet" href="${styleUri}">
-        <link rel="stylesheet" href="${codiconUri}">
+                                <link rel="stylesheet" href="${codiconUri}">
 	
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			</head>

@@ -1,13 +1,10 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
-import FormData = require("form-data");
 
 import { MyProblemsService } from "./client/services/MyProblemsService";
-import { MySubmissionsService } from "./client";
 
 import { WebviewPanelHandler } from "./webviewProvider";
 import { getLanguageRunnerFromExtension } from "./languageRunner";
-import { getCompilerIdFromExtension } from "./utils";
 
 import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "./types";
 
@@ -160,59 +157,4 @@ export async function runAllTestcases(problem: Problem, filePath: string): Promi
   }
 
   return allPassed;
-}
-
-/**
- * Submits the currently open file to Jutge.
- * Before submitting, it runs all testcases to ensure correctness.
- *
- * @param problem The problem to which the file is being submitted.
- *
- * @returns The id of the submission if successful, undefined otherwise.
- */
-export async function submitProblemToJutge(
-  problem: Problem,
-  filePath: string
-): Promise<string | undefined> {
-  if (vscode.window.visibleTextEditors.length === 0) {
-    vscode.window.showErrorMessage("No file is open to be submitted.");
-    return;
-  }
-
-  const fileExtension = filePath.split(".").pop() || "";
-  const compilerId = getCompilerIdFromExtension(fileExtension);
-
-  const allTestsPassed = await runAllTestcases(problem, filePath);
-  if (allTestsPassed) {
-    const request_body = new FormData();
-    request_body.append("compiler_id", compilerId);
-    request_body.append("annotation", "");
-    request_body.append("file", fs.createReadStream(filePath));
-
-    const response = await MySubmissionsService.submit(
-      problem.problem_nm,
-      problem.problem_id,
-      request_body
-    );
-    vscode.window
-      .showInformationMessage(
-        "All testcases passed! Submitting to Jutge...",
-        "View in jutge.org",
-        "Dismiss"
-      )
-      .then((selection) => {
-        if (selection === "View in jutge.org") {
-          vscode.env.openExternal(
-            vscode.Uri.parse(
-              `https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`
-            )
-          );
-        } else if (selection === "Dismiss") {
-          return;
-        }
-      });
-    return response.submission_id;
-  } else {
-    vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.");
-  }
 }

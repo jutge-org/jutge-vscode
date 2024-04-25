@@ -34,10 +34,6 @@ export async function activate(context: vscode.ExtensionContext) {
   console.log("jutge-vscode is now active");
 }
 
-/**
- * Works as entrypoint when the extension is deactivated.
- * It is responsible for cleaning up the extension's resources.
- */
 export function deactivate() {
   removeExtensionContext();
 }

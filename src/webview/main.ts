@@ -1,6 +1,11 @@
-import { provideVSCodeDesignSystem, allComponents } from "@vscode/webview-ui-toolkit";
+import { provideVSCodeDesignSystem, allComponents, Button } from "@vscode/webview-ui-toolkit";
 
-import { VSCodeToWebviewCommand, VSCodeToWebviewMessage, WebviewToVSCodeCommand } from "../types";
+import {
+  VSCodeToWebviewCommand,
+  VSCodeToWebviewMessage,
+  WebviewToVSCodeCommand,
+  SubmissionStatus,
+} from "../types";
 
 provideVSCodeDesignSystem().register(allComponents);
 
@@ -21,6 +26,11 @@ window.addEventListener("message", (event) => {
     case VSCodeToWebviewCommand.UPDATE_TESTCASE:
       updateTestcase(data.testcaseId, data.status, data.output);
       break;
+    case VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS:
+      updateSubmissionStatus(data.status);
+      break;
+    default:
+      console.log("Unknown command", command);
   }
 });
 
@@ -112,6 +122,18 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
       runningText.style.color = "red";
       outputElement.textContent = output;
       receivedDiv.style.display = "block";
+      break;
+  }
+}
+
+function updateSubmissionStatus(status: SubmissionStatus) {
+  const submissionStatusElement = document.getElementById("submit-to-jutge") as Button;
+  switch (status) {
+    case SubmissionStatus.PENDING:
+      submissionStatusElement.disabled = true;
+      break;
+    default:
+      submissionStatusElement.disabled = false;
       break;
   }
 }

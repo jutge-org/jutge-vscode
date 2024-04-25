@@ -10,6 +10,14 @@ export enum TestcaseStatus {
   FAILED = "failed",
 }
 
+export enum SubmissionStatus {
+  AC = "AC",
+  WA = "WA",
+  TLE = "TLE",
+  CE = "CE",
+  PENDING = "Pending",
+}
+
 export type Problem = {
   problem_id: string;
   problem_nm: string;
@@ -26,6 +34,7 @@ export type VSCodeToWebviewMessage = {
 
 export enum VSCodeToWebviewCommand {
   UPDATE_TESTCASE = "update-testcase",
+  UPDATE_SUBMISSION_STATUS = "update-submission-status",
 }
 
 export type WebviewToVSCodeMessage = {
