@@ -4,6 +4,7 @@
 
 ```bash
 npm install
+npm run generate-client
 npm run compile
 ```
 
