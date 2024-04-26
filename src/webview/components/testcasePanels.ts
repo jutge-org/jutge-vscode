@@ -1,6 +1,27 @@
 import { Testcase } from "../../types";
 
+const runAllButton = /*html*/ `
+      <vscode-button id="run-all-testcases">
+        Run All
+        <span slot="start" class="codicon codicon-run-all"></span>
+      </vscode-button>`;
+
+const submitToJutgeButton =
+  /*html*/
+  `<vscode-button id="submit-to-jutge">
+      Submit to Jutge
+      <span slot="start" class="codicon codicon-cloud-upload"></span>
+   </vscode-button>`;
+
 export function generateTestcasePanels(problemTestcases: Testcase[]): string {
+  if (problemTestcases.length === 0) {
+    return /*html*/ `
+      <div class="testcase-header">
+        <h2 class="flex-grow-1">Testcases</h2>
+        No testcases found.
+      </div>`;
+  }
+
   const testcasePanels = problemTestcases
     .map((testcase, index) => {
       const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8");
@@ -48,8 +69,13 @@ export function generateTestcasePanels(problemTestcases: Testcase[]): string {
     .join("");
 
   return /*html*/ `
-    <div class="testcase-panels">
-      ${testcasePanels}
+    <div class="testcase-header">
+      <h2 class="flex-grow-1">Testcases</h2>
+      ${runAllButton}
+      ${submitToJutgeButton}
     </div>
-  `;
+    <div class="testcase-panels">
+        ${testcasePanels}
+    </div>
+    `;
 }

@@ -11,7 +11,7 @@ import {
   preferredLangToLangId,
   fallbackLangOrder,
 } from "./utils";
-import { generateTestcasePanels } from "./webview/components/testcasePanel";
+import { generateTestcasePanels } from "./webview/components/testcasePanels";
 import { runSingleTestcase, runAllTestcases } from "./problemRunner";
 import { submitProblemToJutge } from "./jutgeSubmission";
 import { isUserAuthenticated } from "./jutgeAuth";
@@ -337,17 +337,6 @@ export class ProblemWebviewPanel {
 				<vscode-divider></vscode-divider>
 
 				<section id="testcases" class="component-container">
-					<div class="testcase-header">
-						<h2 class="flex-grow-1">Testcases</h2>
-						<vscode-button id="run-all-testcases">
-							Run All
-							<span slot="start" class="codicon codicon-run-all"></span>
-						</vscode-button>
-						<vscode-button id="submit-to-jutge">
-							Submit to Jutge
-							<span slot="start" class="codicon codicon-cloud-upload"></span>
-						</vscode-button>
-					</div>
 					${testcasePanels}
 				</section>
 
