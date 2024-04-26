@@ -100,11 +100,6 @@
           ],
           "description": "The flags to compile C++ programs (by default, the flags jutge.org uses)"
         },
-        "jutge-vscode.runner.timeout": {
-          "type": "number",
-          "default": 5000,
-          "description": "The maximum time in milliseconds to run a program before killing it."
-        },
         "jutge-vscode.problem.preferredLang": {
           "type": "string",
           "default": "Català",
