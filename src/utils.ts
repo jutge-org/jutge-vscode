@@ -55,12 +55,15 @@ export function getCompilerIdFromExtension(extension: string): string {
   }
 }
 
-export function isProblemValidAndAccessible(problemNm: string, problemId: string) {
+/**
+ * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
+ *
+ */
+export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
   try {
-    const response = MyProblemsService.getProblem(problemNm, problemId);
+    const response = await MyProblemsService.getAbstractProblem(problemNm);
     return response !== undefined;
   } catch (error) {
-    // TODO: Filter errors.
     return false;
   }
 }
@@ -83,4 +86,19 @@ export async function chooseFromEditorList(
     );
     return selectedEditor?.editor;
   }
+}
+
+export const preferredLangToLangId: { [key: string]: string } = {
+  Català: "ca",
+  Castellano: "es",
+  English: "en",
+};
+export const fallbackLangOrder = ["ca", "es", "en", "fr"];
+
+export function getDefaultProblemId(problemNm: string): string {
+  const preferredLang = vscode.workspace
+    .getConfiguration("jutge-vscode")
+    .get("problem.preferredLang") as string;
+  const preferredLangId = preferredLangToLangId[preferredLang];
+  return problemNm + "_" + preferredLangId;
 }

@@ -104,6 +104,16 @@
           "type": "number",
           "default": 5000,
           "description": "The maximum time in milliseconds to run a program before killing it."
+        },
+        "jutge-vscode.problem.preferredLang": {
+          "type": "string",
+          "default": "Català",
+          "enum": [
+            "Català",
+            "Castellano",
+            "English"
+          ],
+          "description": "The preferred language for problem descriptions."
         }
       }
     }

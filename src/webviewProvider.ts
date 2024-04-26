@@ -2,7 +2,15 @@ import * as vscode from "vscode";
 
 import { MyProblemsService } from "./client/services/MyProblemsService";
 
-import { getNonce, getUri, isProblemValidAndAccessible, chooseFromEditorList } from "./utils";
+import {
+  getNonce,
+  getUri,
+  isProblemValidAndAccessible,
+  chooseFromEditorList,
+  getDefaultProblemId,
+  preferredLangToLangId,
+  fallbackLangOrder,
+} from "./utils";
 import { generateTestcasePanels } from "./webview/components/testcasePanel";
 import { runSingleTestcase, runAllTestcases } from "./problemRunner";
 import { submitProblemToJutge } from "./jutgeSubmission";
@@ -78,9 +86,8 @@ export class WebviewPanelHandler {
    * @param extensionUri The uri of the extension.
    * @param problemNm The problem number.
    */
-  public static createOrShow(extensionUri: vscode.Uri, problemNm: string) {
-    // TODO: ProblemId needs to be set up in the config.
-    if (!isProblemValidAndAccessible(problemNm, problemNm + "_ca")) {
+  public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
+    if (!(await isProblemValidAndAccessible(problemNm))) {
       vscode.window.showErrorMessage("Problem not valid or accessible.");
       return;
     }
@@ -154,7 +161,7 @@ export class ProblemWebviewPanel {
     this.panel = panel;
     this._extensionUri = extensionUri;
     this.problem = {
-      problem_id: problemNm + "_ca",
+      problem_id: getDefaultProblemId(problemNm),
       problem_nm: problemNm,
       title: "",
       language_id: null,
@@ -163,10 +170,10 @@ export class ProblemWebviewPanel {
     };
 
     // Get the problem info
-    this._getProblemInfo();
-
-    // Set the webview's initial html content
-    this._update(problemNm);
+    this._getProblemInfo().then(() => {
+      // Set the webview's initial html content
+      this._updateWebviewContents(problemNm);
+    });
 
     // Listen for when the panel is disposed
     // This happens when the user closes the panel or when the panel is closed programmatically
@@ -202,16 +209,38 @@ export class ProblemWebviewPanel {
   /**
    * Gets the problem info.
    */
-  private _getProblemInfo() {
-    MyProblemsService.getProblem(this.problem.problem_nm, this.problem.problem_id)
-      .then((problem) => {
-        this.problem.title = problem.title;
-        this.problem.language_id = problem.language_id;
-      })
-      .catch((error) => {
-        console.error("Error getting problem info: ", error);
-        vscode.window.showErrorMessage("Error getting problem info.");
-      });
+  private async _getProblemInfo(): Promise<void> {
+    try {
+      const abstractProblem = await MyProblemsService.getAbstractProblem(this.problem.problem_nm);
+      const langProblems = abstractProblem.problems;
+      const availableLangIds = langProblems.reduce((acc: { [key: string]: any }, problem) => {
+        acc[problem.language_id] = problem;
+        return acc;
+      }, {});
+
+      const preferredLang = vscode.workspace
+        .getConfiguration("jutge-vscode")
+        .get("problem.preferredLang") as string;
+      const preferredLangId = preferredLangToLangId[preferredLang];
+
+      let finalProblem;
+      if (availableLangIds[preferredLangId]) {
+        finalProblem = availableLangIds[preferredLangId];
+      } else {
+        console.log("Preferred language not available. Trying with fallback languages.");
+        for (const langId of fallbackLangOrder) {
+          if (availableLangIds[langId]) {
+            finalProblem = availableLangIds[langId];
+            break;
+          }
+        }
+      }
+      this.problem.problem_id = finalProblem.problem_id;
+      this.problem.title = finalProblem.title;
+      this.problem.language_id = finalProblem.language_id;
+    } catch (error) {
+      console.error("Error getting problem info: ", error);
+    }
   }
 
   /**
@@ -219,7 +248,7 @@ export class ProblemWebviewPanel {
    *
    * @param problemNm The problem number.
    */
-  private async _update(problemNm: string) {
+  private async _updateWebviewContents(problemNm: string) {
     this.panel.title = problemNm;
     this.panel.webview.html = await this._getHtmlForWebview();
   }
