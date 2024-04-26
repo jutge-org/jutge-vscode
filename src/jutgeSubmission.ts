@@ -31,6 +31,7 @@ export async function submitProblemToJutge(problem: Problem, filePath: string): 
     request_body.append("annotation", "");
     request_body.append("file", fs.createReadStream(filePath));
 
+    // FIXME: If you encounter an error here, change mediaType to "multipart/form-data" in the submit function in MySubmissionsService.
     const response = await MySubmissionsService.submit(
       problem.problem_nm,
       problem.problem_id,

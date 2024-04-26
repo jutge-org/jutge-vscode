@@ -59,7 +59,6 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
 
   const languageRunner = getLanguageRunnerFromExtension(fileExtension);
   try {
-    // TODO: Use configured timeout.
     const output = languageRunner.run(filePath, testcase_input);
     return output;
   } catch (error) {
