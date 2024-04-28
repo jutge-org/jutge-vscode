@@ -79,7 +79,7 @@ suite("Utils Test Suite", () => {
   test("chooseFromEditorList should return the only editor for a list of one", async () => {
     const workspaceFolder = vscode.workspace.workspaceFolders![0];
     const editor = await vscode.window.showTextDocument(
-      vscode.Uri.joinPath(workspaceFolder.uri, "test.py")
+      vscode.Uri.joinPath(workspaceFolder.uri, "test_file.cc")
     );
     assert.equal(await utils.chooseFromEditorList([editor]), editor);
   });
