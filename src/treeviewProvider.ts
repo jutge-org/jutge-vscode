@@ -18,12 +18,6 @@ class JutgeTreeItem extends vscode.TreeItem {
   // API-related ID for the tree item (courseKey, listKey, or problemNm).
   public itemKey?: string;
 
-  // Context value of the tree item. Used to determine the icon and behavior of the tree item.
-  public contextValue?: string;
-
-  // The vscode.Command that should be executed when the tree item is selected.
-  public command?: vscode.Command;
-
   constructor(label: string, collapsibleState: vscode.TreeItemCollapsibleState) {
     super(label, collapsibleState);
   }

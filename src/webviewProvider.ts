@@ -72,7 +72,7 @@ export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptio
     // Restrict the webview to only loading content from the extension's `webview` directory.
     localResourceRoots: [
       vscode.Uri.joinPath(extensionUri, "src", "webview"),
-      vscode.Uri.joinPath(extensionUri, "out"),
+      vscode.Uri.joinPath(extensionUri, "dist"),
     ],
   };
 }
@@ -295,8 +295,7 @@ export class ProblemWebviewPanel {
    */
   private async _getHtmlForWebview(): Promise<string> {
     const webview = this.panel.webview;
-    const scriptUri = getUri(webview, this._extensionUri, ["out", "webview", "main.js"]);
-    // TODO: Move them to the out folder (automatically, esbuild-copy-plugin)
+    const scriptUri = getUri(webview, this._extensionUri, ["dist", "webview", "main.js"]);
     const styleUri = getUri(webview, this._extensionUri, ["src", "webview", "styles", "style.css"]);
     const codiconUri = getUri(webview, this._extensionUri, [
       "src",
