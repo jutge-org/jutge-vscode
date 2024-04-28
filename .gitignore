@@ -5,4 +5,5 @@ package-lock.json
 .vscode-test/
 
 out/
+src/client/
 dist/
