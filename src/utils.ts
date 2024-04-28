@@ -72,7 +72,7 @@ export async function chooseFromEditorList(
   editors: readonly vscode.TextEditor[]
 ): Promise<vscode.TextEditor | undefined> {
   if (editors.length === 0) {
-    return undefined;
+    return;
   }
   if (editors.length === 1) {
     return editors[0];

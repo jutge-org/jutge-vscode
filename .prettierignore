@@ -5,6 +5,7 @@
 
 # testing
 /coverage
+/src/test/mock_workspace
 
 # production
 /out

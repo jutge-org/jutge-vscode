@@ -1,6 +1,7 @@
 {
   "name": "jutge-vscode",
   "displayName": "jutge-vscode",
+  "publisher": "jutge",
   "description": "Visual Studio Code extension for Jutge.org",
   "version": "0.0.1",
   "engines": {
@@ -129,6 +130,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
+    "@types/moxios": "^0.4.17",
     "@types/node": "18.x",
     "@types/vscode": "^1.87.0",
     "@types/vscode-webview": "^1.57.5",
@@ -140,6 +142,7 @@
     "eslint": "^8.56.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
+    "moxios": "^0.4.0",
     "openapi-typescript-codegen": "^0.27.0",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3"
