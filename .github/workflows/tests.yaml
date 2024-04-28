@@ -15,5 +15,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18.x
-      - run: npm install
-      - run: xvfb-run -a npm test
+      - name: Install dependencies
+        run: npm install
+      - name: Generate OpenAPI client
+        run: npm run generate-client
+      - name: Run tests
+        run: xvfb-run -a npm test
