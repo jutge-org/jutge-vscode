@@ -2,8 +2,8 @@ node_modules/
 package-lock.json
 .DS_Store
 .eslintcache
-.vscode-test/
+.vscode-test
 
 out/
-src/client/
 dist/
+src/client

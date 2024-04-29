@@ -153,6 +153,6 @@
   },
   "lint-staged": {
     "*.ts": "eslint --cache --fix",
-    "*": "prettier --write"
+    "*": "prettier --write --ignore-unknown"
   }
 }
