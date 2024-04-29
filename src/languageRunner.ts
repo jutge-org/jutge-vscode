@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { execSync } from "child_process";
+import * as child_process from "child_process";
 import { channel } from "./channel";
 
 export interface LanguageRunner {
@@ -18,12 +18,13 @@ export class PythonRunner implements LanguageRunner {
     // TODO: Probably can do it async.
     // WARN: No idea if execSync works in Windows.
     try {
-      const result = execSync(command, { input: input });
+      const result = child_process.execSync(command, { input: input });
       return result.toString();
     } catch (error) {
-      channel.append(error as string);
+      const parsed_error = error as any;
+      channel.append(parsed_error.stderr.toString());
       channel.show();
-      throw Error("Error running Python code.");
+      throw error;
     }
   }
 }
@@ -38,12 +39,14 @@ export class CppRunner implements LanguageRunner {
       .get("runner.cpp.flags") as string[];
     const flagsString = flags.join(" ");
     const command = `${cppCommand} ${codePath} -o ${binaryPath} ${flagsString}`;
+    console.log(command);
     try {
-      execSync(command);
+      const compilation_output = child_process.execSync(command);
+      channel.append(compilation_output.toString());
     } catch (error) {
       channel.append(error as string);
       channel.show();
-      throw Error("Error compiling C++ code.");
+      throw error;
     }
   }
   run(codePath: string, input: string): string {
@@ -51,12 +54,13 @@ export class CppRunner implements LanguageRunner {
     this.compile(codePath, binaryPath);
     const command = `${binaryPath}`;
     try {
-      const result = execSync(command, { input: input });
+      const result = child_process.execSync(command, { input: input });
       return result.toString();
     } catch (error) {
-      channel.append(error as string);
+      const parsed_error = error as any;
+      channel.append(parsed_error.stderr.toString());
       channel.show();
-      throw Error("Error running C++ code.");
+      throw error;
     }
   }
 }
