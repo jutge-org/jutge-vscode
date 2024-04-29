@@ -32,7 +32,7 @@ export function generateTestcasePanels(problemTestcases: Testcase[]): string {
           <div class="toggle-minimize">
             <span class="case-number case-title">
               <span class="icon">
-                <i class="codicon codicon-chevron-down"></i>
+                <i class="codicon codicon-chevron-up"></i>
               </span>
               &nbsp;Testcase ${index + 1}
             </span>
