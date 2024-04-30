@@ -17,7 +17,7 @@ export class PythonRunner implements LanguageRunner {
     const command = `${pythonCommand}`;
     const args = [codePath, flags];
     // TODO: Probably can do it async.
-    // WARN: No idea if spawnSync works in Windows. Maybe some special args need to be passed in.
+    // TODO: This should work on Windows, but maybe some special args need to be passed in.
     const result = child_process.spawnSync(command, args, { input: input, timeout: 5000 });
     handleRuntimeErrors(result);
     return result.stdout.toString();
