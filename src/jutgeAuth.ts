@@ -73,6 +73,7 @@ export async function signOutFromJutge() {
 
   delete axios.defaults.headers.common["Authorization"];
 
+  vscode.commands.executeCommand("jutge-vscode.refreshTree");
   vscode.window.showInformationMessage("Jutge.org: You have signed out.");
 }
 
