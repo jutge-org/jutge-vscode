@@ -57,29 +57,34 @@ async function monitorSubmissionStatus(problem: Problem, submissionId: string): 
       }, 5000);
     } else {
       sendUpdateSubmissionStatus(problem.problem_nm, response.veredict as SubmissionStatus);
-      // TODO: Is this the kind of message we want to show?
-      vscode.window
-        .showInformationMessage(
-          "Submission status: " + response.veredict,
-          "View in jutge.org",
-          "Dismiss"
-        )
-        .then((selection) => {
-          if (selection === "View in jutge.org") {
-            vscode.env.openExternal(
-              vscode.Uri.parse(
-                `https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`
-              )
-            );
-          } else if (selection === "Dismiss") {
-            return;
-          }
-        });
+      showSubmissionNotification(problem, response);
     }
   } catch (error) {
     vscode.window.showErrorMessage("Error getting submission status: " + error);
     return;
   }
+}
+
+function showSubmissionNotification(problem: Problem, response: any) {
+  const detail = `
+  Problem: ${problem.problem_nm}
+  Veredict: ${response.veredict} 
+  `;
+  vscode.window
+    .showInformationMessage(
+      sign(response.veredict!) + " " + response.veredict,
+      { modal: true, detail },
+      "View in jutge.org"
+    )
+    .then((selection) => {
+      if (selection === "View in jutge.org") {
+        vscode.env.openExternal(
+          vscode.Uri.parse(
+            `https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`
+          )
+        );
+      }
+    });
 }
 
 function sendUpdateSubmissionStatus(problemNm: string, status: SubmissionStatus) {
@@ -90,4 +95,23 @@ function sendUpdateSubmissionStatus(problemNm: string, status: SubmissionStatus)
     },
   };
   WebviewPanelHandler.sendMessageToPanel(problemNm, message);
+}
+
+function sign(verdict: string): string {
+  switch (verdict) {
+    case "AC":
+      return "🟢";
+    case "WA":
+      return "🔴";
+    case "EE":
+      return "💣";
+    case "CE":
+      return "🛠";
+    case "IE":
+      return "🔥";
+    case "Pending":
+      return "⏳";
+    default:
+      return "🔴";
+  }
 }
