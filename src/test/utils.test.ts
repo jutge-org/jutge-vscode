@@ -27,6 +27,14 @@ suite("Utils Test Suite", () => {
     assert.equal(await utils.chooseFromEditorList([]), undefined);
   });
 
+  test("chooseFromEditorList should return the only editor for a list of one", async () => {
+    const workspaceFolder = vscode.workspace.workspaceFolders![0];
+    const editor = await vscode.window.showTextDocument(
+      vscode.Uri.joinPath(workspaceFolder.uri, "test_file.cc")
+    );
+    assert.equal(await utils.chooseFromEditorList([editor]), editor);
+  });
+
   test("getDefaultProblemId should return correct problem id for known problem", async function () {
     await vscode.workspace
       .getConfiguration("jutge-vscode")
@@ -74,13 +82,5 @@ suite("Utils Test Suite", () => {
           assert.equal(value, false);
         });
     });
-  });
-
-  test("chooseFromEditorList should return the only editor for a list of one", async () => {
-    const workspaceFolder = vscode.workspace.workspaceFolders![0];
-    const editor = await vscode.window.showTextDocument(
-      vscode.Uri.joinPath(workspaceFolder.uri, "test_file.cc")
-    );
-    assert.equal(await utils.chooseFromEditorList([editor]), editor);
   });
 });

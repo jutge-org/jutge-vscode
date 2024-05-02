@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as child_process from "child_process";
+import * as childProcess from "child_process";
 import { channel } from "./channel";
 
 export interface LanguageRunner {
@@ -18,7 +18,7 @@ export class PythonRunner implements LanguageRunner {
     const args = [codePath, flags];
     // TODO: Probably can do it async.
     // TODO: This should work on Windows, but maybe some special args need to be passed in.
-    const result = child_process.spawnSync(command, args, { input: input, timeout: 5000 });
+    const result = childProcess.spawnSync(command, args, { input: input, timeout: 5000 });
     handleRuntimeErrors(result);
     return result.stdout.toString();
   }
@@ -34,14 +34,14 @@ export class CppRunner implements LanguageRunner {
       .get("runner.cpp.flags") as string[];
     const command = `${cppCommand}`;
     const args = [codePath, "-o", binaryPath, ...flags];
-    const result = child_process.spawnSync(command, args);
+    const result = childProcess.spawnSync(command, args);
     handleCompilationErrors(result);
   }
   run(codePath: string, input: string): string {
     const binaryPath = codePath + ".out";
     this.compile(codePath, binaryPath);
     const command = `${binaryPath}`;
-    const result = child_process.spawnSync(command, { input: input, timeout: 5000 });
+    const result = childProcess.spawnSync(command, { input: input, timeout: 5000 });
     handleRuntimeErrors(result);
     return result.stdout.toString();
   }
@@ -63,12 +63,12 @@ export function getLanguageRunnerFromExtension(extension: string): LanguageRunne
 
 /**
  * Handles errors that occur during the **runtime execution** of a process.
- * For more information, see `child_process.spawnSync()` docs.
+ * For more information, see `childProcess.spawnSync()` docs.
  *
  * @param result The result of the process execution.
  * @throws Error if any error is found.
  */
-function handleRuntimeErrors(result: child_process.SpawnSyncReturns<Buffer>) {
+function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
   if (result.stderr.length > 0 || result.status !== 0 || result.error || result.signal) {
     if (result.error) {
       // The process execution failed or timed out.
@@ -96,12 +96,12 @@ function handleRuntimeErrors(result: child_process.SpawnSyncReturns<Buffer>) {
 /**
  * Handles errors that occur during the **compilation** of a process.
  * Similar to `handleRuntimeErrors`, but does not throw if stderr is not empty.
- * For more information, see `child_process.spawnSync()` docs.
+ * For more information, see `childProcess.spawnSync()` docs.
  *
  * @param result The result of the process execution.
  * @throws Error if any error is found.
  */
-function handleCompilationErrors(result: child_process.SpawnSyncReturns<Buffer>) {
+function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
   // Always show stderr, but do not consider it an error.
   channel.appendLine(result.stderr.toString());
 
