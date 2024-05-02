@@ -152,7 +152,7 @@ textarea {
 }
 
 .testcase-content {
-  display: none;
+  display: block;
 }
 
 body.vscode-light textarea {

@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 
-import { MyProblemsService } from "./client/services/MyProblemsService";
+import { MyProblemsService } from "./client";
 
 import { WebviewPanelHandler } from "./webviewProvider";
 import { getLanguageRunnerFromExtension } from "./languageRunner";
 
 import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "./types";
+import { channel } from "./channel";
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -81,10 +82,10 @@ async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undef
     return problem.testcases;
   }
   try {
-    const problemTestcases = (await MyProblemsService.getSampleTestcases(
-      problem.problem_nm,
-      problem.problem_id
-    )) as Testcase[];
+    const problemTestcases = (await MyProblemsService.getSampleTestcases({
+      problemNm: problem.problem_nm,
+      problemId: problem.problem_id,
+    })) as Testcase[];
     return problemTestcases;
   } catch (error) {
     console.error("Error getting problem testcases: ", error);
@@ -114,6 +115,7 @@ export async function runSingleTestcase(
   const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8");
   const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8");
 
+  channel.clear();
   sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "");
   const output = runTestcase(input, filePath);
   if (output === expected) {
@@ -142,6 +144,7 @@ export async function runAllTestcases(problem: Problem, filePath: string): Promi
     return false;
   }
 
+  channel.clear();
   for (let i = 0; i < testcases.length; i++) {
     const input = Buffer.from(testcases[i].input_b64, "base64").toString("utf-8");
     const expected = Buffer.from(testcases[i].correct_b64, "base64").toString("utf-8");

@@ -61,7 +61,7 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
   try {
-    const response = await MyProblemsService.getAbstractProblem(problemNm);
+    const response = await MyProblemsService.getAbstractProblem({ problemNm });
     return response !== undefined;
   } catch (error) {
     return false;
@@ -71,6 +71,8 @@ export async function isProblemValidAndAccessible(problemNm: string): Promise<bo
 export async function chooseFromEditorList(
   editors: readonly vscode.TextEditor[]
 ): Promise<vscode.TextEditor | undefined> {
+  // Filter out non-file editors (e.g. logs, output, terminal)
+  editors = editors.filter((editor) => editor.document.uri.scheme === "file");
   if (editors.length === 0) {
     return;
   }
