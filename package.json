@@ -121,10 +121,11 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "format": "prettier --write *",
-    "generate-client": "openapi --input https://api.jutge.org/documentation/json --output ./src/client --client axios --useUnionTypes",
+    "generate-client": "openapi-ts",
     "prepare": "husky install"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.42.1",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
     "@types/vscode": "^1.87.0",
@@ -137,7 +138,6 @@
     "eslint": "^8.56.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
-    "openapi-typescript-codegen": "^0.27.0",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3"
   },

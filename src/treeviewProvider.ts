@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 
-import { MyCoursesService, MyListsService, MyProblemsService } from "./client";
+import {
+  MyCoursesService,
+  MyListsService,
+  MyProblemsService,
+  TCourseOut,
+  TListOut,
+} from "./client";
 
 import { isUserAuthenticated } from "./jutgeAuth";
 import { getDefaultProblemId } from "./utils";
@@ -66,7 +72,9 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
   private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
     try {
-      const courses = await MyCoursesService.getAllEnrolledCourses();
+      const courses = (await MyCoursesService.getAllEnrolledCourses()) as {
+        [key: string]: TCourseOut;
+      };
       return Object.keys(courses).map((courseKey) => {
         const course = courses[courseKey];
         const courseItem = new JutgeTreeItem(
@@ -86,8 +94,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
   private async _getListsFromCourseNm(courseKey: string): Promise<JutgeTreeItem[]> {
     try {
-      const course_info = await MyCoursesService.getEnrolledCourse(courseKey);
-      const lists = course_info.lists;
+      const course_info = await MyCoursesService.getEnrolledCourse({ courseKey });
+      const lists = course_info.lists as { [key: string]: TListOut };
       return Object.keys(lists).map((listKey) => {
         const list = lists[listKey];
         const listItem = new JutgeTreeItem(list.list_nm, vscode.TreeItemCollapsibleState.Collapsed);
@@ -104,7 +112,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
   private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
     try {
-      const list_info = await MyListsService.getList(listKey);
+      const list_info = await MyListsService.getList({ listKey });
 
       // Get data for each problem (concurrently)
       const promises = list_info.items.map(async (problem) => {
@@ -119,7 +127,10 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
         // Get the problem title
         const problem_id = getDefaultProblemId(problem_nm);
-        const { title } = await MyProblemsService.getProblem(problem_nm, problem_id);
+        const { title } = await MyProblemsService.getProblem({
+          problemNm: problem_nm,
+          problemId: problem_id,
+        });
 
         // TODO: Maybe we should set up a JutgeTreeItemBuilder class to make this easier.
         problemItem.contextValue = "problem";

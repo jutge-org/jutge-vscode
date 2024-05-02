@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import axios from "axios";
 
-import { AuthenticationService } from "./client/services/AuthenticationService";
+import { AuthenticationService } from "./client";
 
 import { getExtensionContext } from "./context";
 
@@ -51,7 +51,7 @@ export async function signInToJutge() {
 
   let credentials;
   try {
-    credentials = await AuthenticationService.login({ email, password });
+    credentials = await AuthenticationService.login({ requestBody: { email, password } });
   } catch (error) {
     vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.");
     return;

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 
-import { MyProblemsService } from "./client/services/MyProblemsService";
+import { MyProblemsService } from "./client";
 
 import { WebviewPanelHandler } from "./webviewProvider";
 import { getLanguageRunnerFromExtension } from "./languageRunner";
@@ -82,10 +82,10 @@ async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undef
     return problem.testcases;
   }
   try {
-    const problemTestcases = (await MyProblemsService.getSampleTestcases(
-      problem.problem_nm,
-      problem.problem_id
-    )) as Testcase[];
+    const problemTestcases = (await MyProblemsService.getSampleTestcases({
+      problemNm: problem.problem_nm,
+      problemId: problem.problem_id,
+    })) as Testcase[];
     return problemTestcases;
   } catch (error) {
     console.error("Error getting problem testcases: ", error);
