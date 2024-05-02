@@ -45,11 +45,11 @@ export async function submitProblemToJutge(problem: Problem, filePath: string): 
 
 async function monitorSubmissionStatus(problem: Problem, submissionId: string): Promise<any> {
   try {
-    const response = await MySubmissionsService.getSubmission(
-      problem.problem_nm,
-      problem.problem_id,
-      submissionId
-    );
+    const response = await MySubmissionsService.getSubmission({
+      problemNm: problem.problem_nm,
+      problemId: problem.problem_id,
+      submissionId: submissionId,
+    });
 
     if (response.veredict === SubmissionStatus.PENDING) {
       setTimeout(() => {

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { MyProblemsService } from "./client/services/MyProblemsService";
+import { MyProblemsService } from "./client";
 
 import {
   getNonce,
@@ -211,7 +211,9 @@ export class ProblemWebviewPanel {
    */
   private async _getProblemInfo(): Promise<void> {
     try {
-      const abstractProblem = await MyProblemsService.getAbstractProblem(this.problem.problem_nm);
+      const abstractProblem = await MyProblemsService.getAbstractProblem({
+        problemNm: this.problem.problem_nm,
+      });
       const langProblems = abstractProblem.problems;
       const availableLangIds = langProblems.reduce((acc: { [key: string]: any }, problem) => {
         acc[problem.language_id] = problem;
@@ -258,10 +260,10 @@ export class ProblemWebviewPanel {
       return this.problem.statementHtml;
     }
     try {
-      const problemStatement = await MyProblemsService.getTextStatement(
-        this.problem.problem_nm,
-        this.problem.problem_id
-      );
+      const problemStatement = (await MyProblemsService.getTextStatement({
+        problemNm: this.problem.problem_nm,
+        problemId: this.problem.problem_id,
+      })) as string;
       this.problem.statementHtml = problemStatement;
       return problemStatement;
     } catch (error) {
@@ -275,10 +277,10 @@ export class ProblemWebviewPanel {
       return this.problem.testcases;
     }
     try {
-      const problemTestcases = (await MyProblemsService.getSampleTestcases(
-        this.problem.problem_nm,
-        this.problem.problem_id
-      )) as Testcase[];
+      const problemTestcases = (await MyProblemsService.getSampleTestcases({
+        problemNm: this.problem.problem_nm,
+        problemId: this.problem.problem_id,
+      })) as Testcase[];
       this.problem.testcases = problemTestcases;
       return problemTestcases;
     } catch (error) {

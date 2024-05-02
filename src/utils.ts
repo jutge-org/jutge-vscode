@@ -61,7 +61,7 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
   try {
-    const response = await MyProblemsService.getAbstractProblem(problemNm);
+    const response = await MyProblemsService.getAbstractProblem({ problemNm });
     return response !== undefined;
   } catch (error) {
     return false;
