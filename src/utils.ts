@@ -74,7 +74,7 @@ export async function chooseFromEditorList(
   // Filter out non-file editors (e.g. logs, output, terminal)
   editors = editors.filter((editor) => editor.document.uri.scheme === "file");
   if (editors.length === 0) {
-    return undefined;
+    return;
   }
   if (editors.length === 1) {
     return editors[0];

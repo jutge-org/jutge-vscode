@@ -18,7 +18,7 @@ const extensionConfig = {
   mainFields: ["module", "main"],
   format: "cjs",
   entryPoints: ["./src/extension.ts"],
-  outfile: "./out/extension.js",
+  outfile: "./dist/extension.js",
   external: ["vscode"],
 };
 
@@ -26,10 +26,10 @@ const extensionConfig = {
 /** @type BuildOptions */
 const webviewConfig = {
   ...baseConfig,
-  target: "es2020",
+  target: "es2022",
   format: "esm",
   entryPoints: ["./src/webview/main.ts"],
-  outfile: "./out/webview/main.js",
+  outfile: "./dist/webview/main.js",
 };
 
 // This watch config adheres to the conventions of the esbuild-problem-matchers

@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2020",
-    "lib": ["es2020", "dom"],
-    "outDir": "out",
+    "module": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022", "dom"],
     "sourceMap": true,
     "rootDir": "src",
     "strict": true
   },
-  "exclude": ["node_modules", ".vscode-test", "src/webview/"]
+  "exclude": ["node_modules", ".vscode-test", "src/webview/", "openapi-ts.config.ts"]
 }
