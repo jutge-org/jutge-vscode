@@ -60,7 +60,7 @@ async function getTokenFromCredentials(): Promise<string | undefined> {
 }
 
 function getTokenFromEnvironment(): string | undefined {
-  return process.env.JUTGE_TOKEN;
+  return process.env.JUTGE_API_TOKEN;
 }
 
 function getTokenFromConfigFile(): string | undefined {
