@@ -167,6 +167,7 @@ export class ProblemWebviewPanel {
       language_id: null,
       statementHtml: null,
       testcases: null,
+      handler: null,
     };
 
     // Get the problem info
@@ -277,6 +278,12 @@ export class ProblemWebviewPanel {
       return this.problem.testcases;
     }
     try {
+      const problemExtras = (await MyProblemsService.getProblemExtras({
+        problemNm: this.problem.problem_nm,
+        problemId: this.problem.problem_id,
+      })) as { handler: { handler: string; source_modifier: string } };
+      this.problem.handler = problemExtras.handler.handler;
+
       const problemTestcases = (await MyProblemsService.getSampleTestcases({
         problemNm: this.problem.problem_nm,
         problemId: this.problem.problem_id,
@@ -310,7 +317,7 @@ export class ProblemWebviewPanel {
     const problemStatement = await this._getProblemStatement();
     const problemTestcases = await this._getProblemTestcases();
 
-    const testcasePanels = generateTestcasePanels(problemTestcases);
+    const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler);
 
     return `<!DOCTYPE html>
 			<html lang="en">

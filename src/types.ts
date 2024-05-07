@@ -25,6 +25,7 @@ export type Problem = {
   language_id: null | string;
   statementHtml: string | null;
   testcases: Testcase[] | null;
+  handler: string | null;
 };
 
 export type VSCodeToWebviewMessage = {

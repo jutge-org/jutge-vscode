@@ -13,7 +13,21 @@ const submitToJutgeButton =
       <span slot="start" class="codicon codicon-cloud-upload"></span>
    </vscode-button>`;
 
-export function generateTestcasePanels(problemTestcases: Testcase[]): string {
+export function generateTestcasePanels(
+  problemTestcases: Testcase[],
+  handler: string | null
+): string {
+  if (handler !== "std") {
+    return /*html*/ `
+      <div class="testcase-header">
+        <h2 class="flex-grow-1">Testcases</h2>
+        <div class="warning">
+          <span class="codicon codicon-warning"></span>
+          <span>Local testcase running is not supported for this problem.</span>
+        </div>
+      </div>`;
+  }
+
   if (problemTestcases.length === 0) {
     return /*html*/ `
       <div class="testcase-header">
