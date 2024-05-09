@@ -365,28 +365,28 @@ export class ProblemWebviewPanel {
 
     switch (message.command) {
       case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
-        let defaultEditor = await chooseFromEditorList(vscode.window.visibleTextEditors);
-        if (!defaultEditor) {
+        let all_test_editor = await chooseFromEditorList(vscode.window.visibleTextEditors);
+        if (!all_test_editor) {
           vscode.window.showErrorMessage("No text editor open.");
           return;
         }
-        runAllTestcases(this.problem, defaultEditor.document.uri.fsPath);
+        runAllTestcases(this.problem, all_test_editor.document.uri.fsPath);
         return;
       case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
-        defaultEditor = await chooseFromEditorList(vscode.window.visibleTextEditors);
-        if (!defaultEditor) {
+        let submit_editor = await chooseFromEditorList(vscode.window.visibleTextEditors);
+        if (!submit_editor) {
           vscode.window.showErrorMessage("No text editor open.");
           return;
         }
-        submitProblemToJutge(this.problem, defaultEditor.document.uri.fsPath);
+        submitProblemToJutge(this.problem, submit_editor.document.uri.fsPath);
         return;
       case WebviewToVSCodeCommand.RUN_TESTCASE:
-        defaultEditor = await chooseFromEditorList(vscode.window.visibleTextEditors);
-        if (!defaultEditor) {
+        let test_editor = await chooseFromEditorList(vscode.window.visibleTextEditors);
+        if (!test_editor) {
           vscode.window.showErrorMessage("No text editor open.");
           return;
         }
-        runSingleTestcase(message.data.testcaseId, this.problem, defaultEditor.document.uri.fsPath);
+        runSingleTestcase(message.data.testcaseId, this.problem, test_editor.document.uri.fsPath);
         return;
       case WebviewToVSCodeCommand.NEW_FILE:
         const fileUri = await createNewFileForProblem(this.problem);

@@ -2,11 +2,30 @@ import * as vscode from "vscode";
 import fs from "fs";
 
 import { Language, Problem } from "./types";
-import { getLangIdFromFilePath } from "./languageRunner";
+import { getDefaultExtensionFromLangId } from "./languageRunner";
+
+async function chooseFileLangFromQuickPick(problemNm: string): Promise<Language | undefined> {
+  const fileType = await vscode.window.showQuickPick(
+    Object.values(Language).map((lang) => ({
+      label: `${lang} File`,
+      description: lang,
+    })),
+    {
+      placeHolder: "Select file type",
+      title: `New file for ${problemNm}`,
+    }
+  );
+  return fileType?.description;
+}
 
 export async function createNewFileForProblem(problem: Problem): Promise<vscode.Uri | undefined> {
-  const defaultExtension = "cc"; // TODO: Get from config or suggest in a QuickPick
-  const suggestedFileName = `${problem.problem_nm}_${problem.title.replace(/ /g, "_")}.${defaultExtension}`;
+  const fileLang = await chooseFileLangFromQuickPick(problem.problem_nm);
+  if (!fileLang) {
+    return;
+  }
+
+  const fileExtension = getDefaultExtensionFromLangId(fileLang);
+  const suggestedFileName = `${problem.problem_nm}_${problem.title.replace(/ /g, "_")}.${fileExtension}`;
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
     vscode.window.showErrorMessage("No workspace folder open.");
@@ -25,10 +44,11 @@ export async function createNewFileForProblem(problem: Problem): Promise<vscode.
     return;
   }
 
+  // TODO: If extension is changed by user in the save dialog, update fileLang?
   const langComment = {
     [Language.CPP]: "//",
     [Language.PYTHON]: "#",
-  }[getLangIdFromFilePath(uri.fsPath)];
+  }[fileLang];
 
   const problemIdComment = `${langComment} @${problem.problem_id}`;
   const problemTitleComment = `${langComment} ${problem.title}`;

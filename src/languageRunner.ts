@@ -62,6 +62,18 @@ export function getLangIdFromFilePath(filePath: string): Language {
   }
 }
 
+export function getDefaultExtensionFromLangId(languageId: Language): string {
+  switch (languageId) {
+    case Language.PYTHON:
+      return "py";
+    case Language.CPP:
+      return "cc";
+    default:
+      vscode.window.showErrorMessage("Language not supported.");
+      throw new Error("Language not supported.");
+  }
+}
+
 export function getLangRunnerFromLangId(languageId: Language): LanguageRunner {
   // NOTE: Not sure if vscode has native functionality to detect the language of a file.
   switch (languageId) {
