@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as childProcess from "child_process";
 import { channel } from "./channel";
+import { Language } from "./types";
 
 export interface LanguageRunner {
   run(codePath: string, input: string): string;
@@ -47,13 +48,26 @@ export class CppRunner implements LanguageRunner {
   }
 }
 
-export function getLanguageRunnerFromExtension(extension: string): LanguageRunner {
-  // NOTE: Not sure if vscode has native functionality to detect the language of a file.
+export function getLangIdFromFilePath(filePath: string): Language {
+  const extension = filePath.split(".").pop();
   switch (extension) {
     case "py":
-      return new PythonRunner();
+      return Language.PYTHON;
     case "cc":
     case "cpp":
+      return Language.CPP;
+    default:
+      vscode.window.showErrorMessage("Language not supported.");
+      throw new Error("Language not supported.");
+  }
+}
+
+export function getLangRunnerFromLangId(languageId: Language): LanguageRunner {
+  // NOTE: Not sure if vscode has native functionality to detect the language of a file.
+  switch (languageId) {
+    case Language.PYTHON:
+      return new PythonRunner();
+    case Language.CPP:
       return new CppRunner();
     default:
       vscode.window.showErrorMessage("Language not supported.");

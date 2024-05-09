@@ -39,6 +39,14 @@ function main() {
 }
 
 function addOnClickEventListeners() {
+  const newFileButton = document.getElementById("new-file") as HTMLButtonElement;
+  newFileButton?.addEventListener("click", () => {
+    vscode.postMessage({
+      command: WebviewToVSCodeCommand.NEW_FILE,
+      data: "",
+    });
+  });
+
   const submitToJutgeButton = document.getElementById("submit-to-jutge") as HTMLButtonElement;
   submitToJutgeButton?.addEventListener("click", () => {
     vscode.postMessage({
