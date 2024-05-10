@@ -3,6 +3,7 @@ package-lock.json
 .DS_Store
 .eslintcache
 .vscode-test
+*.vsix
 
 out/
 dist/

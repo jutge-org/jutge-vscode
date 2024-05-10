@@ -4,6 +4,7 @@
   "publisher": "jutge",
   "description": "Visual Studio Code extension for Jutge.org",
   "version": "0.0.1",
+  "repository": "https://github.com/jutge-org/jutge-vscode",
   "engines": {
     "vscode": "^1.87.0"
   },
@@ -116,6 +117,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
+    "vscode:package": "vsce package",
     "package": "NODE_ENV=production node ./esbuild.js",
     "compile": "node ./esbuild.js",
     "watch": "node ./esbuild.js --watch",
@@ -125,6 +127,7 @@
     "test": "vscode-test",
     "lint": "eslint src --ext ts",
     "format": "prettier --write *",
+    "clean": "rm -rf out dist",
     "generate-client": "openapi-ts",
     "prepare": "husky install"
   },
@@ -139,6 +142,7 @@
     "@typescript-eslint/parser": "^7.0.2",
     "@vscode/test-cli": "^0.0.6",
     "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^2.26.1",
     "esbuild": "^0.16.17",
     "eslint": "^8.56.0",
     "husky": "^9.0.11",
