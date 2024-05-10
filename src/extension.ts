@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import axios from "axios";
 
-import { getTokenAtActivation, registerAuthCommands } from "./jutgeAuth";
+import { trySetTokenInBackground, registerAuthCommands } from "./jutgeAuth";
 import { registerWebviewCommands } from "./webviewProvider";
 import { registerTreeViewCommands } from "./treeviewProvider";
 import { removeExtensionContext, setExtensionContext } from "./context";
@@ -17,11 +17,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   /* Axios setup */
   axios.defaults.baseURL = "https://api.jutge.org";
-  const token = await getTokenAtActivation();
-  if (token) {
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    await context.secrets.store("jutgeToken", token);
-  }
+  await trySetTokenInBackground();
 
   /* Authentication */
   registerAuthCommands(context);
