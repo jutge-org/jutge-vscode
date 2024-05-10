@@ -26,24 +26,13 @@ async function isTokenValid(token: string): Promise<boolean> {
   }
 }
 
-/*
- * Checks if the user is authenticated by checking
- * if a token is stored and is valid.
- * If not, it tries to get a valid token in the background.
- *
- * @returns A promise that resolves to a boolean indicating if the user is authenticated.
- */
 export async function isUserAuthenticated(): Promise<boolean> {
   const context = getExtensionContext();
   const token = await context.secrets.get("jutgeToken");
   if (!token) {
-    return trySetTokenInBackground();
+    return false;
   }
-  const valid = await isTokenValid(token);
-  if (!valid) {
-    return trySetTokenInBackground();
-  }
-  return true;
+  return await isTokenValid(token);
 }
 
 async function getTokenFromCredentials(): Promise<string | undefined> {
@@ -96,31 +85,27 @@ function getTokenFromConfigFile(): string | undefined {
 }
 
 /**
- * Tries to get a valid token from different sources in the background.
+ * Tries to get a valid token from different sources.
  * The order of sources is:
  * 1. VSCode storage (previous active token).
  * 2. A file in the user's home config directory.
  *
- * @returns A promise that resolves to a boolean indicating if a valid token was found.
+ * @returns A promise that resolves to a valid token or undefined if none is found.
  */
-export async function trySetTokenInBackground(): Promise<boolean> {
+export async function getTokenAtActivation(): Promise<string | undefined> {
   const context = getExtensionContext();
   const tokenSources = [
     { id: "vscode storage", fn: context.secrets.get("jutgeToken") },
-    { id: "JUTGE_API_TOKEN", fn: process.env.JUTGE_API_TOKEN },
     { id: "~/.config/jutge/token.txt", fn: getTokenFromConfigFile() },
   ];
 
   for (const source of tokenSources) {
     const token = await source.fn;
     if (token && (await isTokenValid(token))) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      await context.secrets.store("jutgeToken", token);
-      vscode.commands.executeCommand("jutge-vscode.refreshTree");
-      return true;
+      console.log(`jutge-vscode: Using token from ${source.id}`);
+      return token;
     }
   }
-  return false;
 }
 
 export async function signInToJutge() {
