@@ -39,7 +39,6 @@ class Config {
   }
 
   getPythonCommand(): string {
-    // FIXME: Remove the python command configuration, it is not needed anymore.
     const env = this.#python.environments.getActiveEnvironmentPath();
     channel.appendLine(`Python environment is: "${env.path}"`);
     return env.path;

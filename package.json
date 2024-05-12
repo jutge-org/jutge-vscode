@@ -73,11 +73,6 @@
     "configuration": {
       "title": "Jutge.org",
       "properties": {
-        "jutge-vscode.runner.python.command": {
-          "type": "string",
-          "default": "python3",
-          "description": "The command to run Python scripts"
-        },
         "jutge-vscode.runner.python.flags": {
           "type": "array",
           "default": [
