@@ -120,6 +120,5 @@ export const getWorkingDirectory = (filename: string) => {
     workingDir = dirname(filename);
   }
   channel.appendLine(`Working dir: "${workingDir}"`);
-  channel.show();
   return workingDir;
 };

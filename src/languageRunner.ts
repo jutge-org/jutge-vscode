@@ -1,6 +1,6 @@
 import * as childProcess from "child_process";
 import * as vscode from "vscode";
-import { channel } from "./channel";
+import { channel, channelAddLineAndShow } from "./channel";
 import config from "./config";
 import { Language } from "./types";
 import { getWorkingDirectory } from "./utils";
@@ -109,17 +109,22 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
         `Execution timed out.\n` +
         `If you think this is a mistake, please increase the timeout time in the settings.`;
     }
-    channel.appendLine(message);
+    channelAddLineAndShow(message);
     return;
   }
 
   if (result.signal) {
-    channel.appendLine(`Process killed by the OS with signal ${result.signal}.`);
+    channelAddLineAndShow(`Process killed by the OS with signal ${result.signal}.`);
     return;
   }
 
-  if (result.stderr.length > 0 || result.status !== 0) {
-    channel.appendLine(result.stderr.toString());
+  if (result.stderr.length > 0) {
+    channelAddLineAndShow(result.stderr.toString());
+    return;
+  }
+
+  if (result.status !== 0) {
+    channelAddLineAndShow(`Exited with code ${result.status}.`);
     return;
   }
 }
@@ -139,13 +144,13 @@ function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>) 
   if (result.status !== 0 || result.error || result.signal) {
     // The process execution failed.
     if (result.error) {
-      channel.appendLine(result.error.toString());
+      channelAddLineAndShow(result.error.toString());
     }
     // Signal exists if the process is killed by the OS (in some edge cases).
     else if (result.signal) {
-      channel.appendLine(`Process killed by the OS with signal ${result.signal}.`);
+      channelAddLineAndShow(`Process killed by the OS with signal ${result.signal}.`);
     }
-    channel.show();
+
     throw Error(`Execution Failed: ${result.stderr.toString()}`);
   }
 }

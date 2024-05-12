@@ -107,14 +107,14 @@ export async function runSingleTestcase(
     vscode.window.showErrorMessage("No testcases found for this problem.");
     return false;
   }
+
+  sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "");
+  channel.clear();
+
   const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8");
   const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8");
 
-  sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "");
-
-  channel.clear();
   const output = runTestcase(input, filePath);
-  channel.show();
 
   const passed = output !== null && output === expected;
   const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED;
