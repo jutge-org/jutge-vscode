@@ -1,50 +1,56 @@
-import * as vscode from "vscode";
 import * as childProcess from "child_process";
+import * as vscode from "vscode";
 import { channel } from "./channel";
+import config from "./config";
 import { Language } from "./types";
+import { getWorkingDirectory } from "./utils";
 
 export interface LanguageRunner {
-  run(codePath: string, input: string): string;
+  run(codePath: string, input: string): string | null;
 }
 
 export class PythonRunner implements LanguageRunner {
-  run(codePath: string, input: string): string {
-    const pythonCommand = vscode.workspace
-      .getConfiguration("jutge-vscode")
-      .get("runner.python.command") as string;
-    const flags = vscode.workspace
-      .getConfiguration("jutge-vscode")
-      .get("runner.python.flags") as string;
-    const command = `${pythonCommand}`;
-    const args = [codePath, flags];
-    // TODO: Probably can do it async.
-    // TODO: This should work on Windows, but maybe some special args need to be passed in.
-    const result = childProcess.spawnSync(command, args, { input: input, timeout: 5000 });
+  run(codePath: string, input: string): string | null {
+    const command = config.getPythonCommand();
+    const flags = config.getPythonFlags();
+    const workingDir = getWorkingDirectory(codePath);
+
+    // TODO: Re-implement asynchronously?
+    // TODO: Check that this works on Windows.
+    const result = childProcess.spawnSync(command, [...flags, codePath], {
+      input,
+      timeout: 5000,
+      cwd: workingDir,
+    });
+
     handleRuntimeErrors(result);
-    return result.stdout.toString();
+
+    if (result.stdout) {
+      return result.stdout.toString();
+    }
+
+    return null; // no output
   }
 }
 
 export class CppRunner implements LanguageRunner {
   compile(codePath: string, binaryPath: string): void {
-    const cppCommand = vscode.workspace
-      .getConfiguration("jutge-vscode")
-      .get("runner.cpp.command") as string;
-    const flags = vscode.workspace
-      .getConfiguration("jutge-vscode")
-      .get("runner.cpp.flags") as string[];
-    const command = `${cppCommand}`;
-    const args = [codePath, "-o", binaryPath, ...flags];
-    const result = childProcess.spawnSync(command, args);
+    const command = config.getCppCommand();
+    const flags = config.getCppFlags();
+    const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags]);
     handleCompilationErrors(result);
   }
-  run(codePath: string, input: string): string {
+
+  run(codePath: string, input: string): string | null {
     const binaryPath = codePath + ".out";
     this.compile(codePath, binaryPath);
     const command = `${binaryPath}`;
-    const result = childProcess.spawnSync(command, { input: input, timeout: 5000 });
+    const result = childProcess.spawnSync(command, { input, timeout: 5000 });
     handleRuntimeErrors(result);
-    return result.stdout.toString();
+    if (result.stdout) {
+      return result.stdout.toString();
+    }
+    return null;
   }
 }
 
@@ -95,27 +101,26 @@ export function getLangRunnerFromLangId(languageId: Language): LanguageRunner {
  * @throws Error if any error is found.
  */
 function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
-  if (result.stderr.length > 0 || result.status !== 0 || result.error || result.signal) {
-    if (result.error) {
-      // The process execution failed or timed out.
-      if (result.error.toString().includes("ETIMEDOUT")) {
-        // Timed out.
-        channel.appendLine(
-          "Execution timed out.\nIf you think this is a mistake, please increase the timeout time in the settings."
-        );
-      } else {
-        // Any other system error.
-        channel.appendLine(result.error.toString());
-      }
+  // Check error first: it can exist with stderr or status being null
+  if (result.error) {
+    let message = result.error.toString();
+    if (result.error.toString().includes("ETIMEDOUT")) {
+      message =
+        `Execution timed out.\n` +
+        `If you think this is a mistake, please increase the timeout time in the settings.`;
     }
-    // Signal exists if the process is killed by the OS (in some edge cases).
-    else if (result.signal) {
-      channel.appendLine(`Process killed by the OS with signal ${result.signal}.`);
-    }
-    // Always show stderr.
+    channel.appendLine(message);
+    return;
+  }
+
+  if (result.signal) {
+    channel.appendLine(`Process killed by the OS with signal ${result.signal}.`);
+    return;
+  }
+
+  if (result.stderr.length > 0 || result.status !== 0) {
     channel.appendLine(result.stderr.toString());
-    channel.show();
-    throw Error(`Execution Failed: ${result.stderr.toString()}`);
+    return;
   }
 }
 

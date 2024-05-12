@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import { MyProblemsService } from "./client";
+import { dirname } from "path";
+import { channel } from "./channel";
 
 /**
  * A helper function which will get the webview URI of a given file or resource.
@@ -47,6 +49,8 @@ export function getCompilerIdFromExtension(extension: string): string {
   switch (extension) {
     case "cc":
     case "cpp":
+    case "cxx":
+    case "c++":
       return "G++"; // TODO: Give more options
     case "py":
       return "Python3";
@@ -78,16 +82,17 @@ export async function chooseFromEditorList(
   }
   if (editors.length === 1) {
     return editors[0];
-  } else {
-    const selectedEditor = await vscode.window.showQuickPick(
-      editors.map((editor) => ({
-        label: editor.document.fileName,
-        description: editor.document.languageId,
-        editor,
-      }))
-    );
-    return selectedEditor?.editor;
   }
+
+  const selectedEditor = await vscode.window.showQuickPick(
+    editors.map((editor) => ({
+      label: editor.document.fileName,
+      description: editor.document.languageId,
+      editor,
+    }))
+  );
+  // TODO: What if
+  return selectedEditor?.editor;
 }
 
 export const preferredLangToLangId: { [key: string]: string } = {
@@ -104,3 +109,17 @@ export function getDefaultProblemId(problemNm: string): string {
   const preferredLangId = preferredLangToLangId[preferredLang];
   return problemNm + "_" + preferredLangId;
 }
+
+export const getWorkingDirectory = (filename: string) => {
+  let workingDir = "";
+  let workspaces = vscode.workspace.workspaceFolders;
+  if (workspaces && workspaces.length > 0) {
+    // TODO: Check that this uri is not remote?
+    workingDir = workspaces[0].uri.path;
+  } else {
+    workingDir = dirname(filename);
+  }
+  channel.appendLine(`Working dir: "${workingDir}"`);
+  channel.show();
+  return workingDir;
+};

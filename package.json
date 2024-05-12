@@ -153,10 +153,14 @@
   },
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.4.0",
+    "@vscode/python-extension": "^1.0.5",
     "axios": "^1.6.7"
   },
   "lint-staged": {
     "*.ts": "eslint --cache --fix",
     "*": "prettier --write --ignore-unknown"
-  }
+  },
+  "extensionDependencies": [
+    "ms-python.python"
+  ]
 }

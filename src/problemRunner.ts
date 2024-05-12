@@ -21,7 +21,7 @@ function sendUpdateTestcaseMessage(
   problemNm: string,
   testcaseId: number,
   status: TestcaseStatus,
-  output: string | undefined
+  output: string | null
 ) {
   const message = {
     command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
@@ -46,19 +46,20 @@ function sendUpdateTestcaseMessage(
  * @throws If the language is not supported.
  * @throws If the language runner fails.
  */
-export function runTestcase(testcase_input: string, filePath: string): string | undefined {
+export function runTestcase(testcase_input: string, filePath: string): string | null {
   if (!fs.existsSync(filePath)) {
     vscode.window.showErrorMessage("File does not exist.");
-    return;
+    return null;
   }
 
   const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath));
   try {
     const output = languageRunner.run(filePath, testcase_input);
     return output;
-  } catch (error) {
+  } catch (error: any) {
+    vscode.window.showErrorMessage(`Error running testcase: ${error.toString()}`);
     console.error("Error running testcase: ", error);
-    return;
+    return null;
   }
 }
 
@@ -109,16 +110,17 @@ export async function runSingleTestcase(
   const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8");
   const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8");
 
-  channel.clear();
   sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "");
+
+  channel.clear();
   const output = runTestcase(input, filePath);
-  if (output === expected) {
-    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.PASSED, output);
-    return true;
-  } else {
-    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.FAILED, output);
-    return false;
-  }
+  channel.show();
+
+  const passed = output !== null && output === expected;
+  const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED;
+  sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, status, output);
+
+  return passed;
 }
 
 /**
