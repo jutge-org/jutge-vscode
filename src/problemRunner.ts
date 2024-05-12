@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { MyProblemsService } from "./client";
 
 import { WebviewPanelHandler } from "./webviewProvider";
-import { getLanguageRunnerFromExtension } from "./languageRunner";
+import { getLangIdFromFilePath, getLangRunnerFromLangId } from "./languageRunner";
 
 import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "./types";
 import { channel } from "./channel";
@@ -52,13 +52,7 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
     return;
   }
 
-  const fileExtension = filePath.split(".").pop();
-  if (!fileExtension) {
-    vscode.window.showErrorMessage("File has no extension.");
-    return;
-  }
-
-  const languageRunner = getLanguageRunnerFromExtension(fileExtension);
+  const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath));
   try {
     const output = languageRunner.run(filePath, testcase_input);
     return output;

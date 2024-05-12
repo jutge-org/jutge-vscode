@@ -44,7 +44,13 @@ export type WebviewToVSCodeMessage = {
 };
 
 export enum WebviewToVSCodeCommand {
+  NEW_FILE = "new-file",
   SUBMIT_TO_JUTGE = "submit-to-jutge",
   RUN_ALL_TESTCASES = "run-all-testcases",
   RUN_TESTCASE = "run-testcase",
+}
+
+export enum Language {
+  CPP = "C++",
+  PYTHON = "Python",
 }

@@ -141,6 +141,11 @@ textarea {
   margin-top: 4px;
 }
 
+#header {
+  display: flex;
+  align-items: center;
+}
+
 .testcase-header {
   display: flex;
   align-items: center;
