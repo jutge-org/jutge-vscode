@@ -280,9 +280,7 @@ export class ProblemWebviewPanel {
 
     private _getUri(...path: string[]) {
         const uri = vscode.Uri.joinPath(this._extensionUri, ...path)
-        const webviewUri = this.panel.webview.asWebviewUri(uri)
-        console.log("WebviewUri", webviewUri)
-        return webviewUri
+        return this.panel.webview.asWebviewUri(uri)
     }
 
     /**
@@ -292,9 +290,8 @@ export class ProblemWebviewPanel {
      * @returns The html content for the webview panel.
      */
     private async _getHtmlForWebview(): Promise<string> {
+        const styleUri = this._getUri("dist", "webview", "main.css")
         const scriptUri = this._getUri("dist", "webview", "main.js")
-        const styleUri = this._getUri("src", "webview", "styles", "style.css")
-        const codiconUri = this._getUri("src", "webview", "styles", "codicon.css")
 
         const nonce = utils.getNonce() // Use a nonce to only allow specific scripts to be run
 
@@ -319,9 +316,10 @@ export class ProblemWebviewPanel {
 				<meta http-equiv="Content-Security-Policy" 
                       content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; script-src 'nonce-${nonce}'; font-src ${cspSource};">
 
-				<link rel="stylesheet" href="${styleUri}">
-                <link rel="stylesheet" href="${codiconUri}">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+                <link rel="stylesheet" href="${styleUri}" />
+
                 <style>body { font-size: 1rem; }</style>
 			</head>
 			<body>
@@ -329,7 +327,7 @@ export class ProblemWebviewPanel {
                     <h2 id="problem-nm" class="flex-grow-1">
                         ${this.problem.problem_nm + " - " + this.problem.title}
                     </h2>
-                    ${Button("New File", "codicon-new-file")}
+                    ${Button("New File", "add", "new-file")}
                 </section>
 				<section id="statement" class="component-container">
 					${problemStatement}

@@ -1,6 +1,9 @@
-import { provideVSCodeDesignSystem, allComponents, Button } from "@vscode/webview-ui-toolkit"
+import { Button, allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
+import { SubmissionStatus, VSCodeToWebviewCommand, VSCodeToWebviewMessage, WebviewToVSCodeCommand } from "../types"
 
-import { VSCodeToWebviewCommand, VSCodeToWebviewMessage, WebviewToVSCodeCommand, SubmissionStatus } from "../types"
+// Warning: this import is important, it will produce a "main.css" file that
+// later we will refer to from the HTML (esbuild does this)
+import "./styles/style.css"
 
 provideVSCodeDesignSystem().register(allComponents)
 

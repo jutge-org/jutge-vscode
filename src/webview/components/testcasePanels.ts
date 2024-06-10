@@ -1,17 +1,6 @@
 import { Testcase } from "../../types"
-
-const runAllButton = /*html*/ `
-      <vscode-button id="run-all-testcases">
-        Run All
-        <span slot="start" class="codicon codicon-run-all"></span>
-      </vscode-button>`
-
-const submitToJutgeButton =
-    /*html*/
-    `<vscode-button id="submit-to-jutge">
-      Submit to Jutge
-      <span slot="start" class="codicon codicon-cloud-upload"></span>
-   </vscode-button>`
+import { Button } from "./Button"
+import { warningIcon } from "./icons"
 
 export function generateTestcasePanels(problemTestcases: Testcase[], handler: string | null): string {
     if (handler !== "std") {
@@ -19,7 +8,7 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
       <div class="testcase-header">
         <h2 class="flex-grow-1">Testcases</h2>
         <div class="warning">
-          <span class="codicon codicon-warning"></span>
+          ${warningIcon()}
           <span>Local testcase running is not supported for this problem.</span>
         </div>
       </div>`
@@ -50,9 +39,7 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
             <span class="running-text"></span>
           </div>
           <div className="time">
-            <button class="btn btn-green" title="Run Again" id="run-testcase-${index + 1}">
-              <span class="codicon codicon-debug-restart"></span>
-            </button>
+            ${Button("", "run-again", `run-testcase-${index + 1}`, "Run Again")}
           </div>
         </div>
 
@@ -82,8 +69,8 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
     return /*html*/ `
     <div class="testcase-header">
       <h2 class="flex-grow-1">Testcases</h2>
-      ${runAllButton}
-      ${submitToJutgeButton}
+      ${Button("Run All", "run-all", "run-all-testcases")}
+      ${Button("Submit to Jutge", "submit", "submit-to-jutge")}
     </div>
     <div class="testcase-panels">
         ${testcasePanels}
