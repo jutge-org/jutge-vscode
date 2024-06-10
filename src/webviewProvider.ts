@@ -278,6 +278,13 @@ export class ProblemWebviewPanel {
         }
     }
 
+    private _getUri(...path: string[]) {
+        const uri = vscode.Uri.joinPath(this._extensionUri, ...path)
+        const webviewUri = this.panel.webview.asWebviewUri(uri)
+        console.log("WebviewUri", webviewUri)
+        return webviewUri
+    }
+
     /**
      * Gets the html content for the webview panel.
      *
@@ -285,10 +292,10 @@ export class ProblemWebviewPanel {
      * @returns The html content for the webview panel.
      */
     private async _getHtmlForWebview(): Promise<string> {
-        const webview = this.panel.webview
-        const scriptUri = utils.getUri(webview, this._extensionUri, ["dist", "webview", "main.js"])
-        const styleUri = utils.getUri(webview, this._extensionUri, ["src", "webview", "styles", "style.css"])
-        const codiconUri = utils.getUri(webview, this._extensionUri, ["src", "webview", "styles", "codicon.css"])
+        const scriptUri = this._getUri("dist", "webview", "main.js")
+        const styleUri = this._getUri("src", "webview", "styles", "style.css")
+        const codiconUri = this._getUri("src", "webview", "styles", "codicon.css")
+
         const nonce = utils.getNonce() // Use a nonce to only allow specific scripts to be run
 
         const problemStatement = await this._getProblemStatement()
@@ -296,43 +303,41 @@ export class ProblemWebviewPanel {
 
         const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler)
 
+        const { cspSource } = this.panel.webview
+
         return `
         <!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<!--
+				${
+                    "" /*
 					Use a content security policy to only allow loading images from https or from our extension directory,
 					and only allow scripts that have a specific nonce.
-				-->
+				*/
+                }
 				<meta http-equiv="Content-Security-Policy" 
-                      content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; font-src ${webview.cspSource};">
+                      content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; script-src 'nonce-${nonce}'; font-src ${cspSource};">
 
 				<link rel="stylesheet" href="${styleUri}">
                 <link rel="stylesheet" href="${codiconUri}">
-	
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>body { font-size: 1rem; }</style>
 			</head>
-			<body>	
+			<body>
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="flex-grow-1">
                         ${this.problem.problem_nm + " - " + this.problem.title}
                     </h2>
-                    
                     ${Button("New File", "codicon-new-file")}
                 </section>
-
 				<section id="statement" class="component-container">
 					${problemStatement}
 				</section>
-
 				<vscode-divider></vscode-divider>
-
 				<section id="testcases" class="component-container">
 					${testcasePanels}
 				</section>
-
 				<script type="module" nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
         </html>

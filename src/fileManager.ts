@@ -33,7 +33,7 @@ export async function createNewFileForProblem(problem: Problem): Promise<vscode.
     }
 
     const uri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(workspaceFolder + "/" + suggestedFileName),
+        defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFileName),
         filters: {
             "All files": ["*"],
         },
