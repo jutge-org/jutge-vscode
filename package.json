@@ -111,20 +111,20 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run package",
-        "vscode:package": "vsce package",
-        "package": "NODE_ENV=production node ./esbuild.js",
-        "compile": "node ./esbuild.js",
+        "generate-client": "openapi-ts",
+        "compile": "openapi-ts && node ./esbuild.js",
         "watch": "node ./esbuild.js --watch",
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "test": "vscode-test",
         "lint": "eslint src --ext ts",
-        "format": "prettier --write *",
         "clean": "rm -rf out dist",
-        "generate-client": "openapi-ts",
-        "prepare": "husky install"
+        "prepare": "husky install",
+        "format": "prettier --write *",
+        "package": "NODE_ENV=production node ./esbuild.js",
+        "vscode:prepublish": "npm run package",
+        "vscode:package": "vsce package"
     },
     "devDependencies": {
         "@hey-api/openapi-ts": "^0.42.1",
