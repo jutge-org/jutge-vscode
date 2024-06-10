@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
-import { MyProblemsService } from "./client";
-import { dirname } from "path";
-import { channel } from "./channel";
+import * as vscode from "vscode"
+import { MyProblemsService } from "./client"
+import { dirname } from "path"
+import { channel } from "./channel"
 
 /**
  * A helper function which will get the webview URI of a given file or resource.
@@ -15,7 +15,8 @@ import { channel } from "./channel";
  * @returns A URI pointing to the file/resource
  */
 export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathList: string[]) {
-  return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
+    const uri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList))
+    return uri
 }
 
 /**
@@ -27,12 +28,12 @@ export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathLi
  * @returns A nonce
  */
 export function getNonce() {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
+    let text = ""
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length))
+    }
+    return text
 }
 
 /**
@@ -45,18 +46,18 @@ export function getNonce() {
  * @returns The compiler id
  */
 export function getCompilerIdFromExtension(extension: string): string {
-  // TODO: Dump from jutge api or set up as config
-  switch (extension) {
-    case "cc":
-    case "cpp":
-    case "cxx":
-    case "c++":
-      return "G++"; // TODO: Give more options
-    case "py":
-      return "Python3";
-    default:
-      return "";
-  }
+    // TODO: Dump from jutge api or set up as config
+    switch (extension) {
+        case "cc":
+        case "cpp":
+        case "cxx":
+        case "c++":
+            return "G++" // TODO: Give more options
+        case "py":
+            return "Python3"
+        default:
+            return ""
+    }
 }
 
 /**
@@ -64,61 +65,59 @@ export function getCompilerIdFromExtension(extension: string): string {
  *
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
-  try {
-    const response = await MyProblemsService.getAbstractProblem({ problemNm });
-    return response !== undefined;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await MyProblemsService.getAbstractProblem({ problemNm })
+        return response !== undefined
+    } catch (error) {
+        return false
+    }
 }
 
 export async function chooseFromEditorList(
-  editors: readonly vscode.TextEditor[]
+    editors: readonly vscode.TextEditor[]
 ): Promise<vscode.TextEditor | undefined> {
-  // Filter out non-file editors (e.g. logs, output, terminal)
-  editors = editors.filter((editor) => editor.document.uri.scheme === "file");
-  if (editors.length === 0) {
-    return;
-  }
-  if (editors.length === 1) {
-    return editors[0];
-  }
+    // Filter out non-file editors (e.g. logs, output, terminal)
+    editors = editors.filter((editor) => editor.document.uri.scheme === "file")
+    if (editors.length === 0) {
+        return
+    }
+    if (editors.length === 1) {
+        return editors[0]
+    }
 
-  const selectedEditor = await vscode.window.showQuickPick(
-    editors.map((editor) => ({
-      label: editor.document.fileName,
-      description: editor.document.languageId,
-      editor,
-    }))
-  );
-  // TODO: What if
-  return selectedEditor?.editor;
+    const selectedEditor = await vscode.window.showQuickPick(
+        editors.map((editor) => ({
+            label: editor.document.fileName,
+            description: editor.document.languageId,
+            editor,
+        }))
+    )
+    // TODO: What if
+    return selectedEditor?.editor
 }
 
 export const preferredLangToLangId: { [key: string]: string } = {
-  Català: "ca",
-  Castellano: "es",
-  English: "en",
-};
-export const fallbackLangOrder = ["ca", "es", "en", "fr"];
+    Català: "ca",
+    Castellano: "es",
+    English: "en",
+}
+export const fallbackLangOrder = ["ca", "es", "en", "fr"]
 
 export function getDefaultProblemId(problemNm: string): string {
-  const preferredLang = vscode.workspace
-    .getConfiguration("jutge-vscode")
-    .get("problem.preferredLang") as string;
-  const preferredLangId = preferredLangToLangId[preferredLang];
-  return problemNm + "_" + preferredLangId;
+    const preferredLang = vscode.workspace.getConfiguration("jutge-vscode").get("problem.preferredLang") as string
+    const preferredLangId = preferredLangToLangId[preferredLang]
+    return problemNm + "_" + preferredLangId
 }
 
 export const getWorkingDirectory = (filename: string) => {
-  let workingDir = "";
-  let workspaces = vscode.workspace.workspaceFolders;
-  if (workspaces && workspaces.length > 0) {
-    // TODO: Check that this uri is not remote?
-    workingDir = workspaces[0].uri.path;
-  } else {
-    workingDir = dirname(filename);
-  }
-  channel.appendLine(`Working dir: "${workingDir}"`);
-  return workingDir;
-};
+    let workingDir = ""
+    let workspaces = vscode.workspace.workspaceFolders
+    if (workspaces && workspaces.length > 0) {
+        // TODO: Check that this uri is not remote?
+        workingDir = workspaces[0].uri.path
+    } else {
+        workingDir = dirname(filename)
+    }
+    channel.appendLine(`Working dir: "${workingDir}"`)
+    return workingDir
+}

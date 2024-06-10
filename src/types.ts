@@ -1,56 +1,56 @@
 export type Testcase = {
-  name: string;
-  input_b64: string;
-  correct_b64: string;
-};
+    name: string
+    input_b64: string
+    correct_b64: string
+}
 
 export enum TestcaseStatus {
-  RUNNING = "running",
-  PASSED = "passed",
-  FAILED = "failed",
+    RUNNING = "running",
+    PASSED = "passed",
+    FAILED = "failed",
 }
 
 export enum SubmissionStatus {
-  AC = "AC",
-  WA = "WA",
-  TLE = "TLE",
-  CE = "CE",
-  PENDING = "Pending",
+    AC = "AC",
+    WA = "WA",
+    TLE = "TLE",
+    CE = "CE",
+    PENDING = "Pending",
 }
 
 export type Problem = {
-  problem_id: string;
-  problem_nm: string;
-  title: string;
-  language_id: null | string;
-  statementHtml: string | null;
-  testcases: Testcase[] | null;
-  handler: string | null;
-};
+    problem_id: string
+    problem_nm: string
+    title: string
+    language_id: null | string
+    statementHtml: string | null
+    testcases: Testcase[] | null
+    handler: string | null
+}
 
 export type VSCodeToWebviewMessage = {
-  command: VSCodeToWebviewCommand;
-  data: any;
-};
+    command: VSCodeToWebviewCommand
+    data: any
+}
 
 export enum VSCodeToWebviewCommand {
-  UPDATE_TESTCASE = "update-testcase",
-  UPDATE_SUBMISSION_STATUS = "update-submission-status",
+    UPDATE_TESTCASE = "update-testcase",
+    UPDATE_SUBMISSION_STATUS = "update-submission-status",
 }
 
 export type WebviewToVSCodeMessage = {
-  command: WebviewToVSCodeCommand;
-  data: any;
-};
+    command: WebviewToVSCodeCommand
+    data: any
+}
 
 export enum WebviewToVSCodeCommand {
-  NEW_FILE = "new-file",
-  SUBMIT_TO_JUTGE = "submit-to-jutge",
-  RUN_ALL_TESTCASES = "run-all-testcases",
-  RUN_TESTCASE = "run-testcase",
+    NEW_FILE = "new-file",
+    SUBMIT_TO_JUTGE = "submit-to-jutge",
+    RUN_ALL_TESTCASES = "run-all-testcases",
+    RUN_TESTCASE = "run-testcase",
 }
 
 export enum Language {
-  CPP = "C++",
-  PYTHON = "Python",
+    CPP = "C++",
+    PYTHON = "Python",
 }

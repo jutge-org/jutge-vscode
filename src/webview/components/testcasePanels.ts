@@ -1,46 +1,43 @@
-import { Testcase } from "../../types";
+import { Testcase } from "../../types"
 
 const runAllButton = /*html*/ `
       <vscode-button id="run-all-testcases">
         Run All
         <span slot="start" class="codicon codicon-run-all"></span>
-      </vscode-button>`;
+      </vscode-button>`
 
 const submitToJutgeButton =
-  /*html*/
-  `<vscode-button id="submit-to-jutge">
+    /*html*/
+    `<vscode-button id="submit-to-jutge">
       Submit to Jutge
       <span slot="start" class="codicon codicon-cloud-upload"></span>
-   </vscode-button>`;
+   </vscode-button>`
 
-export function generateTestcasePanels(
-  problemTestcases: Testcase[],
-  handler: string | null
-): string {
-  if (handler !== "std") {
-    return /*html*/ `
+export function generateTestcasePanels(problemTestcases: Testcase[], handler: string | null): string {
+    if (handler !== "std") {
+        return /*html*/ `
       <div class="testcase-header">
         <h2 class="flex-grow-1">Testcases</h2>
         <div class="warning">
           <span class="codicon codicon-warning"></span>
           <span>Local testcase running is not supported for this problem.</span>
         </div>
-      </div>`;
-  }
+      </div>`
+    }
 
-  if (problemTestcases.length === 0) {
-    return /*html*/ `
+    if (problemTestcases.length === 0) {
+        return /*html*/ `
       <div class="testcase-header">
         <h2 class="flex-grow-1">Testcases</h2>
         No testcases found.
-      </div>`;
-  }
+      </div>`
+    }
 
-  const testcasePanels = problemTestcases
-    .map((testcase, index) => {
-      const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8");
-      const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8");
-      return /*html*/ `
+    const testcasePanels = problemTestcases
+        .map((testcase, index) => {
+            const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
+            const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
+            return /*html*/ `
       <div class="case" id="testcase-${index + 1}">
         <div class="testcase-metadata">
           <div class="toggle-minimize">
@@ -78,11 +75,11 @@ export function generateTestcasePanels(
         </div>
       </div>
     </div>
-        `;
-    })
-    .join("");
+        `
+        })
+        .join("")
 
-  return /*html*/ `
+    return /*html*/ `
     <div class="testcase-header">
       <h2 class="flex-grow-1">Testcases</h2>
       ${runAllButton}
@@ -91,5 +88,5 @@ export function generateTestcasePanels(
     <div class="testcase-panels">
         ${testcasePanels}
     </div>
-    `;
+    `
 }

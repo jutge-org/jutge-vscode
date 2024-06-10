@@ -21,8 +21,6 @@ node v21.7.1
 npm v10.5.0
 ```
 
-jutge
-
 ## Features
 
 > [!NOTE]

@@ -1,222 +1,222 @@
 * {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently
                                     supported by Chrome and Opera */
-  cursor: default !important;
-  box-sizing: border-box;
+    cursor: default !important;
+    box-sizing: border-box;
 }
 
 * {
-  border-radius: 2px;
+    border-radius: 2px;
 }
 
 .toggle-minimize {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
-  padding: 6px;
-  margin-left: -8px;
-  margin-right: 0px;
-  margin-bottom: 0px;
-  margin-top: 0px;
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    padding: 6px;
+    margin-left: -8px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    margin-top: 0px;
 }
 
 .toggle-minimize:hover .case-title {
-  filter: brightness(150%);
+    filter: brightness(150%);
 }
 
 .case-number {
-  font-weight: bolder;
-  color: rgb(69, 133, 136) !important;
+    font-weight: bolder;
+    color: rgb(69, 133, 136) !important;
 }
 
 body.vscode-light .case-number {
-  color: rgb(11, 93, 131) !important;
+    color: rgb(11, 93, 131) !important;
 }
 
 .icon,
 .codicon {
-  vertical-align: middle;
-  font-size: 80%;
+    vertical-align: middle;
+    font-size: 80%;
 }
 
 .time {
-  color: rgb(185, 185, 84);
+    color: rgb(185, 185, 84);
 }
 
 .btn {
-  padding: 2px 5px 2px 5px;
-  background: #2fadf5a7;
-  color: white;
-  outline: none;
-  text-align: center;
-  border: 2px solid transparent;
+    padding: 2px 5px 2px 5px;
+    background: #2fadf5a7;
+    color: white;
+    outline: none;
+    text-align: center;
+    border: 2px solid transparent;
 }
 
 .btn-green {
-  background: #8ae33291;
+    background: #8ae33291;
 }
 
 .textarea-container {
-  position: relative;
+    position: relative;
 }
 
 .clipboard {
-  filter: grayscale(100%);
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  padding: 4px;
-  cursor: pointer;
-  opacity: 0.5;
-  font-size: 80%;
+    filter: grayscale(100%);
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0.5;
+    font-size: 80%;
 }
 
 .clipboard:hover {
-  opacity: 1;
+    opacity: 1;
 }
 
 .selectable {
-  -webkit-touch-callout: text; /* iOS Safari */
-  -webkit-user-select: text; /* Safari */
-  -khtml-user-select: text; /* Konqueror HTML */
-  -moz-user-select: text; /* Firefox */
-  -ms-user-select: text; /* Internet Explorer/Edge */
-  user-select: text; /* Non-prefixed version, currently
+    -webkit-touch-callout: text; /* iOS Safari */
+    -webkit-user-select: text; /* Safari */
+    -khtml-user-select: text; /* Konqueror HTML */
+    -moz-user-select: text; /* Firefox */
+    -ms-user-select: text; /* Internet Explorer/Edge */
+    user-select: text; /* Non-prefixed version, currently
                                     supported by Chrome and Opera */
-  cursor: text !important;
+    cursor: text !important;
 }
 
 ::-webkit-resizer {
-  display: none;
+    display: none;
 }
 textarea:focus,
 textarea:active {
-  background: black;
-  outline: none !important;
-  border: 1px solid #3393cc;
+    background: black;
+    outline: none !important;
+    border: 1px solid #3393cc;
 }
 
 pre {
-  margin: 0px;
-  padding: 5px;
+    margin: 0px;
+    padding: 5px;
 }
 
 textarea {
-  background: var(--input-background);
-  font-family: Consolas, "Ubuntu Mono", monospace;
-  width: 100%;
-  display: block;
-  background: rgba(0, 0, 0, 0.2);
-  outline: none !important;
-  border: 0px;
-  color: bisque;
-  max-width: 100%;
-  max-height: 250px !important;
-  overflow-y: auto;
-  resize: none;
-  border: 1px solid var(--input-background);
-  margin-bottom: 4px;
+    background: var(--input-background);
+    font-family: Consolas, "Ubuntu Mono", monospace;
+    width: 100%;
+    display: block;
+    background: rgba(0, 0, 0, 0.2);
+    outline: none !important;
+    border: 0px;
+    color: bisque;
+    max-width: 100%;
+    max-height: 250px !important;
+    overflow-y: auto;
+    resize: none;
+    border: 1px solid var(--input-background);
+    margin-bottom: 4px;
 }
 
 .case-textarea {
-  background: var(--input-background);
-  font-family: Consolas, "Ubuntu Mono", monospace;
-  width: 100%;
-  display: block;
-  background: rgba(0, 0, 0, 0.2);
-  outline: none !important;
-  border: 0px;
-  color: bisque;
-  max-width: 100%;
-  max-height: 250px !important;
-  overflow-y: auto;
-  resize: none;
-  border: 1px solid var(--input-background);
-  margin-bottom: 4px;
-  margin-top: 4px;
+    background: var(--input-background);
+    font-family: Consolas, "Ubuntu Mono", monospace;
+    width: 100%;
+    display: block;
+    background: rgba(0, 0, 0, 0.2);
+    outline: none !important;
+    border: 0px;
+    color: bisque;
+    max-width: 100%;
+    max-height: 250px !important;
+    overflow-y: auto;
+    resize: none;
+    border: 1px solid var(--input-background);
+    margin-bottom: 4px;
+    margin-top: 4px;
 }
 
 #header {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .testcase-header {
-  display: flex;
-  align-items: center;
-  column-gap: 4px;
+    display: flex;
+    align-items: center;
+    column-gap: 4px;
 }
 
 .testcase-metadata {
-  display: flex;
+    display: flex;
 }
 
 .testcase-content {
-  display: block;
+    display: block;
 }
 
 body.vscode-light textarea {
-  background: rgba(255, 255, 255, 0.5);
-  outline: none !important;
-  border: 1px solid lightgrey;
+    background: rgba(255, 255, 255, 0.5);
+    outline: none !important;
+    border: 1px solid lightgrey;
 }
 
 body.vscode-light .case {
-  background: var(--vscode-list-dropBackground);
-  box-shadow: 0px 1px 2px 1px rgba(0, 0, 0, 0.2);
-  border-left: 5px solid rgba(0, 0, 0, 0.3);
-  margin-bottom: 4px;
+    background: var(--vscode-list-dropBackground);
+    box-shadow: 0px 1px 2px 1px rgba(0, 0, 0, 0.2);
+    border-left: 5px solid rgba(0, 0, 0, 0.3);
+    margin-bottom: 4px;
 }
 
 body.vscode-light textarea:focus {
-  background: white;
-  outline: none !important;
-  border: 1px solid rgb(28, 145, 184);
+    background: white;
+    outline: none !important;
+    border: 1px solid rgb(28, 145, 184);
 }
 
 .case {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 8px;
-  margin-bottom: 2px;
-  border-left: 5px solid rgba(69, 133, 136);
+    background: rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    margin-bottom: 2px;
+    border-left: 5px solid rgba(69, 133, 136);
 }
 
 .case.running {
-  border-left-color: yellow !important;
+    border-left-color: yellow !important;
 }
 
 .case.passed {
-  border-left-color: green !important;
+    border-left-color: green !important;
 }
 
 .case.failed {
-  border-left-color: red !important;
+    border-left-color: red !important;
 }
 
 .received-div {
-  display: none;
+    display: none;
 }
 
 .running-text {
-  color: yellow;
-  padding-right: 5px;
-  padding-left: 5px;
-  font-size: 1.15em;
+    color: yellow;
+    padding-right: 5px;
+    padding-left: 5px;
+    font-size: 1.15em;
 }
 
 .running-text.passed {
-  color: green !important;
+    color: green !important;
 }
 
 .running-text.failed {
-  color: red !important;
+    color: red !important;
 }
 
 .flex-grow-1 {
-  flex-grow: 1;
+    flex-grow: 1;
 }
