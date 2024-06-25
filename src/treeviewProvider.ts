@@ -1,9 +1,10 @@
 import * as vscode from "vscode"
 
-import { MyCoursesService, MyListsService, MyProblemsService, TCourseOut, TListOut } from "./client"
+import { MyCoursesService, MyListsService, MyProblemsService, MyStatusesService, TCourseOut, TListOut } from "./client"
 
 import { isUserAuthenticated } from "./jutgeAuth"
 import { getDefaultProblemId } from "./utils"
+import { stat } from "fs"
 
 export function registerTreeViewCommands(context: vscode.ExtensionContext) {
     const treeViewProvider = new TreeViewProvider()
@@ -76,12 +77,14 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
     }
 
     private async _getListsFromCourseNm(courseKey: string): Promise<JutgeTreeItem[]> {
+        // jpetit a sac
         try {
             const course_info = await MyCoursesService.getEnrolledCourse({ courseKey })
             const lists = course_info.lists as { [key: string]: TListOut }
+            const all_lists = (await MyListsService.getAllLists()) as any
             return Object.keys(lists).map((listKey) => {
-                const list = lists[listKey]
-                const listItem = new JutgeTreeItem(list.list_nm, vscode.TreeItemCollapsibleState.Collapsed)
+                const list = all_lists[listKey]
+                const listItem = new JutgeTreeItem(list.title, vscode.TreeItemCollapsibleState.Collapsed)
                 listItem.contextValue = "list"
                 listItem.itemKey = listKey
                 return listItem
@@ -94,8 +97,24 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
     }
 
     private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
+        // jpetit a sac
+
+        function icon(status: string) {
+            if (status === "accepted") {
+                return "🟢"
+            } else if (status === "scored") {
+                return "🟡"
+            } else if (status === "rejected") {
+                return "🔴"
+            } else {
+                return "\u2003"
+            }
+        }
+
         try {
             const list_info = await MyListsService.getList({ listKey })
+            const all_statuses = (await MyStatusesService.getAllStatuses()) as any
+            console.log(list_info)
 
             // Get data for each problem (concurrently)
             const promises = list_info.items.map(async (problem) => {
@@ -115,7 +134,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
                 // TODO: Maybe we should set up a JutgeTreeItemBuilder class to make this easier.
                 problemItem.contextValue = "problem"
                 problemItem.itemKey = problem_nm
-                problemItem.label = title
+                problemItem.label = icon(all_statuses[problem_nm].status) + " " + title
                 problemItem.command = {
                     command: "jutge-vscode.showProblem",
                     title: "Open Problem",
