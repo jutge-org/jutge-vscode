@@ -3,6 +3,7 @@ import fs from "fs"
 
 import { Language, Problem } from "./types"
 import { getDefaultExtensionFromLangId } from "./languageRunner"
+import { MyProfileService, TProfileOut } from "./client"
 
 async function chooseFileLangFromQuickPick(problemNm: string): Promise<Language | undefined> {
     const fileType = await vscode.window.showQuickPick(
@@ -50,10 +51,12 @@ export async function createNewFileForProblem(problem: Problem): Promise<vscode.
         [Language.PYTHON]: "#",
     }[fileLang]
 
-    const problemIdComment = `${langComment} @${problem.problem_id}`
+    const profile = await MyProfileService.getProfile()
+    const problemIdComment = `${langComment} ${problem.problem_id}`
     const problemTitleComment = `${langComment} ${problem.title}`
-    const createdComment = `${langComment} Created: ${new Date().toLocaleString()} by ${process.env.USER}`
-    const fileHeader = [problemIdComment, problemTitleComment, createdComment].join("\n").concat("\n\n")
+    const UrlComment = `${langComment} https://jutge.org/problems/${problem.problem_id}`
+    const createdComment = `${langComment} Created ${new Date().toLocaleString()} by ${profile.name}`
+    const fileHeader = [problemIdComment, problemTitleComment, UrlComment, createdComment].join("\n").concat("\n\n")
 
     try {
         fs.writeFileSync(uri.fsPath, fileHeader, { flag: "w" })
