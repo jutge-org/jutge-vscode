@@ -16,7 +16,7 @@ export async function activate(context: vscode.ExtensionContext) {
     setExtensionContext(context)
 
     /* Axios setup */
-    axios.defaults.baseURL = "https://api.jutge.org"
+    axios.defaults.baseURL = "https://api.jutge.org/v1" // TODO: this should be configurable (maybe read from openapi-ts.config.ts ?)
     const token = await getTokenAtActivation()
     if (token) {
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
