@@ -243,7 +243,7 @@ export class ProblemWebviewPanel {
             return this.problem.statementHtml
         }
         try {
-            const problemStatement = (await MyProblemsService.getTextStatement({
+            const problemStatement = (await MyProblemsService.getHtmlStatement({
                 problemNm: this.problem.problem_nm,
                 problemId: this.problem.problem_id,
             })) as string
@@ -311,9 +311,11 @@ export class ProblemWebviewPanel {
                     "" /*
 					Use a content security policy to only allow loading images from https or from our extension directory,
 					and only allow scripts that have a specific nonce.
+
+                    jpetit a sac: ho trec
 				*/
                 }
-				<meta http-equiv="Content-Security-Policy" 
+				<no-meta http-equiv="Content-Security-Policy"
                       content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; script-src 'nonce-${nonce}'; font-src ${cspSource};">
 
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
