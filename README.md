@@ -3,9 +3,7 @@
 ## Install and compile
 
 ```bash
-npm install
-npm run generate-client
-npm run compile
+make
 ```
 
 ## Run
