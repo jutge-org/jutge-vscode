@@ -33,8 +33,7 @@
             "jutge": [
                 {
                     "id": "jutgeTreeView",
-                    "name": "jutge-vscode",
-                    "icon": "resources/lightbulb-regular.svg",
+                    "name": "Problem Lists",
                     "contextualTitle": "Jutge.org"
                 }
             ]

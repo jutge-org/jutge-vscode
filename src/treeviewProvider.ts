@@ -1,16 +1,17 @@
 import * as vscode from "vscode"
 
-import { MyCoursesService, MyListsService, MyProblemsService, TCourseOut, TListOut } from "./client"
+import { MyCoursesService, MyListsService, MyProblemsService, MyStatusesService, TCourseOut, TListOut } from "./client"
 
 import { isUserAuthenticated } from "./jutgeAuth"
 import { getDefaultProblemId } from "./utils"
+import { getExtensionContext } from "./context"
 
 export function registerTreeViewCommands(context: vscode.ExtensionContext) {
     const treeViewProvider = new TreeViewProvider()
-    context.subscriptions.push(vscode.window.registerTreeDataProvider("jutgeTreeView", treeViewProvider))
-    context.subscriptions.push(
-        vscode.commands.registerCommand("jutge-vscode.refreshTree", () => treeViewProvider.refresh())
-    )
+    const { subscriptions } = context
+    const { window, commands } = vscode
+    subscriptions.push(window.registerTreeDataProvider("jutgeTreeView", treeViewProvider))
+    subscriptions.push(commands.registerCommand("jutge-vscode.refreshTree", () => treeViewProvider.refresh()))
 }
 
 class JutgeTreeItem extends vscode.TreeItem {
@@ -23,10 +24,8 @@ class JutgeTreeItem extends vscode.TreeItem {
 }
 
 export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
-    private _onDidChangeTreeData: vscode.EventEmitter<JutgeTreeItem | undefined | null | void> =
-        new vscode.EventEmitter<JutgeTreeItem | undefined | null | void>()
-    readonly onDidChangeTreeData: vscode.Event<JutgeTreeItem | undefined | null | void> =
-        this._onDidChangeTreeData.event
+    private _onDidChangeTreeData = new vscode.EventEmitter<JutgeTreeItem | undefined | null | void>()
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event
 
     refresh(): void {
         this._onDidChangeTreeData.fire()
@@ -84,6 +83,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
                 const listItem = new JutgeTreeItem(list.list_nm, vscode.TreeItemCollapsibleState.Collapsed)
                 listItem.contextValue = "list"
                 listItem.itemKey = listKey
+
                 return listItem
             })
         } catch (error) {
@@ -95,7 +95,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
         try {
-            const list_info = await MyListsService.getList({ listKey })
+            const list_info = await MyListsService.getList({ listKey, withStatus: "true" })
+            const statuses = await MyStatusesService.getAllStatuses()
 
             // Get data for each problem (concurrently)
             const promises = list_info.items.map(async (problem) => {
@@ -116,10 +117,20 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
                 problemItem.contextValue = "problem"
                 problemItem.itemKey = problem_nm
                 problemItem.label = title
+                problemItem.tooltip = problem_nm
+
                 problemItem.command = {
                     command: "jutge-vscode.showProblem",
                     title: "Open Problem",
                     arguments: [problem.problem_nm],
+                }
+
+                if (problem.status === "accepted") {
+                    const { extensionUri } = getExtensionContext().extension
+                    problemItem.iconPath = {
+                        light: vscode.Uri.joinPath(extensionUri, "resources", "light", "thumbs-up.svg"),
+                        dark: vscode.Uri.joinPath(extensionUri, "resources", "dark", "thumbs-up.svg"),
+                    }
                 }
                 return problemItem
             })
