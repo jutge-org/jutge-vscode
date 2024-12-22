@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 
 import { WebviewPanelHandler } from "@/providers/WebviewProvider";
-import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/languageRunner";
+import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/LanguageRunner";
 
 import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types";
 import { channel } from "@/utils/channel";

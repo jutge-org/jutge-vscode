@@ -172,24 +172,19 @@ export class ProblemWebviewPanel {
             handler: null,
         };
 
-        // Get the problem info
-        this._getProblemInfo().then(() => {
-            // Set the webview's initial html content
-            this._updateWebviewContents(problemNm);
-        });
+        // Initialize problem info and update webview
+        this._getProblemInfo()
+            .then(() => this._updateWebviewContents(problemNm))
+            .catch((error) => {
+                console.error("Failed to initialize problem:", error);
+                vscode.window.showErrorMessage("Failed to load problem information");
+            });
 
-        // Listen for when the panel is disposed
-        // This happens when the user closes the panel or when the panel is closed programmatically
-        this.panel.onDidDispose(() => this.dispose(), null, this._disposables);
+        // Clean up resources when panel is closed
+        this.panel.onDidDispose(this.dispose, null, this._disposables);
 
-        // Handle messages from the webview
-        this.panel.webview.onDidReceiveMessage(
-            (message) => {
-                this._handleMessage(message);
-            },
-            null,
-            this._disposables
-        );
+        // Handle webview messages
+        this.panel.webview.onDidReceiveMessage(this._handleMessage.bind(this), null, this._disposables);
     }
 
     /**
@@ -307,56 +302,45 @@ export class ProblemWebviewPanel {
     private async _getHtmlForWebview(): Promise<string> {
         const styleUri = this._getUri("dist", "webview", "main.css");
         const scriptUri = this._getUri("dist", "webview", "main.js");
-
-        const nonce = utils.getNonce(); // Use a nonce to only allow specific scripts to be run
+        const nonce = utils.getNonce();
 
         const problemStatement = await this._getProblemStatement();
         const problemTestcases = await this._getProblemTestcases();
-
         const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler);
 
-        const { cspSource } = this.panel.webview;
-
         return `
-        <!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				${
-                    "" /*
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-
-                    jpetit a sac: ho trec
-				*/
-                }
-				<no-meta http-equiv="Content-Security-Policy"
-                      content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; script-src 'nonce-${nonce}'; font-src ${cspSource};">
-
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+                <meta http-equiv="Content-Security-Policy" 
+                    content="default-src 'none';
+                            style-src ${this.panel.webview.cspSource} 'unsafe-inline';
+                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource};
+                            img-src ${this.panel.webview.cspSource} https:;
+                            font-src ${this.panel.webview.cspSource};">
                 <link rel="stylesheet" href="${styleUri}" />
-
                 <style>body { font-size: 1rem; }</style>
-			</head>
-			<body>
+            </head>
+            <body>
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="flex-grow-1">
-                        ${this.problem.problem_nm + " - " + this.problem.title}
+                        ${this.problem.problem_nm} - ${this.problem.title}
                     </h2>
                     ${Button("New File", "add", "new-file")}
                 </section>
-				<section id="statement" class="component-container">
-					${problemStatement}
-				</section>
-				<vscode-divider></vscode-divider>
-				<section id="testcases" class="component-container">
-					${testcasePanels}
-				</section>
-				<script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-        </html>
-    `;
+                <section id="statement" class="component-container">
+                    ${problemStatement}
+                </section>
+                <vscode-divider></vscode-divider>
+                <section id="testcases" class="component-container">
+                    ${testcasePanels}
+                </section>
+                <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {

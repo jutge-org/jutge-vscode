@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import fs from "fs";
 
 import { Language, Problem } from "@/utils/types";
-import { getDefaultExtensionFromLangId } from "@/runners/languageRunner";
+import { getDefaultExtensionFromLangId } from "@/runners/LanguageRunner";
 import * as j from "@/jutgeClient";
 
 export class FileService {
