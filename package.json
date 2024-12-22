@@ -111,8 +111,7 @@
         }
     },
     "scripts": {
-        "generate-client": "openapi-ts",
-        "compile": "openapi-ts && node ./esbuild.js",
+        "compile": "node ./esbuild.js",
         "watch": "node ./esbuild.js --watch",
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
@@ -127,7 +126,6 @@
         "vscode:package": "vsce package"
     },
     "devDependencies": {
-        "@hey-api/openapi-ts": "^0.42.1",
         "@types/mocha": "^10.0.6",
         "@types/moxios": "^0.4.17",
         "@types/node": "18.x",
