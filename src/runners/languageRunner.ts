@@ -1,9 +1,9 @@
 import * as childProcess from "child_process";
 import * as vscode from "vscode";
-import { channel, channelAddLineAndShow } from "./channel";
-import { Language } from "./types";
-import { getWorkingDirectory } from "./utils";
-import { ConfigService } from "./services/ConfigService";
+import { channel, channelAddLineAndShow } from "@/utils/channel";
+import { Language } from "@/utils/types";
+import { getWorkingDirectory } from "@/utils/helpers";
+import { ConfigService } from "@/services/ConfigService";
 
 export interface LanguageRunner {
     run(codePath: string, input: string): string | null

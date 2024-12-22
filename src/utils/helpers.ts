@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import * as j from "./jutgeClient";
+import * as j from "@/jutgeClient";
 import { dirname } from "path";
-import { channel } from "./channel";
+import { channel } from "@/utils/channel";
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.

@@ -1,13 +1,17 @@
 import * as vscode from "vscode";
-import { createNewFileForProblem, showFileInColumn } from "./fileManager";
-import { submitProblemToJutge } from "./jutgeSubmission";
-import { runAllTestcases, runSingleTestcase } from "./problemRunner";
-import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "./types";
-import * as utils from "./utils";
-import { Button } from "./webview/components/Button";
-import { generateTestcasePanels } from "./webview/components/testcasePanels";
-import * as j from "./jutgeClient";
-import { AuthService } from "./services/AuthService";
+import * as j from "@/jutgeClient";
+
+import { FileService } from "@/services/FileService";
+import { SubmissionService } from "@/services/SubmissionService";
+import { AuthService } from "@/services/AuthService";
+
+import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner";
+
+import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types";
+import * as utils from "@/utils/helpers";
+
+import { Button } from "@/webview/components/Button";
+import { generateTestcasePanels } from "@/webview/components/testcasePanels";
 
 /**
  * Registers commands to control the webview.
@@ -373,7 +377,7 @@ export class ProblemWebviewPanel {
                     vscode.window.showErrorMessage("No text editor open.");
                     return;
                 }
-                submitProblemToJutge(this.problem, submit_editor.document.uri.fsPath);
+                SubmissionService.submitProblem(this.problem, submit_editor.document.uri.fsPath);
                 return;
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 let test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors);
@@ -384,11 +388,11 @@ export class ProblemWebviewPanel {
                 runSingleTestcase(message.data.testcaseId, this.problem, test_editor.document.uri.fsPath);
                 return;
             case WebviewToVSCodeCommand.NEW_FILE:
-                const fileUri = await createNewFileForProblem(this.problem);
+                const fileUri = await FileService.createNewFileForProblem(this.problem);
                 if (!fileUri) {
                     return;
                 }
-                await showFileInColumn(fileUri, vscode.ViewColumn.One);
+                await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One);
                 this.panel.reveal(vscode.ViewColumn.Beside, true);
         }
     }

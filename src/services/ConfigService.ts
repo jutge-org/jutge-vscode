@@ -1,6 +1,6 @@
 import { PythonExtension } from "@vscode/python-extension";
 import * as vscode from "vscode";
-import { channel } from "../channel";
+import { channel } from "@/utils/channel";
 
 export class ConfigService {
     private static pythonApi: PythonExtension | null = null;

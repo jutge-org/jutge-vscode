@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 
-import { AuthService } from "./services/AuthService";
-import { getDefaultProblemId } from "./utils";
-import * as j from "./jutgeClient";
+import { AuthService } from "../services/AuthService";
+import { getDefaultProblemId } from "../utils/helpers";
+import * as j from "../jutgeClient";
 
 export function registerTreeViewCommands(context: vscode.ExtensionContext) {
     const treeViewProvider = new TreeViewProvider();

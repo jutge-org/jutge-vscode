@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 
-import { WebviewPanelHandler } from "./webviewProvider";
-import { getLangIdFromFilePath, getLangRunnerFromLangId } from "./languageRunner";
+import { WebviewPanelHandler } from "@/providers/WebviewProvider";
+import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/languageRunner";
 
-import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "./types";
-import { channel } from "./channel";
+import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types";
+import { channel } from "@/utils/channel";
 
-import * as j from "./jutgeClient";
+import * as j from "@/jutgeClient";
 
 /**
  * Sends a message to the webview to update the status of a testcase.

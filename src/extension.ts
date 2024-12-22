@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 
-import { AuthService } from "./services/AuthService";
-import { registerWebviewCommands } from "./webviewProvider";
-import { registerTreeViewCommands } from "./treeviewProvider";
-import { removeExtensionContext, setExtensionContext } from "./context";
+import { removeExtensionContext, setExtensionContext } from "@/context";
+import { AuthService } from "@/services/AuthService";
+import { registerWebviewCommands } from "@/providers/WebviewProvider";
+import { registerTreeViewCommands } from "@/providers/TreeViewProvider";
 
 /**
  * Works as entrypoint when the extension is activated.

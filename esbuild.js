@@ -8,6 +8,9 @@ const baseConfig = {
     bundle: true,
     minify: process.env.NODE_ENV === "production",
     sourcemap: process.env.NODE_ENV !== "production",
+    alias: {
+        "@": "./src",
+    },
 }
 
 // Config for extension source code (to be run in a Node-based context)

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as j from "../jutgeClient";
+import * as j from "@/jutgeClient";
 import * as fs from "fs";
 
 export class AuthService {
