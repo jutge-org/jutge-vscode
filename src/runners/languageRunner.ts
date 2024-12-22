@@ -1,6 +1,6 @@
 import * as childProcess from "child_process";
 import * as vscode from "vscode";
-import { channel, channelAddLineAndShow } from "@/utils/channel";
+import { channel } from "@/utils/channel";
 import { Language } from "@/utils/types";
 import { getWorkingDirectory } from "@/utils/helpers";
 import { ConfigService } from "@/services/ConfigService";
