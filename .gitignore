@@ -8,3 +8,4 @@ package-lock.json
 out/
 dist/
 src/client
+jutge-vscode*/
