@@ -6,11 +6,11 @@ import { getWorkingDirectory } from "@/utils/helpers";
 import { ConfigService } from "@/services/ConfigService";
 
 export interface LanguageRunner {
-    run(codePath: string, input: string): string | null
+    run(codePath: string, input: string, document: vscode.TextDocument): string | null
 }
 
 export class PythonRunner implements LanguageRunner {
-    run(codePath: string, input: string): string | null {
+    run(codePath: string, input: string, document: vscode.TextDocument): string | null {
         const command = ConfigService.getPythonCommand();
         const flags = ConfigService.getPythonFlags();
         const workingDir = getWorkingDirectory(codePath);
@@ -23,7 +23,7 @@ export class PythonRunner implements LanguageRunner {
             cwd: workingDir,
         });
 
-        handleRuntimeErrors(result);
+        handleRuntimeErrors(result, document);
 
         if (result.stdout) {
             return result.stdout.toString();
@@ -34,19 +34,19 @@ export class PythonRunner implements LanguageRunner {
 }
 
 export class CppRunner implements LanguageRunner {
-    compile(codePath: string, binaryPath: string): void {
+    compile(codePath: string, binaryPath: string, document: vscode.TextDocument): void {
         const command = ConfigService.getCppCommand();
         const flags = ConfigService.getCppFlags();
         const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags]);
-        handleCompilationErrors(result);
+        handleCompilationErrors(result, document);
     }
 
-    run(codePath: string, input: string): string | null {
+    run(codePath: string, input: string, document: vscode.TextDocument): string | null {
         const binaryPath = codePath + ".out";
-        this.compile(codePath, binaryPath);
+        this.compile(codePath, binaryPath, document);
         const command = `${binaryPath}`;
         const result = childProcess.spawnSync(command, { input, timeout: 5000 });
-        handleRuntimeErrors(result);
+        handleRuntimeErrors(result, document);
         if (result.stdout) {
             return result.stdout.toString();
         }
@@ -93,40 +93,74 @@ export function getLangRunnerFromLangId(languageId: Language): LanguageRunner {
     }
 }
 
+// Create diagnostic collections at the module level
+const runtimeDiagnosticCollection = vscode.languages.createDiagnosticCollection("jutge-runtime");
+const compileDiagnosticCollection = vscode.languages.createDiagnosticCollection("jutge-compile");
+
 /**
  * Handles errors that occur during the **runtime execution** of a process.
  * For more information, see `childProcess.spawnSync()` docs.
  *
  * @param result The result of the process execution.
- * @throws Error if any error is found.
+ * @param document The document where the diagnostics should be shown
  */
-function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
-    // Check error first: it can exist with stderr or status being null
+function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>, document: vscode.TextDocument) {
+    const diagnostics: vscode.Diagnostic[] = [];
+
+    // Try to parse stderr for line numbers if available
+    const errorRegex = /.*:(\d+):(?:\d+:)?\s*(.*)/;
+
     if (result.error) {
         let message = result.error.toString();
         if (result.error.toString().includes("ETIMEDOUT")) {
-            message =
-                `Execution timed out.\n` +
-                `If you think this is a mistake, please increase the timeout time in the settings.`;
+            message = `Execution timed out.\nIf you think this is a mistake, please increase the timeout time in the settings.`;
         }
-        channelAddLineAndShow(message);
-        return;
-    }
-
-    if (result.signal) {
-        channelAddLineAndShow(`Process killed by the OS with signal ${result.signal}.`);
-        return;
+        // Add as a file-level error
+        diagnostics.push(createDiagnostic(message, document, 0));
     }
 
     if (result.stderr.length > 0) {
-        channelAddLineAndShow(result.stderr.toString());
-        return;
+        const stderrLines = result.stderr.toString().split("\n");
+
+        for (const line of stderrLines) {
+            const match = line.match(errorRegex);
+            if (match) {
+                // We found a line number in the error
+                const [_, lineNum, errorMessage] = match;
+                const lineNumber = parseInt(lineNum) - 1; // Convert to 0-based
+                diagnostics.push(createDiagnostic(errorMessage, document, lineNumber));
+            } else if (line.trim()) {
+                // No line number found, add as a file-level error
+                diagnostics.push(createDiagnostic(line, document, 0));
+            }
+        }
     }
 
-    if (result.status !== 0) {
-        channelAddLineAndShow(`Exited with code ${result.status}.`);
-        return;
+    if (result.signal) {
+        diagnostics.push(createDiagnostic(`Process killed by the OS with signal ${result.signal}.`, document, 0));
     }
+
+    if (result.status !== 0 && diagnostics.length === 0) {
+        // Only add exit code if we haven't found any other errors
+        diagnostics.push(createDiagnostic(`Process exited with code ${result.status}.`, document, 0));
+    }
+
+    // Set or clear diagnostics
+    if (diagnostics.length > 0) {
+        runtimeDiagnosticCollection.set(document.uri, diagnostics);
+    } else {
+        runtimeDiagnosticCollection.delete(document.uri);
+    }
+}
+
+/**
+ * Creates a diagnostic with the appropriate severity and range
+ */
+function createDiagnostic(message: string, document: vscode.TextDocument, lineNumber: number): vscode.Diagnostic {
+    const line = document.lineAt(Math.min(lineNumber, document.lineCount - 1));
+    const range = line.range;
+
+    return new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
 }
 
 /**
@@ -137,20 +171,44 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
  * @param result The result of the process execution.
  * @throws Error if any error is found.
  */
-function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>) {
-    // Always show stderr, but do not consider it an error.
-    channel.appendLine(result.stderr.toString());
+function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>, document: vscode.TextDocument) {
+    const diagnostics: vscode.Diagnostic[] = [];
 
-    if (result.status !== 0 || result.error || result.signal) {
-        // The process execution failed.
-        if (result.error) {
-            channelAddLineAndShow(result.error.toString());
-        }
-        // Signal exists if the process is killed by the OS (in some edge cases).
-        else if (result.signal) {
-            channelAddLineAndShow(`Process killed by the OS with signal ${result.signal}.`);
-        }
+    // Try to parse stderr for line numbers if available
+    // GCC/G++ error format: <file>:<line>:<column>: error: <message>
+    const errorRegex = /.*:(\d+):(?:\d+:)?\s*(.*)/;
 
-        throw Error(`Execution Failed: ${result.stderr.toString()}`);
+    if (result.stderr.length > 0) {
+        const stderrLines = result.stderr.toString().split("\n");
+        channel.appendLine(result.stderr.toString()); // Keep logging to channel for reference
+
+        for (const line of stderrLines) {
+            const match = line.match(errorRegex);
+            if (match) {
+                // We found a line number in the error
+                const [_, lineNum, errorMessage] = match;
+                const lineNumber = parseInt(lineNum) - 1; // Convert to 0-based
+                diagnostics.push(createDiagnostic(errorMessage, document, lineNumber));
+            } else if (line.trim()) {
+                // No line number found, add as a file-level error
+                diagnostics.push(createDiagnostic(line, document, 0));
+            }
+        }
+    }
+
+    if (result.error) {
+        diagnostics.push(createDiagnostic(result.error.toString(), document, 0));
+    }
+
+    if (result.signal) {
+        diagnostics.push(createDiagnostic(`Process killed by the OS with signal ${result.signal}.`, document, 0));
+    }
+
+    // Set or clear diagnostics
+    if (diagnostics.length > 0) {
+        compileDiagnosticCollection.set(document.uri, diagnostics);
+        throw Error(`Compilation Failed: ${result.stderr.toString()}`);
+    } else {
+        compileDiagnosticCollection.delete(document.uri);
     }
 }

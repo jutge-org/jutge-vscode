@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 
 import { removeExtensionContext, setExtensionContext } from "@/context";
+
 import { AuthService } from "@/services/AuthService";
+import { ConfigService } from "@/services/ConfigService";
+
 import { registerWebviewCommands } from "@/providers/WebviewProvider";
 import { registerTreeViewCommands } from "@/providers/TreeViewProvider";
 
@@ -15,6 +18,7 @@ export async function activate(context: vscode.ExtensionContext) {
     setExtensionContext(context);
 
     await AuthService.initialize(context); // needs to wait for token to be validated
+    await ConfigService.initialize();
 
     registerWebviewCommands(context);
     registerTreeViewCommands(context);
