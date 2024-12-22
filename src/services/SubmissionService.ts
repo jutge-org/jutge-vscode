@@ -1,12 +1,11 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
-import FormData = require("form-data")
+import * as vscode from "vscode"
+import * as fs from "fs"
 
-import { WebviewPanelHandler } from "@/providers/WebviewProvider";
-import { getCompilerIdFromExtension } from "@/utils/helpers";
-import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types";
-import { runAllTestcases } from "@/runners/ProblemRunner";
-import * as j from "@/jutgeClient";
+import { WebviewPanelHandler } from "@/providers/WebviewProvider"
+import { getCompilerIdFromExtension } from "@/utils/helpers"
+import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
+import { runAllTestcases } from "@/runners/ProblemRunner"
+import * as j from "@/jutgeClient"
 
 export class SubmissionService {
     /**
@@ -17,24 +16,19 @@ export class SubmissionService {
      * @param filePath Path to the file being submitted
      */
     public static async submitProblem(problem: Problem, filePath: string): Promise<void> {
-        const fileExtension = filePath.split(".").pop() || "";
-        const compilerId = getCompilerIdFromExtension(fileExtension);
+        const fileExtension = filePath.split(".").pop() || ""
+        const compilerId = getCompilerIdFromExtension(fileExtension)
 
-        const allTestsPassed = await runAllTestcases(problem, filePath);
+        const allTestsPassed = await runAllTestcases(problem, filePath)
         if (allTestsPassed) {
-            SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, SubmissionStatus.PENDING);
+            SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, SubmissionStatus.PENDING)
 
             try {
-                const formData = new FormData();
-                formData.append("compiler_id", compilerId);
-                formData.append("annotation", "");
-                formData.append("file", fs.createReadStream(filePath));
-
                 // Create a File object from the file stream
-                const fileStream = fs.readFileSync(filePath);
+                const fileStream = fs.readFileSync(filePath)
                 const file = new File([fileStream], filePath.split("/").pop() || "", {
                     type: "application/octet-stream",
-                });
+                })
 
                 const response = await j.student.submissions.submit(
                     {
@@ -43,15 +37,15 @@ export class SubmissionService {
                         annotation: "",
                     },
                     file
-                );
+                )
 
-                vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...");
-                SubmissionService.monitorSubmissionStatus(problem, response.submission_id);
+                vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...")
+                SubmissionService.monitorSubmissionStatus(problem, response.submission_id)
             } catch (error) {
-                vscode.window.showErrorMessage("Error submitting to Jutge: " + error);
+                vscode.window.showErrorMessage("Error submitting to Jutge: " + error)
             }
         } else {
-            vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.");
+            vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.")
         }
     }
 
@@ -60,18 +54,18 @@ export class SubmissionService {
             const response = await j.student.submissions.get({
                 problem_id: problem.problem_id,
                 submission_id: submissionId,
-            });
+            })
 
             if (response.veredict === SubmissionStatus.PENDING) {
                 setTimeout(() => {
-                    SubmissionService.monitorSubmissionStatus(problem, submissionId);
-                }, 5000);
+                    SubmissionService.monitorSubmissionStatus(problem, submissionId)
+                }, 5000)
             } else {
-                SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, response.veredict as SubmissionStatus);
-                SubmissionService.showSubmissionNotification(problem, response);
+                SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, response.veredict as SubmissionStatus)
+                SubmissionService.showSubmissionNotification(problem, response)
             }
         } catch (error) {
-            vscode.window.showErrorMessage("Error getting submission status: " + error);
+            vscode.window.showErrorMessage("Error getting submission status: " + error)
         }
     }
 
@@ -79,7 +73,7 @@ export class SubmissionService {
         const detail = `
 Problem: ${problem.problem_nm}
 Veredict: ${response.veredict} 
-`;
+`
         vscode.window
             .showInformationMessage(
                 SubmissionService.getVerdict(response.veredict!) + " " + response.veredict,
@@ -92,9 +86,9 @@ Veredict: ${response.veredict}
                         vscode.Uri.parse(
                             `https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`
                         )
-                    );
+                    )
                 }
-            });
+            })
     }
 
     private static sendUpdateSubmissionStatus(problemNm: string, status: SubmissionStatus) {
@@ -103,26 +97,26 @@ Veredict: ${response.veredict}
             data: {
                 status: status,
             },
-        };
-        WebviewPanelHandler.sendMessageToPanel(problemNm, message);
+        }
+        WebviewPanelHandler.sendMessageToPanel(problemNm, message)
     }
 
     private static getVerdict(verdict: string): string {
         switch (verdict) {
             case "AC":
-                return "🟢";
+                return "🟢"
             case "WA":
-                return "🔴";
+                return "🔴"
             case "EE":
-                return "💣";
+                return "💣"
             case "CE":
-                return "🛠";
+                return "🛠"
             case "IE":
-                return "🔥";
+                return "🔥"
             case "Pending":
-                return "⏳";
+                return "⏳"
             default:
-                return "🔴";
+                return "🔴"
         }
     }
 }
