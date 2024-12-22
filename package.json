@@ -147,9 +147,12 @@
         "typescript": "^5.3.3"
     },
     "dependencies": {
-        "@vscode/webview-ui-toolkit": "^1.4.0",
+        "@inquirer/prompts": "^7.2.1",
         "@vscode/python-extension": "^1.0.5",
-        "axios": "^1.6.7"
+        "@vscode/webview-ui-toolkit": "^1.4.0",
+        "axios": "^1.6.7",
+        "chalk": "^5.4.1",
+        "yaml": "^2.6.1"
     },
     "lint-staged": {
         "*.ts": "eslint --cache --fix",

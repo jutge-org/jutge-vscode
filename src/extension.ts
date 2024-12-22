@@ -1,10 +1,10 @@
-import * as vscode from "vscode"
-import axios from "axios"
+import * as vscode from "vscode";
+import * as j from "./jutgeClient";
 
-import { getTokenAtActivation, registerAuthCommands } from "./jutgeAuth"
-import { registerWebviewCommands } from "./webviewProvider"
-import { registerTreeViewCommands } from "./treeviewProvider"
-import { removeExtensionContext, setExtensionContext } from "./context"
+import { getTokenAtActivation, registerAuthCommands } from "./jutgeAuth";
+import { registerWebviewCommands } from "./webviewProvider";
+import { registerTreeViewCommands } from "./treeviewProvider";
+import { removeExtensionContext, setExtensionContext } from "./context";
 
 /**
  * Works as entrypoint when the extension is activated.
@@ -13,28 +13,26 @@ import { removeExtensionContext, setExtensionContext } from "./context"
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
-    setExtensionContext(context)
+    setExtensionContext(context);
 
-    /* Axios setup */
-    axios.defaults.baseURL = "https://api.jutge.org/v1" // TODO: this should be configurable (maybe read from openapi-ts.config.ts ?)
-    const token = await getTokenAtActivation()
+    const token = await getTokenAtActivation();
     if (token) {
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
-        await context.secrets.store("jutgeToken", token)
+        j.setMeta(token);
+        await context.secrets.store("jutgeToken", token);
     }
 
     /* Authentication */
-    registerAuthCommands(context)
+    registerAuthCommands(context);
 
     /* WebView */
-    registerWebviewCommands(context)
+    registerWebviewCommands(context);
 
     /* TreeView */
-    registerTreeViewCommands(context)
+    registerTreeViewCommands(context);
 
-    console.log("jutge-vscode is now active")
+    console.log("jutge-vscode is now active");
 }
 
 export function deactivate() {
-    removeExtensionContext()
+    removeExtensionContext();
 }

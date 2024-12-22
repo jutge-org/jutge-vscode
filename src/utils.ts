@@ -1,7 +1,7 @@
-import * as vscode from "vscode"
-import { MyProblemsService } from "./client"
-import { dirname } from "path"
-import { channel } from "./channel"
+import * as vscode from "vscode";
+import * as j from "./jutgeClient";
+import { dirname } from "path";
+import { channel } from "./channel";
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -12,12 +12,12 @@ import { channel } from "./channel"
  * @returns A nonce
  */
 export function getNonce() {
-    let text = ""
-    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    let text = "";
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
-    return text
+    return text;
 }
 
 /**
@@ -36,11 +36,11 @@ export function getCompilerIdFromExtension(extension: string): string {
         case "cpp":
         case "cxx":
         case "c++":
-            return "G++" // TODO: Give more options
+            return "G++"; // TODO: Give more options
         case "py":
-            return "Python3"
+            return "Python3";
         default:
-            return ""
+            return "";
     }
 }
 
@@ -50,10 +50,10 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
     try {
-        const response = await MyProblemsService.getAbstractProblem({ problemNm })
-        return response !== undefined
+        await j.problems.getAbstractProblem(problemNm);
+        return true;
     } catch (error) {
-        return false
+        return false;
     }
 }
 
@@ -61,12 +61,12 @@ export async function chooseFromEditorList(
     editors: readonly vscode.TextEditor[]
 ): Promise<vscode.TextEditor | undefined> {
     // Filter out non-file editors (e.g. logs, output, terminal)
-    editors = editors.filter((editor) => editor.document.uri.scheme === "file")
+    editors = editors.filter((editor) => editor.document.uri.scheme === "file");
     if (editors.length === 0) {
-        return
+        return;
     }
     if (editors.length === 1) {
-        return editors[0]
+        return editors[0];
     }
 
     const selectedEditor = await vscode.window.showQuickPick(
@@ -75,33 +75,33 @@ export async function chooseFromEditorList(
             description: editor.document.languageId,
             editor,
         }))
-    )
+    );
     // TODO: What if
-    return selectedEditor?.editor
+    return selectedEditor?.editor;
 }
 
 export const preferredLangToLangId: { [key: string]: string } = {
     Català: "ca",
     Castellano: "es",
     English: "en",
-}
-export const fallbackLangOrder = ["ca", "es", "en", "fr"]
+};
+export const fallbackLangOrder = ["ca", "es", "en", "fr"];
 
 export function getDefaultProblemId(problemNm: string): string {
-    const preferredLang = vscode.workspace.getConfiguration("jutge-vscode").get("problem.preferredLang") as string
-    const preferredLangId = preferredLangToLangId[preferredLang]
-    return problemNm + "_" + preferredLangId
+    const preferredLang = vscode.workspace.getConfiguration("jutge-vscode").get("problem.preferredLang") as string;
+    const preferredLangId = preferredLangToLangId[preferredLang];
+    return problemNm + "_" + preferredLangId;
 }
 
 export const getWorkingDirectory = (filename: string) => {
-    let workingDir = ""
-    let workspaces = vscode.workspace.workspaceFolders
+    let workingDir = "";
+    let workspaces = vscode.workspace.workspaceFolders;
     if (workspaces && workspaces.length > 0) {
         // TODO: Check that this uri is not remote?
-        workingDir = workspaces[0].uri.path
+        workingDir = workspaces[0].uri.path;
     } else {
-        workingDir = dirname(filename)
+        workingDir = dirname(filename);
     }
-    channel.appendLine(`Working dir: "${workingDir}"`)
-    return workingDir
-}
+    channel.appendLine(`Working dir: "${workingDir}"`);
+    return workingDir;
+};
