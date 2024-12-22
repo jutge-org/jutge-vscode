@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { createNewFileForProblem, showFileInColumn } from "./fileManager";
-import { isUserAuthenticated } from "./jutgeAuth";
 import { submitProblemToJutge } from "./jutgeSubmission";
 import { runAllTestcases, runSingleTestcase } from "./problemRunner";
 import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "./types";
@@ -8,6 +7,7 @@ import * as utils from "./utils";
 import { Button } from "./webview/components/Button";
 import { generateTestcasePanels } from "./webview/components/testcasePanels";
 import * as j from "./jutgeClient";
+import { AuthService } from "./services/AuthService";
 
 /**
  * Registers commands to control the webview.
@@ -17,7 +17,7 @@ import * as j from "./jutgeClient";
 export function registerWebviewCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("jutge-vscode.showProblem", async (problemNm: string | undefined) => {
-            if (!(await isUserAuthenticated())) {
+            if (!(await AuthService.isUserAuthenticated())) {
                 vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.");
                 return;
             }

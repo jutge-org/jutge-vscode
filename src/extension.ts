@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
-import * as j from "./jutgeClient";
 
-import { getTokenAtActivation, registerAuthCommands } from "./jutgeAuth";
+import { AuthService } from "./services/AuthService";
 import { registerWebviewCommands } from "./webviewProvider";
 import { registerTreeViewCommands } from "./treeviewProvider";
 import { removeExtensionContext, setExtensionContext } from "./context";
@@ -15,19 +14,9 @@ import { removeExtensionContext, setExtensionContext } from "./context";
 export async function activate(context: vscode.ExtensionContext) {
     setExtensionContext(context);
 
-    const token = await getTokenAtActivation();
-    if (token) {
-        j.setMeta(token);
-        await context.secrets.store("jutgeToken", token);
-    }
+    await AuthService.initialize(context); // needs to wait for token to be validated
 
-    /* Authentication */
-    registerAuthCommands(context);
-
-    /* WebView */
     registerWebviewCommands(context);
-
-    /* TreeView */
     registerTreeViewCommands(context);
 
     console.log("jutge-vscode is now active");

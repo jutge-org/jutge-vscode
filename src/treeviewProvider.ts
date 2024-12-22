@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { isUserAuthenticated } from "./jutgeAuth";
+import { AuthService } from "./services/AuthService";
 import { getDefaultProblemId } from "./utils";
 import * as j from "./jutgeClient";
 
@@ -42,7 +42,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
      * viewsWelcome are defined in `package.json`.
      */
     async getChildren(element?: JutgeTreeItem): Promise<JutgeTreeItem[]> {
-        if ((await isUserAuthenticated()) === false) {
+        if (!(await AuthService.isUserAuthenticated())) {
             return [];
         }
         if (!element) {
