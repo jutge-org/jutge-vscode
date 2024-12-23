@@ -23,6 +23,63 @@ You should also install these dependencies:
     bun add yaml chalk @inquirer/prompts
 */
 
+import { createCache } from 'cache-manager';
+import { Keyv } from 'keyv';
+import KeyvFile from 'keyv-file';
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+
+const storagePath = path.join(os.homedir(), '.config', 'jutge-vscode', 'cache');
+fs.mkdirSync(storagePath, { recursive: true });
+
+const cache = createCache({
+    ttl: 1000 * 60 * 60 * 24, // 1 day
+    stores: [new Keyv({
+        store: new KeyvFile({
+            filename: path.join(storagePath, 'jutge-cache.json'), // persistent cache file
+            expiredCheckDelay: 24 * 3600 * 1000, // ms, check and remove expired data in each ms
+            writeDelay: 100, // ms, batch write to disk in a specific duration, enhance write performance.
+        })
+    })],
+});
+
+// List of cacheable operations (read-only operations)
+const CACHEABLE_OPERATIONS = new Set([
+    'tables.getLanguages',
+    'tables.getCountries',
+    'tables.getCompilers',
+    'tables.getDrivers',
+    'tables.getVerdicts',
+    'tables.getProglangs',
+    'tables.getAll',
+    'problems.getAbstractProblem',
+    'problems.getProblem',
+    'problems.getHtmlStatement',
+    'problems.getTextStatement',
+    'problems.getMarkdownStatement',
+    'student.lists.getAll',
+    'student.lists.get',
+    'student.courses.getAllAvailable',
+    'student.courses.getAllEnrolled',
+    'student.courses.getAvailable',
+    'student.courses.getEnrolled',
+    'student.awards.getAll',
+    'student.awards.get',
+    'student.statuses.getAll',
+    'student.statuses.getForAbstractProblem',
+    'student.statuses.getForProblem',
+    'problems.getAllAbstractProblems',
+    'problems.getAbstractProblems',
+    'problems.getAbstractProblemsInList',
+    'problems.getAbstractProblemExtras',
+    'problems.getProblemExtras',
+    'problems.getSampleTestcases',
+    'problems.getPublicTestcases',
+    'problems.getPdfStatement',
+    'problems.getZipStatement'
+]);
+
 interface Meta {
     token: string
     exam: string | null
@@ -90,13 +147,31 @@ export class ProtocolError extends Error {
 }
 
 /** Function that sends a request to the API and returns the response **/
-
 async function execute(func: string, input: any, ifiles: File[] = []): Promise<[any, Download[]]> {
+    // Only cache if it's a cacheable operation and has no input files
+    console.log(func, CACHEABLE_OPERATIONS.has(func), ifiles.length === 0);
+    const shouldCache = CACHEABLE_OPERATIONS.has(func) && ifiles.length === 0;
+    
+    if (shouldCache) {
+        const cacheKey = JSON.stringify({ func, input });
+        try {
+            const cachedResult = await cache.get<[any, Download[]]>(cacheKey);
+            if (cachedResult) {
+                console.log('Cache hit for', func);
+                return cachedResult;
+            }
+        } catch (error) {
+            console.error('Cache get error:', error);
+        }
+    }
+
     // prepare form
     const iform = new FormData();
     const idata = { func, input, meta: meta };
     iform.append("data", JSON.stringify(idata));
-    for (const index in ifiles) {iform.append(`file_${index}`, ifiles[index]);}
+    for (const index in ifiles) {
+        iform.append(`file_${index}`, ifiles[index]);
+    }
 
     // send request
     const response = await fetch(JUTGE_API_URL, {
@@ -130,7 +205,20 @@ async function execute(func: string, input: any, ifiles: File[] = []): Promise<[
         }
     }
 
-    return [output, ofiles];
+    const result: [any, Download[]] = [output, ofiles];
+
+    // Cache the result if it's a cacheable operation
+    if (shouldCache) {
+        const cacheKey = JSON.stringify({ func, input });
+        try {
+            console.log('Caching result for', func);
+            await cache.set(cacheKey, result);
+        } catch (error) {
+            console.error('Cache set error:', error);
+        }
+    }
+
+    return result;
 }
 
 function throwError(error: Record<string, any>, operation_id: string | undefined) {
@@ -170,6 +258,7 @@ export async function logout(): Promise<void> {
         console.error("Error logging out");
     }
     meta = { token: "", exam: null };
+    await cache.clear(); // Clear the cache on logout
 }
 
 export type CredentialsIn = {
