@@ -8,5 +8,8 @@
     "jsxSingleQuote": false,
     "trailingComma": "es5",
     "bracketSpacing": true,
-    "arrowParens": "always"
+    "arrowParens": "always",
+    "importOrder": ["^@/(.*)$", "^[./]"],
+    "importOrderSeparation": true,
+    "importOrderSortSpecifiers": true
 }

@@ -1,17 +1,17 @@
-import * as vscode from "vscode";
-import * as j from "@/jutgeClient";
+import * as vscode from "vscode"
+import * as j from "@/jutgeClient"
 
-import { FileService } from "@/services/FileService";
-import { SubmissionService } from "@/services/SubmissionService";
-import { AuthService } from "@/services/AuthService";
+import { FileService } from "@/services/FileService"
+import { SubmissionService } from "@/services/SubmissionService"
+import { AuthService } from "@/services/AuthService"
 
-import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner";
+import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner"
 
-import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types";
-import * as utils from "@/utils/helpers";
+import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
+import * as utils from "@/utils/helpers"
 
-import { Button } from "@/webview/components/Button";
-import { generateTestcasePanels } from "@/webview/components/testcasePanels";
+import { Button } from "@/webview/components/Button"
+import { generateTestcasePanels } from "@/webview/components/testcasePanels"
 
 /**
  * Registers commands to control the webview.
@@ -22,8 +22,8 @@ export function registerWebviewCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("jutge-vscode.showProblem", async (problemNm: string | undefined) => {
             if (!(await AuthService.isUserAuthenticated())) {
-                vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.");
-                return;
+                vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
+                return
             }
 
             // If the command is called from the command palette, ask for the problem number.
@@ -33,15 +33,15 @@ export function registerWebviewCommands(context: vscode.ExtensionContext) {
                     placeHolder: "P12345",
                     prompt: "Please write the problem number.",
                     value: "",
-                });
+                })
                 if (!inputProblemNm) {
-                    return;
+                    return
                 }
-                problemNm = inputProblemNm;
+                problemNm = inputProblemNm
             }
-            WebviewPanelHandler.createOrShow(context.extensionUri, problemNm);
+            WebviewPanelHandler.createOrShow(context.extensionUri, problemNm)
         })
-    );
+    )
 }
 
 /**
@@ -60,11 +60,11 @@ export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptio
             vscode.Uri.joinPath(extensionUri, "src", "webview"),
             vscode.Uri.joinPath(extensionUri, "dist"),
         ],
-    };
+    }
 }
 
 export class WebviewPanelHandler {
-    private static createdPanels: Map<string, ProblemWebviewPanel> = new Map();
+    private static createdPanels: Map<string, ProblemWebviewPanel> = new Map()
 
     /**
      * Creates a new problem webview panel.
@@ -74,17 +74,17 @@ export class WebviewPanelHandler {
      */
     public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
         if (!(await utils.isProblemValidAndAccessible(problemNm))) {
-            vscode.window.showErrorMessage("Problem not valid or accessible.");
-            return;
+            vscode.window.showErrorMessage("Problem not valid or accessible.")
+            return
         }
 
-        const column = this._getColumn();
+        const column = this._getColumn()
 
         // If we already have a panel, show it.
         if (this.createdPanels.has(problemNm)) {
-            let panel = this.createdPanels.get(problemNm) as ProblemWebviewPanel;
-            panel.panel.reveal(column, true);
-            return this.createdPanels.get(problemNm);
+            let panel = this.createdPanels.get(problemNm) as ProblemWebviewPanel
+            panel.panel.reveal(column, true)
+            return this.createdPanels.get(problemNm)
         }
 
         const panel = vscode.window.createWebviewPanel(
@@ -92,42 +92,42 @@ export class WebviewPanelHandler {
             problemNm,
             { viewColumn: column, preserveFocus: true },
             getWebviewOptions(extensionUri)
-        );
+        )
 
-        this.createdPanels.set(problemNm, new ProblemWebviewPanel(panel, extensionUri, problemNm));
-        return this.createdPanels.get(problemNm);
+        this.createdPanels.set(problemNm, new ProblemWebviewPanel(panel, extensionUri, problemNm))
+        return this.createdPanels.get(problemNm)
     }
 
     // Returns column beside or the column of an existing panel.
     private static _getColumn() {
         if (WebviewPanelHandler.createdPanels.size === 0) {
-            return vscode.ViewColumn.Beside;
+            return vscode.ViewColumn.Beside
         } else {
-            return WebviewPanelHandler.createdPanels.values().next().value.panel.viewColumn;
+            return WebviewPanelHandler.createdPanels.values().next().value.panel.viewColumn
         }
     }
 
     public static getPanel(problemNm: string) {
-        return this.createdPanels.get(problemNm);
+        return this.createdPanels.get(problemNm)
     }
 
     public static removePanel(problemNm: string) {
-        this.createdPanels.delete(problemNm);
+        this.createdPanels.delete(problemNm)
     }
 
     public static sendMessageToPanel(problemNm: string, message: VSCodeToWebviewMessage) {
-        const panel = this.createdPanels.get(problemNm);
+        const panel = this.createdPanels.get(problemNm)
         if (panel) {
-            panel.panel.webview.postMessage(message);
+            panel.panel.webview.postMessage(message)
         } else {
-            console.error(`Panel ${problemNm} not found.`);
+            console.error(`Panel ${problemNm} not found.`)
         }
     }
 
     private async _getProblemInfo(problemNm: string): Promise<Problem> {
-        const problem_id = utils.getDefaultProblemId(problemNm);
-        const problem = await j.problems.getProblem(problem_id);
-        const statementHtml = await j.problems.getHtmlStatement(problem_id);
+        const problem_id = utils.getDefaultProblemId(problemNm)
+        const problem = await j.problems.getProblem(problem_id)
+        const statementHtml = await j.problems.getHtmlStatement(problem_id)
 
         return {
             problem_id: problem_id,
@@ -137,18 +137,18 @@ export class WebviewPanelHandler {
             statementHtml: statementHtml,
             testcases: null,
             handler: null,
-        };
+        }
     }
 }
 
 export class ProblemWebviewPanel {
-    public static readonly viewType = "problemWebview";
-    public readonly panel: vscode.WebviewPanel;
+    public static readonly viewType = "problemWebview"
+    public readonly panel: vscode.WebviewPanel
 
-    public problem: Problem;
+    public problem: Problem
 
-    private readonly _extensionUri: vscode.Uri;
-    private _disposables: vscode.Disposable[] = [];
+    private readonly _extensionUri: vscode.Uri
+    private _disposables: vscode.Disposable[] = []
 
     /**
      * Constructor for the problem webview panel.
@@ -160,8 +160,8 @@ export class ProblemWebviewPanel {
      * @returns The problem webview panel.
      */
     public constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, problemNm: string) {
-        this.panel = panel;
-        this._extensionUri = extensionUri;
+        this.panel = panel
+        this._extensionUri = extensionUri
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),
             problem_nm: problemNm,
@@ -170,21 +170,28 @@ export class ProblemWebviewPanel {
             statementHtml: null,
             testcases: null,
             handler: null,
-        };
+        }
 
         // Initialize problem info and update webview
         this._getProblemInfo()
             .then(() => this._updateWebviewContents(problemNm))
             .catch((error) => {
-                console.error("Failed to initialize problem:", error);
-                vscode.window.showErrorMessage("Failed to load problem information");
-            });
+                console.error("Failed to initialize problem:", error)
+                vscode.window.showErrorMessage("Failed to load problem information")
+            })
 
         // Clean up resources when panel is closed
-        this.panel.onDidDispose(this.dispose, null, this._disposables);
+        this.panel.onDidDispose(
+            () => {
+                console.log("Disposing of panel: ", this.problem.problem_nm)
+                this.dispose()
+            },
+            null,
+            this._disposables
+        )
 
         // Handle webview messages
-        this.panel.webview.onDidReceiveMessage(this._handleMessage.bind(this), null, this._disposables);
+        this.panel.webview.onDidReceiveMessage(this._handleMessage.bind(this), null, this._disposables)
     }
 
     /**
@@ -192,14 +199,14 @@ export class ProblemWebviewPanel {
      * This method is called when the panel is closed (either by the user or programmatically).
      */
     public dispose() {
-        WebviewPanelHandler.removePanel(this.problem.problem_nm);
+        WebviewPanelHandler.removePanel(this.problem.problem_nm)
 
-        this.panel.dispose();
+        this.panel.dispose()
 
         while (this._disposables.length) {
-            const x = this._disposables.pop();
+            const x = this._disposables.pop()
             if (x) {
-                x.dispose();
+                x.dispose()
             }
         }
     }
@@ -209,41 +216,41 @@ export class ProblemWebviewPanel {
      */
     private async _getProblemInfo(): Promise<void> {
         try {
-            const abstractProblem = await j.problems.getAbstractProblem(this.problem.problem_nm);
-            const langProblems = abstractProblem.problems;
+            const abstractProblem = await j.problems.getAbstractProblem(this.problem.problem_nm)
+            const langProblems = abstractProblem.problems
             const availableLangIds = Object.values(langProblems).reduce(
                 (acc: Record<string, j.BriefProblem>, problem: j.BriefProblem) => {
-                    acc[problem.language_id] = problem;
-                    return acc;
+                    acc[problem.language_id] = problem
+                    return acc
                 },
                 {} as Record<string, j.BriefProblem>
-            );
+            )
 
             const preferredLang = vscode.workspace
                 .getConfiguration("jutge-vscode")
-                .get("problem.preferredLang") as string;
-            const preferredLangId = utils.preferredLangToLangId[preferredLang];
+                .get("problem.preferredLang") as string
+            const preferredLangId = utils.preferredLangToLangId[preferredLang]
 
-            let finalProblem;
+            let finalProblem
             if (availableLangIds[preferredLangId]) {
-                finalProblem = availableLangIds[preferredLangId];
+                finalProblem = availableLangIds[preferredLangId]
             } else {
-                console.log("Preferred language not available. Trying with fallback languages.");
+                console.log("Preferred language not available. Trying with fallback languages.")
                 for (const langId of utils.fallbackLangOrder) {
                     if (availableLangIds[langId]) {
-                        finalProblem = availableLangIds[langId];
-                        break;
+                        finalProblem = availableLangIds[langId]
+                        break
                     }
                 }
             }
             if (!finalProblem) {
-                throw new Error("No problem found in any language.");
+                throw new Error("No problem found in any language.")
             }
-            this.problem.problem_id = finalProblem.problem_id;
-            this.problem.title = finalProblem.title;
-            this.problem.language_id = finalProblem.language_id;
+            this.problem.problem_id = finalProblem.problem_id
+            this.problem.title = finalProblem.title
+            this.problem.language_id = finalProblem.language_id
         } catch (error) {
-            console.error("Error getting problem info: ", error);
+            console.error("Error getting problem info: ", error)
         }
     }
 
@@ -253,44 +260,44 @@ export class ProblemWebviewPanel {
      * @param problemNm The problem number.
      */
     private async _updateWebviewContents(problemNm: string) {
-        this.panel.title = problemNm;
-        this.panel.webview.html = await this._getHtmlForWebview();
+        this.panel.title = problemNm
+        this.panel.webview.html = await this._getHtmlForWebview()
     }
 
     private async _getProblemStatement() {
         if (this.problem.statementHtml) {
-            return this.problem.statementHtml;
+            return this.problem.statementHtml
         }
         try {
-            const problemStatement = await j.problems.getHtmlStatement(this.problem.problem_id);
-            this.problem.statementHtml = problemStatement;
-            return problemStatement;
+            const problemStatement = await j.problems.getHtmlStatement(this.problem.problem_id)
+            this.problem.statementHtml = problemStatement
+            return problemStatement
         } catch (error) {
-            console.error("Error getting problem statement: ", error);
-            return "<p>Error getting problem statement.</p>";
+            console.error("Error getting problem statement: ", error)
+            return "<p>Error getting problem statement.</p>"
         }
     }
 
     private async _getProblemTestcases() {
         if (this.problem.testcases) {
-            return this.problem.testcases;
+            return this.problem.testcases
         }
         try {
-            const problemExtras = await j.problems.getProblemExtras(this.problem.problem_id);
-            this.problem.handler = problemExtras.handler.handler;
+            const problemExtras = await j.problems.getProblemExtras(this.problem.problem_id)
+            this.problem.handler = problemExtras.handler.handler
 
-            const problemTestcases = await j.problems.getSampleTestcases(this.problem.problem_id);
-            this.problem.testcases = problemTestcases;
-            return problemTestcases;
+            const problemTestcases = await j.problems.getSampleTestcases(this.problem.problem_id)
+            this.problem.testcases = problemTestcases
+            return problemTestcases
         } catch (error) {
-            console.error("Error getting problem testcases: ", error);
-            return [];
+            console.error("Error getting problem testcases: ", error)
+            return []
         }
     }
 
     private _getUri(...path: string[]) {
-        const uri = vscode.Uri.joinPath(this._extensionUri, ...path);
-        return this.panel.webview.asWebviewUri(uri);
+        const uri = vscode.Uri.joinPath(this._extensionUri, ...path)
+        return this.panel.webview.asWebviewUri(uri)
     }
 
     /**
@@ -300,13 +307,13 @@ export class ProblemWebviewPanel {
      * @returns The html content for the webview panel.
      */
     private async _getHtmlForWebview(): Promise<string> {
-        const styleUri = this._getUri("dist", "webview", "main.css");
-        const scriptUri = this._getUri("dist", "webview", "main.js");
-        const nonce = utils.getNonce();
+        const styleUri = this._getUri("dist", "webview", "main.css")
+        const scriptUri = this._getUri("dist", "webview", "main.js")
+        const nonce = utils.getNonce()
 
-        const problemStatement = await this._getProblemStatement();
-        const problemTestcases = await this._getProblemTestcases();
-        const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler);
+        const problemStatement = await this._getProblemStatement()
+        const problemTestcases = await this._getProblemTestcases()
+        const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler)
 
         return `
             <!DOCTYPE html>
@@ -316,9 +323,9 @@ export class ProblemWebviewPanel {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta http-equiv="Content-Security-Policy" 
                     content="default-src 'none';
-                            style-src ${this.panel.webview.cspSource} 'unsafe-inline';
-                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource};
-                            img-src ${this.panel.webview.cspSource} https:;
+                            style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
+                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                            img-src ${this.panel.webview.cspSource} https: data:;
                             font-src ${this.panel.webview.cspSource};">
                 <link rel="stylesheet" href="${styleUri}" />
                 <style>body { font-size: 1rem; }</style>
@@ -340,44 +347,44 @@ export class ProblemWebviewPanel {
                 <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
             </body>
             </html>
-        `;
+        `
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.log("Received message from webview: ", message);
+        console.log("Received message from webview: ", message)
 
         switch (message.command) {
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
-                let all_test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors);
+                let all_test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
                 if (!all_test_editor) {
-                    vscode.window.showErrorMessage("No text editor open.");
-                    return;
+                    vscode.window.showErrorMessage("No text editor open.")
+                    return
                 }
-                runAllTestcases(this.problem, all_test_editor.document.uri.fsPath);
-                return;
+                runAllTestcases(this.problem, all_test_editor.document.uri.fsPath)
+                return
             case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
-                let submit_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors);
+                let submit_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
                 if (!submit_editor) {
-                    vscode.window.showErrorMessage("No text editor open.");
-                    return;
+                    vscode.window.showErrorMessage("No text editor open.")
+                    return
                 }
-                SubmissionService.submitProblem(this.problem, submit_editor.document.uri.fsPath);
-                return;
+                SubmissionService.submitProblem(this.problem, submit_editor.document.uri.fsPath)
+                return
             case WebviewToVSCodeCommand.RUN_TESTCASE:
-                let test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors);
+                let test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
                 if (!test_editor) {
-                    vscode.window.showErrorMessage("No text editor open.");
-                    return;
+                    vscode.window.showErrorMessage("No text editor open.")
+                    return
                 }
-                runSingleTestcase(message.data.testcaseId, this.problem, test_editor.document.uri.fsPath);
-                return;
+                runSingleTestcase(message.data.testcaseId, this.problem, test_editor.document.uri.fsPath)
+                return
             case WebviewToVSCodeCommand.NEW_FILE:
-                const fileUri = await FileService.createNewFileForProblem(this.problem);
+                const fileUri = await FileService.createNewFileForProblem(this.problem)
                 if (!fileUri) {
-                    return;
+                    return
                 }
-                await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One);
-                this.panel.reveal(vscode.ViewColumn.Beside, true);
+                await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
+                this.panel.reveal(vscode.ViewColumn.Beside, true)
         }
     }
 }

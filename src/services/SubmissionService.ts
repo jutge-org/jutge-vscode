@@ -1,11 +1,11 @@
 import * as vscode from "vscode"
 import * as fs from "fs"
+import * as j from "@/jutgeClient"
 
 import { WebviewPanelHandler } from "@/providers/WebviewProvider"
+import { runAllTestcases } from "@/runners/ProblemRunner"
 import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
-import { runAllTestcases } from "@/runners/ProblemRunner"
-import * as j from "@/jutgeClient"
 
 export class SubmissionService {
     /**
