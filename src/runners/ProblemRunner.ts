@@ -1,13 +1,13 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
+import * as vscode from "vscode"
+import * as fs from "fs"
 
-import { WebviewPanelHandler } from "@/providers/WebviewProvider";
-import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/LanguageRunner";
+import { WebviewPanelHandler } from "@/providers/WebviewProvider"
+import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/LanguageRunner"
 
-import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types";
-import { channel } from "@/utils/channel";
+import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types"
+import { channel } from "@/utils/channel"
 
-import * as j from "@/jutgeClient";
+import * as j from "@/jutgeClient"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -30,8 +30,8 @@ function sendUpdateTestcaseMessage(
             status: status,
             output: output,
         },
-    };
-    WebviewPanelHandler.sendMessageToPanel(problemNm, message);
+    }
+    WebviewPanelHandler.sendMessageToPanel(problemNm, message)
 }
 
 /**
@@ -48,23 +48,23 @@ function sendUpdateTestcaseMessage(
  */
 export function runTestcase(testcase_input: string, filePath: string): string | null {
     if (!fs.existsSync(filePath)) {
-        vscode.window.showErrorMessage("File does not exist.");
-        return null;
+        vscode.window.showErrorMessage("File does not exist.")
+        return null
     }
 
-    const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath));
+    const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath))
     try {
-        const document = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === filePath);
+        const document = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === filePath)
         if (!document) {
-            vscode.window.showErrorMessage("File not found in the workspace.");
-            return null;
+            vscode.window.showErrorMessage("File not found in the workspace.")
+            return null
         }
-        const output = languageRunner.run(filePath, testcase_input, document);
-        return output;
+        const output = languageRunner.run(filePath, testcase_input, document)
+        return output
     } catch (error: any) {
-        vscode.window.showErrorMessage(`Error running testcase: ${error.toString()}`);
-        console.error("Error running testcase: ", error);
-        return null;
+        vscode.window.showErrorMessage(`Error running testcase: ${error.toString()}`)
+        console.error("Error running testcase: ", error)
+        return null
     }
 }
 
@@ -79,14 +79,14 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
  */
 async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undefined> {
     if (problem.testcases) {
-        return problem.testcases;
+        return problem.testcases
     }
     try {
-        const problemTestcases = await j.problems.getSampleTestcases(problem.problem_id);
-        return problemTestcases;
+        const problemTestcases = await j.problems.getSampleTestcases(problem.problem_id)
+        return problemTestcases
     } catch (error) {
-        console.error("Error getting problem testcases: ", error);
-        return;
+        console.error("Error getting problem testcases: ", error)
+        return
     }
 }
 
@@ -99,26 +99,26 @@ async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undef
  * @returns True if the testcase passed, false otherwise.
  */
 export async function runSingleTestcase(testcaseId: number, problem: Problem, filePath: string): Promise<boolean> {
-    const testcaseNm = testcaseId - 1; // Testcases are 1-indexed to be consistent with the UI.
-    const testcases = await getProblemTestcases(problem);
+    const testcaseNm = testcaseId - 1 // Testcases are 1-indexed to be consistent with the UI.
+    const testcases = await getProblemTestcases(problem)
     if (!testcases || testcases.length === 0) {
-        vscode.window.showErrorMessage("No testcases found for this problem.");
-        return false;
+        vscode.window.showErrorMessage("No testcases found for this problem.")
+        return false
     }
 
-    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "");
-    channel.clear();
+    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "")
+    channel.clear()
 
-    const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8");
-    const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8");
+    const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8")
+    const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8")
 
-    const output = runTestcase(input, filePath);
+    const output = runTestcase(input, filePath)
 
-    const passed = output !== null && output === expected;
-    const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED;
-    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, status, output);
+    const passed = output !== null && output === expected
+    const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED
+    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, status, output)
 
-    return passed;
+    return passed
 }
 
 /**
@@ -130,28 +130,28 @@ export async function runSingleTestcase(testcaseId: number, problem: Problem, fi
  * @returns True if all testcases passed, false otherwise.
  */
 export async function runAllTestcases(problem: Problem, filePath: string): Promise<boolean> {
-    let allPassed = true;
+    let allPassed = true
 
-    const testcases = await getProblemTestcases(problem);
+    const testcases = await getProblemTestcases(problem)
     if (!testcases || testcases.length === 0) {
-        vscode.window.showErrorMessage("No testcases found for this problem.");
-        return false;
+        vscode.window.showErrorMessage("No testcases found for this problem.")
+        return false
     }
 
-    channel.clear();
+    channel.clear()
     for (let i = 0; i < testcases.length; i++) {
-        const input = Buffer.from(testcases[i].input_b64, "base64").toString("utf-8");
-        const expected = Buffer.from(testcases[i].correct_b64, "base64").toString("utf-8");
+        const input = Buffer.from(testcases[i].input_b64, "base64").toString("utf-8")
+        const expected = Buffer.from(testcases[i].correct_b64, "base64").toString("utf-8")
 
-        sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.RUNNING, "");
-        const output = runTestcase(input, filePath);
+        sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.RUNNING, "")
+        const output = runTestcase(input, filePath)
         if (output === expected) {
-            sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.PASSED, output);
+            sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.PASSED, output)
         } else {
-            sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.FAILED, output);
-            allPassed = false;
+            sendUpdateTestcaseMessage(problem.problem_nm, i + 1, TestcaseStatus.FAILED, output)
+            allPassed = false
         }
     }
 
-    return allPassed;
+    return allPassed
 }

@@ -1,62 +1,62 @@
-import { PythonExtension } from "@vscode/python-extension";
-import * as vscode from "vscode";
-import { channel } from "@/utils/channel";
+import { PythonExtension } from "@vscode/python-extension"
+import * as vscode from "vscode"
+import { channel } from "@/utils/channel"
 
 export class ConfigService {
-    private static pythonApi: PythonExtension | null = null;
+    private static pythonApi: PythonExtension | null = null
 
     public static initialize(): void {
-        PythonExtension.api().then((api) => (ConfigService.pythonApi = api));
+        PythonExtension.api().then((api) => (ConfigService.pythonApi = api))
     }
 
     private static get python() {
         if (ConfigService.pythonApi === null) {
-            throw new Error(`Trying to use python API before it was loaded`);
+            throw new Error(`Trying to use python API before it was loaded`)
         }
-        return ConfigService.pythonApi;
+        return ConfigService.pythonApi
     }
 
     private static get config() {
-        return vscode.workspace.getConfiguration("jutge-vscode");
+        return vscode.workspace.getConfiguration("jutge-vscode")
     }
 
     private static getString(key: string): string {
-        let config = ConfigService.config.get<string>(key);
+        let config = ConfigService.config.get<string>(key)
         if (config === undefined || config === "") {
-            vscode.window.showWarningMessage(`Warning: '${key}' setting is undefined.`);
-            config = "python3"; // set to default
+            vscode.window.showWarningMessage(`Warning: '${key}' setting is undefined.`)
+            config = "python3" // set to default
         }
-        return config;
+        return config
     }
 
     private static getStringArray(key: string): Array<string> {
-        let config = ConfigService.config.get<Array<string>>(key);
+        let config = ConfigService.config.get<Array<string>>(key)
         if (config === undefined) {
-            vscode.window.showWarningMessage(`Warning: '${key}' setting is undefined.`);
-            config = ["-u"]; // set to default
+            vscode.window.showWarningMessage(`Warning: '${key}' setting is undefined.`)
+            config = ["-u"] // set to default
         }
-        return config;
+        return config
     }
 
     public static getPythonCommand(): string {
-        const env = ConfigService.python.environments.getActiveEnvironmentPath();
-        channel.appendLine(`Python environment is: "${env.path}"`);
-        return env.path;
+        const env = ConfigService.python.environments.getActiveEnvironmentPath()
+        channel.appendLine(`Python environment is: "${env.path}"`)
+        return env.path
     }
 
     public static getPythonFlags(): Array<string> {
-        return ConfigService.getStringArray("runner.python.flags");
+        return ConfigService.getStringArray("runner.python.flags")
     }
 
     public static getCppCommand(): string {
-        return ConfigService.getString("runner.cpp.command");
+        return ConfigService.getString("runner.cpp.command")
     }
 
     public static getCppFlags(): string {
-        return ConfigService.getString("runner.cpp.flags");
+        return ConfigService.getString("runner.cpp.flags")
     }
 
     public static getPreferredLang(): string {
-        return ConfigService.getString("problem.preferredLang");
+        return ConfigService.getString("problem.preferredLang")
     }
 }

@@ -1,9 +1,9 @@
-import * as vscode from "vscode";
-import fs from "fs";
+import * as vscode from "vscode"
+import fs from "fs"
 
-import { Language, Problem } from "@/utils/types";
-import { getDefaultExtensionFromLangId } from "@/runners/LanguageRunner";
-import * as j from "@/jutgeClient";
+import { Language, Problem } from "@/utils/types"
+import { getDefaultExtensionFromLangId } from "@/runners/LanguageRunner"
+import * as j from "@/jutgeClient"
 
 export class FileService {
     private static async chooseFileLangFromQuickPick(problemNm: string): Promise<Language | undefined> {
@@ -16,22 +16,22 @@ export class FileService {
                 placeHolder: "Select file type",
                 title: `New file for ${problemNm}`,
             }
-        );
-        return fileType?.description;
+        )
+        return fileType?.description
     }
 
     public static async createNewFileForProblem(problem: Problem): Promise<vscode.Uri | undefined> {
-        const fileLang = await FileService.chooseFileLangFromQuickPick(problem.problem_nm);
+        const fileLang = await FileService.chooseFileLangFromQuickPick(problem.problem_nm)
         if (!fileLang) {
-            return;
+            return
         }
 
-        const fileExtension = getDefaultExtensionFromLangId(fileLang);
-        const suggestedFileName = `${problem.problem_nm}_${problem.title.replace(/ /g, "_")}.${fileExtension}`;
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        const fileExtension = getDefaultExtensionFromLangId(fileLang)
+        const suggestedFileName = `${problem.problem_nm}_${problem.title.replace(/ /g, "_")}.${fileExtension}`
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
         if (!workspaceFolder) {
-            vscode.window.showErrorMessage("No workspace folder open.");
-            return;
+            vscode.window.showErrorMessage("No workspace folder open.")
+            return
         }
 
         const uri = await vscode.window.showSaveDialog({
@@ -41,38 +41,38 @@ export class FileService {
             },
             saveLabel: "Create",
             title: `Create new file for ${problem.title}`,
-        });
+        })
         if (!uri) {
-            return;
+            return
         }
 
         // TODO: If extension is changed by user in the save dialog, update fileLang?
         const langComment = {
             [Language.CPP]: "//",
             [Language.PYTHON]: "#",
-        }[fileLang];
+        }[fileLang]
 
-        const profile = await j.student.profile.get();
-        const problemIdComment = `${langComment} ${problem.problem_id}`;
-        const problemTitleComment = `${langComment} ${problem.title}`;
-        const UrlComment = `${langComment} https://jutge.org/problems/${problem.problem_id}`;
-        const createdComment = `${langComment} Created ${new Date().toLocaleString()} by ${profile.name}`;
-        const fileHeader = [problemIdComment, problemTitleComment, UrlComment, createdComment].join("\n").concat("\n\n");
+        const profile = await j.student.profile.get()
+        const problemIdComment = `${langComment} ${problem.problem_id}`
+        const problemTitleComment = `${langComment} ${problem.title}`
+        const UrlComment = `${langComment} https://jutge.org/problems/${problem.problem_id}`
+        const createdComment = `${langComment} Created ${new Date().toLocaleString()} by ${profile.name}`
+        const fileHeader = [problemIdComment, problemTitleComment, UrlComment, createdComment].join("\n").concat("\n\n")
 
         try {
-            fs.writeFileSync(uri.fsPath, fileHeader, { flag: "w" });
+            fs.writeFileSync(uri.fsPath, fileHeader, { flag: "w" })
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `);
-            throw error;
+            vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
+            throw error
         }
-        return uri;
+        return uri
     }
 
     public static async showFileInColumn(
         uri: vscode.Uri,
         column: vscode.ViewColumn | undefined
     ): Promise<vscode.TextEditor | undefined> {
-        const document = await vscode.workspace.openTextDocument(uri);
-        return vscode.window.showTextDocument(document, column);
+        const document = await vscode.workspace.openTextDocument(uri)
+        return vscode.window.showTextDocument(document, column)
     }
 }
