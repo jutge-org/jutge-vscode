@@ -42,6 +42,11 @@ export function registerWebviewCommands(context: vscode.ExtensionContext) {
             WebviewPanelHandler.createOrShow(context.extensionUri, problemNm)
         })
     )
+
+    vscode.window.registerWebviewPanelSerializer(
+        ProblemWebviewPanel.viewType,
+        new ProblemWebviewPanelSerializer(context.extensionUri)
+    )
 }
 
 /**
@@ -138,6 +143,10 @@ export class WebviewPanelHandler {
             testcases: null,
             handler: null,
         }
+    }
+
+    public static registerPanel(problemNm: string, panel: ProblemWebviewPanel) {
+        this.createdPanels.set(problemNm, panel)
     }
 }
 
@@ -326,7 +335,7 @@ export class ProblemWebviewPanel {
                             style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
                             script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
                             img-src ${this.panel.webview.cspSource} https: data:;
-                            font-src ${this.panel.webview.cspSource};">
+                            font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;">
                 <link rel="stylesheet" href="${styleUri}" />
                 <style>body { font-size: 1rem; }</style>
             </head>
@@ -385,6 +394,31 @@ export class ProblemWebviewPanel {
                 }
                 await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
+        }
+    }
+}
+
+class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
+    private readonly _extensionUri: vscode.Uri
+
+    constructor(extensionUri: vscode.Uri) {
+        this._extensionUri = extensionUri
+    }
+
+    async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+        try {
+            console.log("Deserializing webview panel with state:", state)
+            if (!state?.problemNm) {
+                console.error("No problem number found in state")
+                webviewPanel.dispose()
+                return
+            }
+
+            const panel = new ProblemWebviewPanel(webviewPanel, this._extensionUri, state.problemNm)
+            WebviewPanelHandler.registerPanel(state.problemNm, panel)
+        } catch (error) {
+            console.error("Error deserializing webview panel:", error)
+            webviewPanel.dispose()
         }
     }
 }
