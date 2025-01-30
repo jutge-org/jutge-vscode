@@ -50,7 +50,6 @@ function main() {
     addOnClickEventListeners()
 
     const problemNm = document.getElementById("problem-nm")?.textContent?.split(" - ")[0].trim()
-    console.log("Updating state with problemNm:", problemNm)
     vscode.setState({ problemNm })
 }
 

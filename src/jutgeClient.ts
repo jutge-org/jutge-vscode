@@ -149,7 +149,6 @@ export class ProtocolError extends Error {
 /** Function that sends a request to the API and returns the response **/
 async function execute(func: string, input: any, ifiles: File[] = []): Promise<[any, Download[]]> {
     // Only cache if it's a cacheable operation and has no input files
-    console.log(func, CACHEABLE_OPERATIONS.has(func), ifiles.length === 0);
     const shouldCache = CACHEABLE_OPERATIONS.has(func) && ifiles.length === 0;
     
     if (shouldCache) {
@@ -157,7 +156,6 @@ async function execute(func: string, input: any, ifiles: File[] = []): Promise<[
         try {
             const cachedResult = await cache.get<[any, Download[]]>(cacheKey);
             if (cachedResult) {
-                console.log('Cache hit for', func);
                 return cachedResult;
             }
         } catch (error) {
@@ -211,7 +209,6 @@ async function execute(func: string, input: any, ifiles: File[] = []): Promise<[
     if (shouldCache) {
         const cacheKey = JSON.stringify({ func, input });
         try {
-            console.log('Caching result for', func);
             await cache.set(cacheKey, result);
         } catch (error) {
             console.error('Cache set error:', error);

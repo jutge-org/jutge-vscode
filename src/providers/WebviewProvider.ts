@@ -192,7 +192,6 @@ export class ProblemWebviewPanel {
         // Clean up resources when panel is closed
         this.panel.onDidDispose(
             () => {
-                console.log("Disposing of panel: ", this.problem.problem_nm)
                 this.dispose()
             },
             null,

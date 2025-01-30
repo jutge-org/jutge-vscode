@@ -102,22 +102,27 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
         try {
-            const list_info = await j.student.lists.get(listKey)
-            const all_statuses = await j.student.statuses.getAll()
+            const [list_info, all_statuses] = await Promise.all([
+                j.student.lists.get(listKey),
+                j.student.statuses.getAll(),
+            ])
 
             const promises = list_info.items.map(async (problem) => {
                 const { problem_nm } = problem
                 if (problem_nm === null) {
                     return new JutgeTreeItem("Problem name unavailable", vscode.TreeItemCollapsibleState.None)
                 }
-                const problemItem = new JutgeTreeItem(problem_nm, vscode.TreeItemCollapsibleState.None)
 
+                const problemItem = new JutgeTreeItem(problem_nm, vscode.TreeItemCollapsibleState.None)
                 const problem_id = getDefaultProblemId(problem_nm)
                 const problemInfo = await j.problems.getProblem(problem_id)
 
+                // Get status for this problem
+                const status = all_statuses[problem_nm]?.status
+
                 problemItem.contextValue = "problem"
                 problemItem.itemKey = problem_nm
-                problemItem.label = "⚪ " + problemInfo.title // Using a default icon since icon() is undefined
+                problemItem.label = `${this._getIconForStatus(status)} ${problemInfo.title}`
                 problemItem.command = {
                     command: "jutge-vscode.showProblem",
                     title: "Open Problem",
@@ -130,6 +135,20 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
         } catch (error) {
             console.error("Error getting problems from list:", error)
             return []
+        }
+    }
+
+    private _getIconForStatus(status: string | undefined): string {
+        if (status === "") {
+            return ""
+        }
+        switch (status) {
+            case "accepted":
+                return "🟢"
+            case "rejected":
+                return "🔴"
+            default:
+                return "⚪"
         }
     }
 }

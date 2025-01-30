@@ -13,7 +13,7 @@ import { registerTreeViewCommands } from "@/providers/TreeViewProvider"
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
-    await AuthService.initialize(context) // needs to wait for token to be validated
+    await AuthService.initialize(context) // needs to await token validation
     ConfigService.initialize()
 
     registerWebviewCommands(context)
