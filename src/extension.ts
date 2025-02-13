@@ -2,9 +2,12 @@ import * as vscode from "vscode"
 
 import { AuthService } from "@/services/AuthService"
 import { ConfigService } from "@/services/ConfigService"
+import { JutgeApiClient } from "./jutge_api_client"
 
 import { registerWebviewCommands } from "@/providers/WebviewProvider"
 import { registerTreeViewCommands } from "@/providers/TreeViewProvider"
+
+export const jutgeClient = new JutgeApiClient()
 
 /**
  * Works as entrypoint when the extension is activated.

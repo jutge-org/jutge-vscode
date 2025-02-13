@@ -1,10 +1,11 @@
 import * as vscode from "vscode"
-import * as j from "@/jutgeClient"
 
 import { FileService } from "@/services/FileService"
 import { SubmissionService } from "@/services/SubmissionService"
 import { AuthService } from "@/services/AuthService"
+import { BriefProblem } from "@/jutge_api_client"
 
+import { jutgeClient } from "@/extension"
 import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner"
 
 import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
@@ -131,8 +132,8 @@ export class WebviewPanelHandler {
 
     private async _getProblemInfo(problemNm: string): Promise<Problem> {
         const problem_id = utils.getDefaultProblemId(problemNm)
-        const problem = await j.problems.getProblem(problem_id)
-        const statementHtml = await j.problems.getHtmlStatement(problem_id)
+        const problem = await jutgeClient.problems.getProblem(problem_id)
+        const statementHtml = await jutgeClient.problems.getHtmlStatement(problem_id)
 
         return {
             problem_id: problem_id,
@@ -224,14 +225,14 @@ export class ProblemWebviewPanel {
      */
     private async _getProblemInfo(): Promise<void> {
         try {
-            const abstractProblem = await j.problems.getAbstractProblem(this.problem.problem_nm)
+            const abstractProblem = await jutgeClient.problems.getAbstractProblem(this.problem.problem_nm)
             const langProblems = abstractProblem.problems
             const availableLangIds = Object.values(langProblems).reduce(
-                (acc: Record<string, j.BriefProblem>, problem: j.BriefProblem) => {
+                (acc: Record<string, BriefProblem>, problem: BriefProblem) => {
                     acc[problem.language_id] = problem
                     return acc
                 },
-                {} as Record<string, j.BriefProblem>
+                {} as Record<string, BriefProblem>
             )
 
             const preferredLang = vscode.workspace
@@ -277,7 +278,7 @@ export class ProblemWebviewPanel {
             return this.problem.statementHtml
         }
         try {
-            const problemStatement = await j.problems.getHtmlStatement(this.problem.problem_id)
+            const problemStatement = await jutgeClient.problems.getHtmlStatement(this.problem.problem_id)
             this.problem.statementHtml = problemStatement
             return problemStatement
         } catch (error) {
@@ -291,10 +292,10 @@ export class ProblemWebviewPanel {
             return this.problem.testcases
         }
         try {
-            const problemExtras = await j.problems.getProblemExtras(this.problem.problem_id)
+            const problemExtras = await jutgeClient.problems.getProblemSuppl(this.problem.problem_id)
             this.problem.handler = problemExtras.handler.handler
 
-            const problemTestcases = await j.problems.getSampleTestcases(this.problem.problem_id)
+            const problemTestcases = await jutgeClient.problems.getSampleTestcases(this.problem.problem_id)
             this.problem.testcases = problemTestcases
             return problemTestcases
         } catch (error) {

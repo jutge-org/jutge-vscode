@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 
 import { AuthService } from "@/services/AuthService"
 import { getDefaultProblemId } from "@/utils/helpers"
-import * as j from "@/jutgeClient"
+import { j } from "../jutgeClient"
 
 export function registerTreeViewCommands(context: vscode.ExtensionContext) {
     const treeViewProvider = new TreeViewProvider()
@@ -57,7 +57,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
         try {
-            const courses = await j.student.courses.getAllEnrolled()
+            const courses = await j.student.courses.indexEnrolled()
             return Object.keys(courses).map((courseKey) => {
                 const course = courses[courseKey]
                 const courseItem = new JutgeTreeItem(course.course_nm, vscode.TreeItemCollapsibleState.Collapsed)
