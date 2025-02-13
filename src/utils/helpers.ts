@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import * as j from "@/jutgeClient"
+import { jutgeClient } from "@/extension"
 import { dirname } from "path"
 import { channel } from "@/utils/channel"
 
@@ -50,7 +50,7 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
     try {
-        await j.problems.getAbstractProblem(problemNm)
+        await jutgeClient.problems.getAbstractProblem(problemNm)
         return true
     } catch (error) {
         return false

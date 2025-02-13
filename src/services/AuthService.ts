@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import * as j from "@/jutgeClient"
+import { jutgeClient } from "@/extension"
 import * as fs from "fs"
 
 export class AuthService {
@@ -15,7 +15,10 @@ export class AuthService {
 
         const token = await AuthService.getTokenAtActivation()
         if (token) {
-            j.setMeta(token)
+            jutgeClient.meta = {
+                token,
+                exam: null,
+            }
             await context.secrets.store("jutgeToken", token)
         }
     }
@@ -29,13 +32,16 @@ export class AuthService {
     }
 
     private static async isTokenValid(token: string): Promise<boolean> {
-        const originalMeta = j.meta
+        const originalMeta = jutgeClient.meta
         try {
-            j.setMeta(token)
-            await j.student.profile.get()
+            jutgeClient.meta = {
+                token,
+                exam: null,
+            }
+            await jutgeClient.student.profile.get()
             return true
         } catch (error) {
-            j.setMeta(originalMeta?.token || "", originalMeta?.exam || null)
+            jutgeClient.meta = originalMeta
             return false
         }
     }
@@ -64,9 +70,9 @@ export class AuthService {
         }
 
         try {
-            const token = await j.login(email, password)
+            const credentials = await jutgeClient.login({ email, password })
             await AuthService.context.secrets.store("email", email)
-            return token
+            return credentials.token
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
             console.log("Error signing in:", error)
@@ -116,7 +122,7 @@ export class AuthService {
         await AuthService.context.secrets.delete("jutgeToken")
         await AuthService.context.secrets.delete("email")
 
-        await j.logout()
+        await jutgeClient.logout()
 
         vscode.commands.executeCommand("jutge-vscode.refreshTree")
         vscode.window.showInformationMessage("Jutge.org: You have signed out.")

@@ -1,12 +1,11 @@
 import * as vscode from "vscode"
 import * as fs from "fs"
-import * as j from "@/jutgeClient"
 
 import { WebviewPanelHandler } from "@/providers/WebviewProvider"
 import { runAllTestcases } from "@/runners/ProblemRunner"
 import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
-
+import { jutgeClient } from "@/extension"
 export class SubmissionService {
     /**
      * Submits the currently open file to Jutge.
@@ -30,7 +29,7 @@ export class SubmissionService {
                     type: "application/octet-stream",
                 })
 
-                const response = await j.student.submissions.submit(
+                const response = await jutgeClient.student.submissions.submit(
                     {
                         problem_id: problem.problem_id,
                         compiler_id: compilerId,
@@ -51,7 +50,7 @@ export class SubmissionService {
 
     private static async monitorSubmissionStatus(problem: Problem, submissionId: string): Promise<void> {
         try {
-            const response = await j.student.submissions.get({
+            const response = await jutgeClient.student.submissions.get({
                 problem_id: problem.problem_id,
                 submission_id: submissionId,
             })

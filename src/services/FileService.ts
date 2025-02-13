@@ -3,7 +3,7 @@ import fs from "fs"
 
 import { Language, Problem } from "@/utils/types"
 import { getDefaultExtensionFromLangId } from "@/runners/LanguageRunner"
-import * as j from "@/jutgeClient"
+import { jutgeClient } from "@/extension"
 
 export class FileService {
     private static async chooseFileLangFromQuickPick(problemNm: string): Promise<Language | undefined> {
@@ -52,7 +52,7 @@ export class FileService {
             [Language.PYTHON]: "#",
         }[fileLang]
 
-        const profile = await j.student.profile.get()
+        const profile = await jutgeClient.student.profile.get()
         const problemIdComment = `${langComment} ${problem.problem_id}`
         const problemTitleComment = `${langComment} ${problem.title}`
         const UrlComment = `${langComment} https://jutge.org/problems/${problem.problem_id}`

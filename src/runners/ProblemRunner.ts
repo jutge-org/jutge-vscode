@@ -7,7 +7,7 @@ import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/Langua
 import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types"
 import { channel } from "@/utils/channel"
 
-import * as j from "@/jutgeClient"
+import { jutgeClient } from "@/extension"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -82,7 +82,7 @@ async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undef
         return problem.testcases
     }
     try {
-        const problemTestcases = await j.problems.getSampleTestcases(problem.problem_id)
+        const problemTestcases = await jutgeClient.problems.getSampleTestcases(problem.problem_id)
         return problemTestcases
     } catch (error) {
         console.error("Error getting problem testcases: ", error)
