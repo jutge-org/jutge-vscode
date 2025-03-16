@@ -4,6 +4,8 @@ import { channel } from "@/utils/channel"
 import { Language } from "@/utils/types"
 import { getWorkingDirectory } from "@/utils/helpers"
 import { ConfigService } from "@/services/ConfigService"
+import { TerminalService } from "@/services/TerminalService"
+import * as path from "path"
 
 export interface LanguageRunner {
     run(codePath: string, input: string, document: vscode.TextDocument): string | null
@@ -15,14 +17,17 @@ export class PythonRunner implements LanguageRunner {
         const flags = ConfigService.getPythonFlags()
         const workingDir = getWorkingDirectory(codePath)
 
-        // TODO: Re-implement asynchronously?
-        // TODO: Check that this works on Windows.
+        TerminalService.executeCommand(command, [...flags, codePath], workingDir)
+
+        // Also run the command via spawnSync to capture the output for our logic
         const result = childProcess.spawnSync(command, [...flags, codePath], {
             input,
             timeout: 5000,
             cwd: workingDir,
         })
 
+        // We don't need to show the errors in terminal separately since the
+        // terminal execution already shows them, but we still need to handle them
         handleRuntimeErrors(result, document)
 
         if (result.stdout) {
@@ -37,16 +42,44 @@ export class CppRunner implements LanguageRunner {
     compile(codePath: string, binaryPath: string, document: vscode.TextDocument): void {
         const command = ConfigService.getCppCommand()
         const flags = ConfigService.getCppFlags()
-        const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags])
+        const workingDir = getWorkingDirectory(codePath)
+
+        // Execute the compilation command in the terminal
+        TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], workingDir)
+
+        // Also compile via spawnSync to check for errors
+        const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags], {
+            cwd: workingDir,
+        })
+
+        // Still need to handle compilation errors for our diagnostics
         handleCompilationErrors(result, document)
     }
 
     run(codePath: string, input: string, document: vscode.TextDocument): string | null {
         const binaryPath = codePath + ".out"
+        const workingDir = getWorkingDirectory(codePath)
+
+        // Compile first
         this.compile(codePath, binaryPath, document)
-        const command = `${binaryPath}`
-        const result = childProcess.spawnSync(command, { input, timeout: 5000 })
+
+        // Get the binary path relative to working directory for execution
+        const binaryName = path.basename(binaryPath)
+
+        // For binary execution, ensure we handle paths with special characters
+        // Use ./ prefix for executable in current directory
+        TerminalService.executeCommand(`./${binaryName}`, [], workingDir)
+
+        // Run via spawnSync to capture output for our logic
+        const result = childProcess.spawnSync(binaryPath, [], {
+            input,
+            timeout: 5000,
+            cwd: workingDir,
+        })
+
+        // Handle runtime errors for diagnostics
         handleRuntimeErrors(result, document)
+
         if (result.stdout) {
             return result.stdout.toString()
         }
@@ -137,12 +170,14 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>, docu
     }
 
     if (result.signal) {
-        diagnostics.push(createDiagnostic(`Process killed by the OS with signal ${result.signal}.`, document, 0))
+        const message = `Process killed by the OS with signal ${result.signal}.`
+        diagnostics.push(createDiagnostic(message, document, 0))
     }
 
     if (result.status !== 0 && diagnostics.length === 0) {
         // Only add exit code if we haven't found any other errors
-        diagnostics.push(createDiagnostic(`Process exited with code ${result.status}.`, document, 0))
+        const message = `Process exited with code ${result.status}.`
+        diagnostics.push(createDiagnostic(message, document, 0))
     }
 
     // Set or clear diagnostics
@@ -156,6 +191,7 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>, docu
 /**
  * Creates a diagnostic with the appropriate severity and range
  */
+
 function createDiagnostic(message: string, document: vscode.TextDocument, lineNumber: number): vscode.Diagnostic {
     const line = document.lineAt(Math.min(lineNumber, document.lineCount - 1))
     const range = line.range
@@ -201,12 +237,14 @@ function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>, 
     }
 
     if (result.signal) {
-        diagnostics.push(createDiagnostic(`Process killed by the OS with signal ${result.signal}.`, document, 0))
+        const message = `Process killed by the OS with signal ${result.signal}.`
+        diagnostics.push(createDiagnostic(message, document, 0))
     }
 
     // Set or clear diagnostics
     if (diagnostics.length > 0) {
         compileDiagnosticCollection.set(document.uri, diagnostics)
+
         throw Error(`Compilation Failed: ${result.stderr.toString()}`)
     } else {
         compileDiagnosticCollection.delete(document.uri)

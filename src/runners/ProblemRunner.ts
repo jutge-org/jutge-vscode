@@ -8,6 +8,7 @@ import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/uti
 import { channel } from "@/utils/channel"
 
 import { jutgeClient } from "@/extension"
+import { TerminalService } from "@/services/TerminalService"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -54,14 +55,23 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
 
     const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath))
     try {
+        // Clear the terminal before running a new test
+        TerminalService.clearTerminal()
+
+        // Show the terminal
+        TerminalService.getTerminal().show(false)
+
         const document = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === filePath)
         if (!document) {
             vscode.window.showErrorMessage("File not found in the workspace.")
             return null
         }
+
+        // Run the test
         const output = languageRunner.run(filePath, testcase_input, document)
         return output
     } catch (error: any) {
+        // Show error message in notification but not in terminal
         vscode.window.showErrorMessage(`Error running testcase: ${error.toString()}`)
         console.error("Error running testcase: ", error)
         return null
