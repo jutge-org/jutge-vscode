@@ -89,9 +89,9 @@ We welcome contributions from the community! Here's how you can help:
 
 ### Coding Standards
 
-The project uses ESLint and Prettier for code formatting and linting
-Run `npm run lint` to check your code for issues
-Run `npm run format` to auto-format code
+- The project uses ESLint and Prettier for code formatting and linting
+- Run `npm run lint` to check your code for issues
+- Run `npm run format` to auto-format code
 
 ### Pull Request Process
 
