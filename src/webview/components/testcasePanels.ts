@@ -66,6 +66,7 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
           <div class="textarea-container received-div">
             Received Output:
             <div class="clipboard" title="Copy to clipboard">Copy</div>
+            <div class="compare-diff" title="Compare with expected">Compare</div>
             <div id="received" class="selectable case-textarea"><pre></pre></div>
           </div>
         </div>

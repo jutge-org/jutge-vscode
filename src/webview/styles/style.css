@@ -248,3 +248,29 @@ body.vscode-light textarea:focus {
     opacity: 0.7;
     font-size: 0.9em;
 }
+
+.compare-diff {
+    position: absolute;
+    right: 60px;
+    top: 0;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    font-size: 0.85em;
+}
+
+.compare-diff:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.textarea-container {
+    position: relative;
+}
+
+.clipboard {
+    position: absolute;
+    right: 5px;
+    top: 0;
+}

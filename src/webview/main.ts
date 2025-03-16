@@ -129,6 +129,32 @@ function addOnClickEventListeners() {
             }
         })
     })
+
+    // Add handler for diff comparison buttons
+    const compareDiffButtons = document.querySelectorAll(".compare-diff")
+    compareDiffButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const testcaseId = parseInt(button.closest(".case").id.split("-")[1])
+
+            // Get the expected and received output texts
+            const testcaseElement = document.getElementById(`testcase-${testcaseId}`)
+            const expectedElement = testcaseElement.querySelector(".expected-div pre")
+            const receivedElement = testcaseElement.querySelector(".received-div pre")
+
+            // Original text (without special chars visualization)
+            const expectedText = expectedElement.getAttribute("data-original-text") || expectedElement.textContent || ""
+            const receivedText = receivedElement.getAttribute("data-original-text") || receivedElement.textContent || ""
+
+            vscode.postMessage({
+                command: WebviewToVSCodeCommand.SHOW_DIFF,
+                data: {
+                    testcaseId: testcaseId,
+                    expected: expectedText,
+                    received: receivedText,
+                },
+            })
+        })
+    })
 }
 
 function updateTestcase(testcaseId: number, status: string, output: string) {
@@ -147,6 +173,7 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             testcaseElement.style["border-left-color"] = "green"
             runningText.style.color = "green"
             runningText.textContent = "Passed"
+            outputElement.setAttribute("data-original-text", output)
             outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
@@ -154,6 +181,7 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             testcaseElement.style["border-left-color"] = "red"
             runningText.textContent = "Failed"
             runningText.style.color = "red"
+            outputElement.setAttribute("data-original-text", output)
             outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break

@@ -397,6 +397,59 @@ export class ProblemWebviewPanel {
                 }
                 await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
+            case WebviewToVSCodeCommand.SHOW_DIFF:
+                const { testcaseId, expected, received } = message.data
+
+                // Create a more specific diff display name
+                const diffTitle = `Testcase ${testcaseId}: Expected vs. Received Output`
+
+                // Use virtual documents with a custom scheme instead of actual files
+                const expectedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/expected.txt`)
+                const receivedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/received.txt`)
+
+                // Register document content providers
+                const contentProvider = new (class implements vscode.TextDocumentContentProvider {
+                    // Event to signal content changes
+                    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
+                    onDidChange = this.onDidChangeEmitter.event
+
+                    // Store the content
+                    private _content = new Map<string, string>([
+                        [expectedUri.toString(), expected],
+                        [receivedUri.toString(), received],
+                    ])
+
+                    provideTextDocumentContent(uri: vscode.Uri): string {
+                        return this._content.get(uri.toString()) || ""
+                    }
+                })()
+
+                // Register the provider for our custom scheme
+                const registration = vscode.workspace.registerTextDocumentContentProvider("jutge-diff", contentProvider)
+
+                // Open the diff editor with our virtual documents
+                await vscode.commands.executeCommand("vscode.diff", expectedUri, receivedUri, diffTitle, {
+                    viewColumn: vscode.ViewColumn.Beside,
+                    preview: true,
+                })
+
+                // Keep registration active until diff is closed
+                // We'll create a listener to dispose it when appropriate
+                const disposable = vscode.window.onDidChangeVisibleTextEditors((editors) => {
+                    // Check if our diff editor is still open
+                    const isStillOpen = editors.some(
+                        (editor) =>
+                            editor.document.uri.scheme === "jutge-diff" &&
+                            editor.document.uri.path.includes(`/${testcaseId}/`)
+                    )
+
+                    if (!isStillOpen) {
+                        registration.dispose()
+                        disposable.dispose()
+                    }
+                })
+
+                return
         }
     }
 }
