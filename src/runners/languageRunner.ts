@@ -31,8 +31,8 @@ export class PythonRunner implements LanguageRunner {
         // Only execute in terminal if there are errors
         if (hasErrors) {
             console.debug(`[PythonRunner] Errors detected, showing in terminal`)
-            // TerminalService.clearTerminal()
-            TerminalService.executeCommand(command, [...flags, codePath], workingDir, true)
+            // Pass the input to executeCommand
+            TerminalService.executeCommand(command, [...flags, codePath], true, input)
         }
 
         // Handle errors for diagnostics
@@ -67,8 +67,7 @@ export class CppRunner implements LanguageRunner {
         // Only execute in terminal if there are errors
         if (hasErrors) {
             console.debug(`[CppRunner] Compilation errors detected, showing in terminal`)
-            // TerminalService.clearTerminal()
-            TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], workingDir, true)
+            TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], true)
         }
 
         // Handle compilation errors for diagnostics
@@ -100,9 +99,7 @@ export class CppRunner implements LanguageRunner {
         // Only execute in terminal if there are errors
         if (hasErrors) {
             console.debug(`[CppRunner] Runtime errors detected, showing in terminal`)
-            // If we already showed the terminal for compile errors,
-            // no need to clear it again
-            TerminalService.executeCommand(`./${binaryName}`, [], workingDir, true)
+            TerminalService.executeCommand(`./${binaryName}`, [], true, input)
         }
 
         // Handle runtime errors for diagnostics
