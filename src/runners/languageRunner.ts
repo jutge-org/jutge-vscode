@@ -82,10 +82,7 @@ export class CppRunner implements LanguageRunner {
         // Compile first - this will show terminal if compile errors
         this.compile(codePath, binaryPath, document)
 
-        // Get the binary path relative to working directory for execution
         const binaryName = path.basename(binaryPath)
-
-        // Run via spawnSync to check for runtime errors
         const result = childProcess.spawnSync(binaryPath, [], {
             input,
             timeout: 5000,

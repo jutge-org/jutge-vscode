@@ -2,7 +2,6 @@ import * as vscode from "vscode"
 import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
-import * as childProcess from "child_process"
 
 export class TerminalService {
     private static terminal: vscode.Terminal | undefined
@@ -78,7 +77,6 @@ export class TerminalService {
      * Executes a command in the terminal
      * @param command The command to execute
      * @param args The arguments for the command
-     * @param cwd The working directory (optional)
      * @param showTerminal Whether to show the terminal (default: false)
      * @param input Optional input to provide to the command
      */
@@ -90,10 +88,7 @@ export class TerminalService {
             terminal.show(true)
         }
 
-        // Escape the command
         const escapedCommand = this.escapeShellString(command)
-
-        // Escape each argument
         const escapedArgs = args.map((arg) => this.escapeShellString(arg))
 
         let fullCommand: string
@@ -112,11 +107,9 @@ export class TerminalService {
                 this.cleanupTempFile(tmpFilePath!)
             }, 5000) // Give it 5 seconds to ensure the command has completed
         } else {
-            // Execute without input redirection
             fullCommand = `${escapedCommand} ${escapedArgs.join(" ")}`
         }
 
-        // Execute the command
         terminal.sendText(fullCommand, true)
         console.debug(`[Terminal] Executing: ${fullCommand}`)
     }
