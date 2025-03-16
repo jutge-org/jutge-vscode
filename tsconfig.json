@@ -5,7 +5,11 @@
         "lib": ["ES2022", "dom"],
         "sourceMap": true,
         "rootDir": "src",
-        "strict": true
+        "strict": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        }
     },
     "exclude": ["node_modules", ".vscode-test", "src/webview/", "openapi-ts.config.ts"]
 }

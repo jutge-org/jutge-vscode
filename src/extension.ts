@@ -1,10 +1,14 @@
 import * as vscode from "vscode"
-import axios from "axios"
+import * as os from "os"
 
-import { getTokenAtActivation, registerAuthCommands } from "./jutgeAuth"
-import { registerWebviewCommands } from "./webviewProvider"
-import { registerTreeViewCommands } from "./treeviewProvider"
-import { removeExtensionContext, setExtensionContext } from "./context"
+import { AuthService } from "@/services/AuthService"
+import { ConfigService } from "@/services/ConfigService"
+import { JutgeApiClient } from "./jutge_api_client"
+
+import { registerWebviewCommands } from "@/providers/WebviewProvider"
+import { registerTreeViewCommands } from "@/providers/TreeViewProvider"
+
+export const jutgeClient = new JutgeApiClient()
 
 /**
  * Works as entrypoint when the extension is activated.
@@ -13,28 +17,28 @@ import { removeExtensionContext, setExtensionContext } from "./context"
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
-    setExtensionContext(context)
+    logSystemInfo(context)
+    await AuthService.initialize(context) // needs to await token validation
+    ConfigService.initialize()
 
-    /* Axios setup */
-    axios.defaults.baseURL = "https://api.jutge.org/v1" // TODO: this should be configurable (maybe read from openapi-ts.config.ts ?)
-    const token = await getTokenAtActivation()
-    if (token) {
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
-        await context.secrets.store("jutgeToken", token)
-    }
-
-    /* Authentication */
-    registerAuthCommands(context)
-
-    /* WebView */
     registerWebviewCommands(context)
-
-    /* TreeView */
     registerTreeViewCommands(context)
 
-    console.log("jutge-vscode is now active")
+    console.info("[Extension] jutge-vscode is now active")
 }
 
-export function deactivate() {
-    removeExtensionContext()
+/**
+ * Logs system information to help with debugging
+ */
+function logSystemInfo(context: vscode.ExtensionContext) {
+    const extension = vscode.extensions.getExtension("jutge.jutge-vscode")
+    const extensionVersion = extension?.packageJSON.version || "unknown"
+
+    console.info("=== jutge-vscode initialization ===")
+    console.info(`Extension Version: ${extensionVersion}`)
+    console.info(`VS Code Version: ${vscode.version}`)
+    console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
+    console.info(`Node.js Version: ${process.version}`)
+    console.info(`Date: ${new Date().toISOString()}`)
+    console.info("===================================")
 }

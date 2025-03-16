@@ -1,13 +1,18 @@
 import * as vscode from "vscode"
-import { MyProblemsService } from "./client"
-import { createNewFileForProblem, showFileInColumn } from "./fileManager"
-import { isUserAuthenticated } from "./jutgeAuth"
-import { submitProblemToJutge } from "./jutgeSubmission"
-import { runAllTestcases, runSingleTestcase } from "./problemRunner"
-import { Problem, Testcase, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "./types"
-import * as utils from "./utils"
-import { Button } from "./webview/components/Button"
-import { generateTestcasePanels } from "./webview/components/testcasePanels"
+
+import { FileService } from "@/services/FileService"
+import { SubmissionService } from "@/services/SubmissionService"
+import { AuthService } from "@/services/AuthService"
+import { BriefProblem } from "@/jutge_api_client"
+
+import { jutgeClient } from "@/extension"
+import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner"
+
+import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
+import * as utils from "@/utils/helpers"
+
+import { Button } from "@/webview/components/Button"
+import { generateTestcasePanels } from "@/webview/components/testcasePanels"
 
 /**
  * Registers commands to control the webview.
@@ -17,7 +22,7 @@ import { generateTestcasePanels } from "./webview/components/testcasePanels"
 export function registerWebviewCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("jutge-vscode.showProblem", async (problemNm: string | undefined) => {
-            if (!(await isUserAuthenticated())) {
+            if (!(await AuthService.isUserAuthenticated())) {
                 vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
                 return
             }
@@ -37,6 +42,11 @@ export function registerWebviewCommands(context: vscode.ExtensionContext) {
             }
             WebviewPanelHandler.createOrShow(context.extensionUri, problemNm)
         })
+    )
+
+    vscode.window.registerWebviewPanelSerializer(
+        ProblemWebviewPanel.viewType,
+        new ProblemWebviewPanelSerializer(context.extensionUri)
     )
 }
 
@@ -69,7 +79,10 @@ export class WebviewPanelHandler {
      * @param problemNm The problem number.
      */
     public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
+        console.debug(`[WebviewPanel] Attempting to show problem ${problemNm}`)
+
         if (!(await utils.isProblemValidAndAccessible(problemNm))) {
+            console.warn(`[WebviewPanel] Problem ${problemNm} not valid or accessible`)
             vscode.window.showErrorMessage("Problem not valid or accessible.")
             return
         }
@@ -78,11 +91,13 @@ export class WebviewPanelHandler {
 
         // If we already have a panel, show it.
         if (this.createdPanels.has(problemNm)) {
+            console.debug(`[WebviewPanel] Reusing existing panel for ${problemNm}`)
             let panel = this.createdPanels.get(problemNm) as ProblemWebviewPanel
             panel.panel.reveal(column, true)
             return this.createdPanels.get(problemNm)
         }
 
+        console.debug(`[WebviewPanel] Creating new panel for ${problemNm}`)
         const panel = vscode.window.createWebviewPanel(
             ProblemWebviewPanel.viewType,
             problemNm,
@@ -119,6 +134,26 @@ export class WebviewPanelHandler {
             console.error(`Panel ${problemNm} not found.`)
         }
     }
+
+    private async _getProblemInfo(problemNm: string): Promise<Problem> {
+        const problem_id = utils.getDefaultProblemId(problemNm)
+        const problem = await jutgeClient.problems.getProblem(problem_id)
+        const statementHtml = await jutgeClient.problems.getHtmlStatement(problem_id)
+
+        return {
+            problem_id: problem_id,
+            problem_nm: problemNm,
+            title: problem.title,
+            language_id: problem.language_id,
+            statementHtml: statementHtml,
+            testcases: null,
+            handler: null,
+        }
+    }
+
+    public static registerPanel(problemNm: string, panel: ProblemWebviewPanel) {
+        this.createdPanels.set(problemNm, panel)
+    }
 }
 
 export class ProblemWebviewPanel {
@@ -152,24 +187,25 @@ export class ProblemWebviewPanel {
             handler: null,
         }
 
-        // Get the problem info
-        this._getProblemInfo().then(() => {
-            // Set the webview's initial html content
-            this._updateWebviewContents(problemNm)
-        })
+        // Initialize problem info and update webview
+        this._getProblemInfo()
+            .then(() => this._updateWebviewContents(problemNm))
+            .catch((error) => {
+                console.error("Failed to initialize problem:", error)
+                vscode.window.showErrorMessage("Failed to load problem information")
+            })
 
-        // Listen for when the panel is disposed
-        // This happens when the user closes the panel or when the panel is closed programmatically
-        this.panel.onDidDispose(() => this.dispose(), null, this._disposables)
-
-        // Handle messages from the webview
-        this.panel.webview.onDidReceiveMessage(
-            (message) => {
-                this._handleMessage(message)
+        // Clean up resources when panel is closed
+        this.panel.onDidDispose(
+            () => {
+                this.dispose()
             },
             null,
             this._disposables
         )
+
+        // Handle webview messages
+        this.panel.webview.onDidReceiveMessage(this._handleMessage.bind(this), null, this._disposables)
     }
 
     /**
@@ -194,14 +230,15 @@ export class ProblemWebviewPanel {
      */
     private async _getProblemInfo(): Promise<void> {
         try {
-            const abstractProblem = await MyProblemsService.getAbstractProblem({
-                problemNm: this.problem.problem_nm,
-            })
+            const abstractProblem = await jutgeClient.problems.getAbstractProblem(this.problem.problem_nm)
             const langProblems = abstractProblem.problems
-            const availableLangIds = langProblems.reduce((acc: { [key: string]: any }, problem) => {
-                acc[problem.language_id] = problem
-                return acc
-            }, {})
+            const availableLangIds = Object.values(langProblems).reduce(
+                (acc: Record<string, BriefProblem>, problem: BriefProblem) => {
+                    acc[problem.language_id] = problem
+                    return acc
+                },
+                {} as Record<string, BriefProblem>
+            )
 
             const preferredLang = vscode.workspace
                 .getConfiguration("jutge-vscode")
@@ -212,7 +249,7 @@ export class ProblemWebviewPanel {
             if (availableLangIds[preferredLangId]) {
                 finalProblem = availableLangIds[preferredLangId]
             } else {
-                console.log("Preferred language not available. Trying with fallback languages.")
+                console.warn("[WebviewPanel] Preferred language not available. Trying with fallback languages.")
                 for (const langId of utils.fallbackLangOrder) {
                     if (availableLangIds[langId]) {
                         finalProblem = availableLangIds[langId]
@@ -220,11 +257,14 @@ export class ProblemWebviewPanel {
                     }
                 }
             }
+            if (!finalProblem) {
+                throw new Error("No problem found in any language.")
+            }
             this.problem.problem_id = finalProblem.problem_id
             this.problem.title = finalProblem.title
             this.problem.language_id = finalProblem.language_id
         } catch (error) {
-            console.error("Error getting problem info: ", error)
+            console.error("[WebviewPanel] Error getting problem info: ", error)
         }
     }
 
@@ -243,10 +283,7 @@ export class ProblemWebviewPanel {
             return this.problem.statementHtml
         }
         try {
-            const problemStatement = (await MyProblemsService.getHtmlStatement({
-                problemNm: this.problem.problem_nm,
-                problemId: this.problem.problem_id,
-            })) as string
+            const problemStatement = await jutgeClient.problems.getHtmlStatement(this.problem.problem_id)
             this.problem.statementHtml = problemStatement
             return problemStatement
         } catch (error) {
@@ -260,16 +297,11 @@ export class ProblemWebviewPanel {
             return this.problem.testcases
         }
         try {
-            const problemExtras = (await MyProblemsService.getProblemExtras({
-                problemNm: this.problem.problem_nm,
-                problemId: this.problem.problem_id,
-            })) as { handler: { handler: string; source_modifier: string } }
+            const [problemExtras, problemTestcases] = await Promise.all([
+                jutgeClient.problems.getProblemSuppl(this.problem.problem_id),
+                jutgeClient.problems.getSampleTestcases(this.problem.problem_id),
+            ])
             this.problem.handler = problemExtras.handler.handler
-
-            const problemTestcases = (await MyProblemsService.getSampleTestcases({
-                problemNm: this.problem.problem_nm,
-                problemId: this.problem.problem_id,
-            })) as Testcase[]
             this.problem.testcases = problemTestcases
             return problemTestcases
         } catch (error) {
@@ -292,60 +324,51 @@ export class ProblemWebviewPanel {
     private async _getHtmlForWebview(): Promise<string> {
         const styleUri = this._getUri("dist", "webview", "main.css")
         const scriptUri = this._getUri("dist", "webview", "main.js")
+        const nonce = utils.getNonce()
 
-        const nonce = utils.getNonce() // Use a nonce to only allow specific scripts to be run
-
-        const problemStatement = await this._getProblemStatement()
-        const problemTestcases = await this._getProblemTestcases()
-
+        const [problemStatement, problemTestcases] = await Promise.all([
+            this._getProblemStatement(),
+            this._getProblemTestcases(),
+        ])
         const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler)
 
-        const { cspSource } = this.panel.webview
-
         return `
-        <!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				${
-                    "" /*
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-
-                    jpetit a sac: ho trec
-				*/
-                }
-				<no-meta http-equiv="Content-Security-Policy"
-                      content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} https:; script-src 'nonce-${nonce}'; font-src ${cspSource};">
-
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+                <meta http-equiv="Content-Security-Policy" 
+                    content="default-src 'none';
+                            style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
+                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                            img-src ${this.panel.webview.cspSource} https: data:;
+                            font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;">
                 <link rel="stylesheet" href="${styleUri}" />
-
                 <style>body { font-size: 1rem; }</style>
-			</head>
-			<body>
+            </head>
+            <body>
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="flex-grow-1">
-                        ${this.problem.problem_nm + " - " + this.problem.title}
+                        ${this.problem.problem_nm} - ${this.problem.title}
                     </h2>
                     ${Button("New File", "add", "new-file")}
                 </section>
-				<section id="statement" class="component-container">
-					${problemStatement}
-				</section>
-				<vscode-divider></vscode-divider>
-				<section id="testcases" class="component-container">
-					${testcasePanels}
-				</section>
-				<script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-        </html>
-    `
+                <section id="statement" class="component-container">
+                    ${problemStatement}
+                </section>
+                <vscode-divider></vscode-divider>
+                <section id="testcases" class="component-container">
+                    ${testcasePanels}
+                </section>
+                <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+            </body>
+            </html>
+        `
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.log("Received message from webview: ", message)
+        console.debug(`[WebviewPanel] Received message from webview: ${message.command}`)
 
         switch (message.command) {
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
@@ -362,7 +385,7 @@ export class ProblemWebviewPanel {
                     vscode.window.showErrorMessage("No text editor open.")
                     return
                 }
-                submitProblemToJutge(this.problem, submit_editor.document.uri.fsPath)
+                SubmissionService.submitProblem(this.problem, submit_editor.document.uri.fsPath)
                 return
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 let test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
@@ -373,12 +396,90 @@ export class ProblemWebviewPanel {
                 runSingleTestcase(message.data.testcaseId, this.problem, test_editor.document.uri.fsPath)
                 return
             case WebviewToVSCodeCommand.NEW_FILE:
-                const fileUri = await createNewFileForProblem(this.problem)
+                const fileUri = await FileService.createNewFileForProblem(this.problem)
                 if (!fileUri) {
                     return
                 }
-                await showFileInColumn(fileUri, vscode.ViewColumn.One)
+                await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
+            case WebviewToVSCodeCommand.SHOW_DIFF:
+                const { testcaseId, expected, received } = message.data
+
+                // Create a more specific diff display name
+                const diffTitle = `Testcase ${testcaseId}: Expected vs. Received Output`
+
+                // Use virtual documents with a custom scheme instead of actual files
+                const expectedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/expected.txt`)
+                const receivedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/received.txt`)
+
+                // Register document content providers
+                const contentProvider = new (class implements vscode.TextDocumentContentProvider {
+                    // Event to signal content changes
+                    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
+                    onDidChange = this.onDidChangeEmitter.event
+
+                    // Store the content
+                    private _content = new Map<string, string>([
+                        [expectedUri.toString(), expected],
+                        [receivedUri.toString(), received],
+                    ])
+
+                    provideTextDocumentContent(uri: vscode.Uri): string {
+                        return this._content.get(uri.toString()) || ""
+                    }
+                })()
+
+                // Register the provider for our custom scheme
+                const registration = vscode.workspace.registerTextDocumentContentProvider("jutge-diff", contentProvider)
+
+                // Open the diff editor with our virtual documents
+                await vscode.commands.executeCommand("vscode.diff", expectedUri, receivedUri, diffTitle, {
+                    viewColumn: vscode.ViewColumn.Beside,
+                    preview: true,
+                })
+
+                // Keep registration active until diff is closed
+                // We'll create a listener to dispose it when appropriate
+                const disposable = vscode.window.onDidChangeVisibleTextEditors((editors) => {
+                    // Check if our diff editor is still open
+                    const isStillOpen = editors.some(
+                        (editor) =>
+                            editor.document.uri.scheme === "jutge-diff" &&
+                            editor.document.uri.path.includes(`/${testcaseId}/`)
+                    )
+
+                    if (!isStillOpen) {
+                        registration.dispose()
+                        disposable.dispose()
+                    }
+                })
+
+                return
+        }
+    }
+}
+
+class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
+    private readonly _extensionUri: vscode.Uri
+
+    constructor(extensionUri: vscode.Uri) {
+        this._extensionUri = extensionUri
+    }
+
+    async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+        try {
+            console.debug(`[WebviewPanel] Deserializing webview panel with state: ${state}`)
+            if (!state?.problemNm) {
+                console.warn("[WebviewPanel] No problem number found in state")
+                webviewPanel.dispose()
+                return
+            }
+
+            const panel = new ProblemWebviewPanel(webviewPanel, this._extensionUri, state.problemNm)
+            WebviewPanelHandler.registerPanel(state.problemNm, panel)
+        } catch (error) {
+            console.error("[WebviewPanel] Error deserializing webview panel: ", error)
+            webviewPanel.dispose()
         }
     }
 }

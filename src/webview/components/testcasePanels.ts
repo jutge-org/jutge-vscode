@@ -1,6 +1,7 @@
-import { Testcase } from "../../types"
+import { Testcase } from "@/utils/types"
 import { Button } from "./Button"
 import { warningIcon } from "./icons"
+import { makeSpecialCharsVisible } from "../utils"
 
 export function generateTestcasePanels(problemTestcases: Testcase[], handler: string | null): string {
     if (handler !== "std") {
@@ -26,6 +27,10 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
         .map((testcase, index) => {
             const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
             const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
+
+            const inputDisplayed = makeSpecialCharsVisible(inputDecoded)
+            const correctDisplayed = makeSpecialCharsVisible(correctDecoded)
+
             return /*html*/ `
       <div class="case" id="testcase-${index + 1}">
         <div class="testcase-metadata">
@@ -47,16 +52,21 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
           <div class="textarea-container input-div">
             Input:
             <div class="clipboard" title="Copy to clipboard">Copy</div>
-            <div id="input" class="selectable case-textarea"><pre>${inputDecoded}</pre></div>
+            <div id="input" class="selectable case-textarea">
+                <pre data-original-text="${inputDecoded}">${inputDisplayed}</pre>
+            </div>
           </div>
           <div class="textarea-container expected-div">
             Expected Output:
             <div class="clipboard" title="Copy to clipboard">Copy</div>
-            <div id="expected" class="selectable case-textarea"><pre>${correctDecoded}</pre></div>
+            <div id="expected" class="selectable case-textarea">
+                <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
+            </div>
           </div>
           <div class="textarea-container received-div">
             Received Output:
             <div class="clipboard" title="Copy to clipboard">Copy</div>
+            <div class="compare-diff" title="Compare with expected">Compare</div>
             <div id="received" class="selectable case-textarea"><pre></pre></div>
           </div>
         </div>

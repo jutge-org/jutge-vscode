@@ -1,5 +1,11 @@
 import { Button, allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
-import { SubmissionStatus, VSCodeToWebviewCommand, VSCodeToWebviewMessage, WebviewToVSCodeCommand } from "../types"
+import {
+    SubmissionStatus,
+    VSCodeToWebviewCommand,
+    VSCodeToWebviewMessage,
+    WebviewToVSCodeCommand,
+} from "../utils/types"
+import { makeSpecialCharsVisible } from "./utils"
 
 // Warning: this import is important, it will produce a "main.css" file that
 // later we will refer to from the HTML (esbuild does this)
@@ -9,6 +15,13 @@ provideVSCodeDesignSystem().register(allComponents)
 
 // Get access to the VS Code API from within the webview context
 const vscode = acquireVsCodeApi()
+
+// Restore state if it exists
+const previousState = vscode.getState()
+if (previousState) {
+    console.log("Restoring previous state:", previousState)
+    // You can restore any UI state here
+}
 
 // Just like a regular webpage we need to wait for the webview
 // DOM to load before we can reference any of the HTML elements
@@ -20,6 +33,8 @@ window.addEventListener("message", (event) => {
     const message = event.data as VSCodeToWebviewMessage
     const { command, data } = message
     console.log("Received message from extension", command, data)
+
+    // Save state whenever we receive updates
     switch (command) {
         case VSCodeToWebviewCommand.UPDATE_TESTCASE:
             updateTestcase(data.testcaseId, data.status, data.output)
@@ -34,6 +49,9 @@ window.addEventListener("message", (event) => {
 
 function main() {
     addOnClickEventListeners()
+
+    const problemNm = document.getElementById("problem-nm")?.textContent?.split(" - ")[0].trim()
+    vscode.setState({ problemNm })
 }
 
 function addOnClickEventListeners() {
@@ -78,9 +96,19 @@ function addOnClickEventListeners() {
     const copyToClipboardButtons = document.querySelectorAll(".clipboard")
     copyToClipboardButtons.forEach((button) => {
         button.addEventListener("click", () => {
-            const text = button.nextElementSibling as HTMLDivElement
-            const textContent = text.textContent
-            navigator.clipboard.writeText(textContent || "")
+            const textElement = button.nextElementSibling as HTMLDivElement
+            const preElement = textElement.querySelector("pre")
+
+            // Store the original text in a data attribute when generating the HTML
+            const originalText = preElement.getAttribute("data-original-text") || preElement.textContent || ""
+            navigator.clipboard.writeText(originalText)
+
+            // Optional: Show a temporary "Copied!" feedback
+            const originalButtonText = button.textContent
+            button.textContent = "Copied!"
+            setTimeout(() => {
+                button.textContent = originalButtonText
+            }, 1000)
         })
     })
 
@@ -101,6 +129,32 @@ function addOnClickEventListeners() {
             }
         })
     })
+
+    // Add handler for diff comparison buttons
+    const compareDiffButtons = document.querySelectorAll(".compare-diff")
+    compareDiffButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const testcaseId = parseInt(button.closest(".case").id.split("-")[1])
+
+            // Get the expected and received output texts
+            const testcaseElement = document.getElementById(`testcase-${testcaseId}`)
+            const expectedElement = testcaseElement.querySelector(".expected-div pre")
+            const receivedElement = testcaseElement.querySelector(".received-div pre")
+
+            // Original text (without special chars visualization)
+            const expectedText = expectedElement.getAttribute("data-original-text") || expectedElement.textContent || ""
+            const receivedText = receivedElement.getAttribute("data-original-text") || receivedElement.textContent || ""
+
+            vscode.postMessage({
+                command: WebviewToVSCodeCommand.SHOW_DIFF,
+                data: {
+                    testcaseId: testcaseId,
+                    expected: expectedText,
+                    received: receivedText,
+                },
+            })
+        })
+    })
 }
 
 function updateTestcase(testcaseId: number, status: string, output: string) {
@@ -119,14 +173,16 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             testcaseElement.style["border-left-color"] = "green"
             runningText.style.color = "green"
             runningText.textContent = "Passed"
-            outputElement.textContent = output
+            outputElement.setAttribute("data-original-text", output)
+            outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
         case "failed":
             testcaseElement.style["border-left-color"] = "red"
             runningText.textContent = "Failed"
             runningText.style.color = "red"
-            outputElement.textContent = output
+            outputElement.setAttribute("data-original-text", output)
+            outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
     }

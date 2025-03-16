@@ -1,7 +1,6 @@
 import * as vscode from "vscode"
-import { MyProblemsService } from "./client"
+import { jutgeClient } from "@/extension"
 import { dirname } from "path"
-import { channel } from "./channel"
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -50,8 +49,8 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
     try {
-        const response = await MyProblemsService.getAbstractProblem({ problemNm })
-        return response !== undefined
+        await jutgeClient.problems.getAbstractProblem(problemNm)
+        return true
     } catch (error) {
         return false
     }
@@ -102,6 +101,6 @@ export const getWorkingDirectory = (filename: string) => {
     } else {
         workingDir = dirname(filename)
     }
-    channel.appendLine(`Working dir: "${workingDir}"`)
+    console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
 }

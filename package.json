@@ -11,7 +11,9 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onWebviewPanel:problemWebview"
+    ],
     "main": "./dist/extension.js",
     "contributes": {
         "viewsWelcome": [
@@ -111,13 +113,8 @@
         }
     },
     "scripts": {
-        "generate-client": "openapi-ts",
-        "compile": "openapi-ts && node ./esbuild.js",
+        "compile": "node ./esbuild.js",
         "watch": "node ./esbuild.js --watch",
-        "compile-tests": "tsc -p . --outDir out",
-        "watch-tests": "tsc -p . -w --outDir out",
-        "pretest": "npm run compile-tests && npm run compile && npm run lint",
-        "test": "vscode-test",
         "lint": "eslint src --ext ts",
         "clean": "rm -rf out dist",
         "prepare": "husky install",
@@ -127,16 +124,11 @@
         "vscode:package": "vsce package"
     },
     "devDependencies": {
-        "@hey-api/openapi-ts": "^0.42.1",
-        "@types/mocha": "^10.0.6",
-        "@types/moxios": "^0.4.17",
         "@types/node": "18.x",
         "@types/vscode": "^1.87.0",
         "@types/vscode-webview": "^1.57.5",
         "@typescript-eslint/eslint-plugin": "^7.0.2",
         "@typescript-eslint/parser": "^7.0.2",
-        "@vscode/test-cli": "^0.0.6",
-        "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^2.26.1",
         "esbuild": "^0.16.17",
         "eslint": "^8.56.0",
@@ -147,9 +139,11 @@
         "typescript": "^5.3.3"
     },
     "dependencies": {
-        "@vscode/webview-ui-toolkit": "^1.4.0",
         "@vscode/python-extension": "^1.0.5",
-        "axios": "^1.6.7"
+        "@vscode/webview-ui-toolkit": "^1.4.0",
+        "cache-manager": "^6.3.1",
+        "keyv-file": "^5.1.1",
+        "yaml": "^2.6.1"
     },
     "lint-staged": {
         "*.ts": "eslint --cache --fix",
