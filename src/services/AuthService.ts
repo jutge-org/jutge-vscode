@@ -6,21 +6,27 @@ export class AuthService {
     private static context: vscode.ExtensionContext
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
+        console.info("[AuthService] Initializing...")
         AuthService.context = context
 
         context.subscriptions.push(
             vscode.commands.registerCommand("jutge-vscode.signIn", () => AuthService.signIn()),
             vscode.commands.registerCommand("jutge-vscode.signOut", () => AuthService.signOut())
         )
+        console.debug("[AuthService] Commands registered")
 
         const token = await AuthService.getTokenAtActivation()
         if (token) {
+            console.debug("[AuthService] Token found during activation")
             jutgeClient.meta = {
                 token,
                 exam: null,
             }
             await context.secrets.store("jutgeToken", token)
+        } else {
+            console.debug("[AuthService] No valid token found during activation")
         }
+        console.info("[AuthService] Initialization complete")
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
@@ -75,7 +81,7 @@ export class AuthService {
             return credentials.token
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
-            console.log("Error signing in:", error)
+            console.error(`AuthService: Error signing in: ${error}`, "AuthService")
             return
         }
     }
@@ -97,7 +103,7 @@ export class AuthService {
         for (const source of tokenSources) {
             const token = await source.fn
             if (token && (await AuthService.isTokenValid(token))) {
-                console.log(`jutge-vscode: Using token from ${source.id}`)
+                console.info(`[AuthService] Using token from ${source.id}`)
                 return token
             }
         }

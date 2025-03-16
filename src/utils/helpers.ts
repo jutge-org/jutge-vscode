@@ -1,7 +1,6 @@
 import * as vscode from "vscode"
 import { jutgeClient } from "@/extension"
 import { dirname } from "path"
-import { channel } from "@/utils/channel"
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -102,6 +101,6 @@ export const getWorkingDirectory = (filename: string) => {
     } else {
         workingDir = dirname(filename)
     }
-    channel.appendLine(`Working dir: "${workingDir}"`)
+    console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
 }

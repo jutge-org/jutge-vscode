@@ -1,6 +1,5 @@
 import * as childProcess from "child_process"
 import * as vscode from "vscode"
-import { channel } from "@/utils/channel"
 import { Language } from "@/utils/types"
 import { getWorkingDirectory } from "@/utils/helpers"
 import { ConfigService } from "@/services/ConfigService"
@@ -13,6 +12,7 @@ export interface LanguageRunner {
 
 export class PythonRunner implements LanguageRunner {
     run(codePath: string, input: string, document: vscode.TextDocument): string | null {
+        console.debug(`[PythonRunner] Running code: ${codePath}`)
         const command = ConfigService.getPythonCommand()
         const flags = ConfigService.getPythonFlags()
         const workingDir = getWorkingDirectory(codePath)
@@ -30,7 +30,8 @@ export class PythonRunner implements LanguageRunner {
 
         // Only execute in terminal if there are errors
         if (hasErrors) {
-            TerminalService.clearTerminal()
+            console.debug(`[PythonRunner] Errors detected, showing in terminal`)
+            // TerminalService.clearTerminal()
             TerminalService.executeCommand(command, [...flags, codePath], workingDir, true)
         }
 
@@ -38,15 +39,18 @@ export class PythonRunner implements LanguageRunner {
         handleRuntimeErrors(result, document)
 
         if (result.stdout) {
+            console.debug(`[PythonRunner] Execution completed successfully`)
             return result.stdout.toString()
         }
 
+        console.debug(`[PythonRunner] No output from execution`)
         return null // no output
     }
 }
 
 export class CppRunner implements LanguageRunner {
     compile(codePath: string, binaryPath: string, document: vscode.TextDocument): void {
+        console.debug(`[CppRunner] Compiling: ${codePath}`)
         const command = ConfigService.getCppCommand()
         const flags = ConfigService.getCppFlags()
         const workingDir = getWorkingDirectory(codePath)
@@ -62,7 +66,8 @@ export class CppRunner implements LanguageRunner {
 
         // Only execute in terminal if there are errors
         if (hasErrors) {
-            TerminalService.clearTerminal()
+            console.debug(`[CppRunner] Compilation errors detected, showing in terminal`)
+            // TerminalService.clearTerminal()
             TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], workingDir, true)
         }
 
@@ -71,6 +76,7 @@ export class CppRunner implements LanguageRunner {
     }
 
     run(codePath: string, input: string, document: vscode.TextDocument): string | null {
+        console.debug(`[CppRunner] Running: ${codePath}`)
         const binaryPath = codePath + ".out"
         const workingDir = getWorkingDirectory(codePath)
 
@@ -93,6 +99,7 @@ export class CppRunner implements LanguageRunner {
 
         // Only execute in terminal if there are errors
         if (hasErrors) {
+            console.debug(`[CppRunner] Runtime errors detected, showing in terminal`)
             // If we already showed the terminal for compile errors,
             // no need to clear it again
             TerminalService.executeCommand(`./${binaryName}`, [], workingDir, true)
@@ -102,8 +109,10 @@ export class CppRunner implements LanguageRunner {
         handleRuntimeErrors(result, document)
 
         if (result.stdout) {
+            console.debug(`[CppRunner] Execution completed successfully`)
             return result.stdout.toString()
         }
+        console.debug(`[CppRunner] No output from execution`)
         return null
     }
 }
@@ -169,12 +178,14 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>, docu
         if (result.error.toString().includes("ETIMEDOUT")) {
             message = `Execution timed out.\nIf you think this is a mistake, please increase the timeout time in the settings.`
         }
+        console.error(`[Runtime Error] ${message}`)
         // Add as a file-level error
         diagnostics.push(createDiagnostic(message, document, 0))
     }
 
     if (result.stderr.length > 0) {
         const stderrLines = result.stderr.toString().split("\n")
+        console.error(`[Runtime Error] ${result.stderr.toString()}`)
 
         for (const line of stderrLines) {
             const match = line.match(errorRegex)
@@ -192,12 +203,14 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>, docu
 
     if (result.signal) {
         const message = `Process killed by the OS with signal ${result.signal}.`
+        console.error(`[Runtime Error] ${message}`)
         diagnostics.push(createDiagnostic(message, document, 0))
     }
 
     if (result.status !== 0 && diagnostics.length === 0) {
         // Only add exit code if we haven't found any other errors
         const message = `Process exited with code ${result.status}.`
+        console.error(`[Runtime Error] ${message}`)
         diagnostics.push(createDiagnostic(message, document, 0))
     }
 
@@ -212,7 +225,6 @@ function handleRuntimeErrors(result: childProcess.SpawnSyncReturns<Buffer>, docu
 /**
  * Creates a diagnostic with the appropriate severity and range
  */
-
 function createDiagnostic(message: string, document: vscode.TextDocument, lineNumber: number): vscode.Diagnostic {
     const line = document.lineAt(Math.min(lineNumber, document.lineCount - 1))
     const range = line.range
@@ -237,7 +249,7 @@ function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>, 
 
     if (result.stderr.length > 0) {
         const stderrLines = result.stderr.toString().split("\n")
-        channel.appendLine(result.stderr.toString()) // Keep logging to channel for reference
+        console.error(`[Compilation Error] ${result.stderr.toString()}`)
 
         for (const line of stderrLines) {
             const match = line.match(errorRegex)
@@ -254,11 +266,13 @@ function handleCompilationErrors(result: childProcess.SpawnSyncReturns<Buffer>, 
     }
 
     if (result.error) {
+        console.error(`[Compilation Error] ${result.error.toString()}`)
         diagnostics.push(createDiagnostic(result.error.toString(), document, 0))
     }
 
     if (result.signal) {
         const message = `Process killed by the OS with signal ${result.signal}.`
+        console.error(`[Compilation Error] ${message}`)
         diagnostics.push(createDiagnostic(message, document, 0))
     }
 

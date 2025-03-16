@@ -1,4 +1,5 @@
 import * as vscode from "vscode"
+import * as os from "os"
 
 import { AuthService } from "@/services/AuthService"
 import { ConfigService } from "@/services/ConfigService"
@@ -16,11 +17,28 @@ export const jutgeClient = new JutgeApiClient()
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
+    logSystemInfo(context)
     await AuthService.initialize(context) // needs to await token validation
     ConfigService.initialize()
 
     registerWebviewCommands(context)
     registerTreeViewCommands(context)
 
-    console.log("jutge-vscode is now active")
+    console.info("[Extension] jutge-vscode is now active")
+}
+
+/**
+ * Logs system information to help with debugging
+ */
+function logSystemInfo(context: vscode.ExtensionContext) {
+    const extension = vscode.extensions.getExtension("jutge.jutge-vscode")
+    const extensionVersion = extension?.packageJSON.version || "unknown"
+
+    console.info("=== jutge-vscode initialization ===")
+    console.info(`Extension Version: ${extensionVersion}`)
+    console.info(`VS Code Version: ${vscode.version}`)
+    console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
+    console.info(`Node.js Version: ${process.version}`)
+    console.info(`Date: ${new Date().toISOString()}`)
+    console.info("===================================")
 }

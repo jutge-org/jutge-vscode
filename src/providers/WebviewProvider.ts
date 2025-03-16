@@ -79,7 +79,10 @@ export class WebviewPanelHandler {
      * @param problemNm The problem number.
      */
     public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
+        console.debug(`[WebviewPanel] Attempting to show problem ${problemNm}`)
+
         if (!(await utils.isProblemValidAndAccessible(problemNm))) {
+            console.warn(`[WebviewPanel] Problem ${problemNm} not valid or accessible`)
             vscode.window.showErrorMessage("Problem not valid or accessible.")
             return
         }
@@ -88,11 +91,13 @@ export class WebviewPanelHandler {
 
         // If we already have a panel, show it.
         if (this.createdPanels.has(problemNm)) {
+            console.debug(`[WebviewPanel] Reusing existing panel for ${problemNm}`)
             let panel = this.createdPanels.get(problemNm) as ProblemWebviewPanel
             panel.panel.reveal(column, true)
             return this.createdPanels.get(problemNm)
         }
 
+        console.debug(`[WebviewPanel] Creating new panel for ${problemNm}`)
         const panel = vscode.window.createWebviewPanel(
             ProblemWebviewPanel.viewType,
             problemNm,
@@ -244,7 +249,7 @@ export class ProblemWebviewPanel {
             if (availableLangIds[preferredLangId]) {
                 finalProblem = availableLangIds[preferredLangId]
             } else {
-                console.log("Preferred language not available. Trying with fallback languages.")
+                console.warn("[WebviewPanel] Preferred language not available. Trying with fallback languages.")
                 for (const langId of utils.fallbackLangOrder) {
                     if (availableLangIds[langId]) {
                         finalProblem = availableLangIds[langId]
@@ -259,7 +264,7 @@ export class ProblemWebviewPanel {
             this.problem.title = finalProblem.title
             this.problem.language_id = finalProblem.language_id
         } catch (error) {
-            console.error("Error getting problem info: ", error)
+            console.error("[WebviewPanel] Error getting problem info: ", error)
         }
     }
 
@@ -363,7 +368,7 @@ export class ProblemWebviewPanel {
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.log("Received message from webview: ", message)
+        console.debug(`[WebviewPanel] Received message from webview: ${message.command}`)
 
         switch (message.command) {
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
@@ -463,9 +468,9 @@ class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
 
     async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
         try {
-            console.log("Deserializing webview panel with state:", state)
+            console.debug(`[WebviewPanel] Deserializing webview panel with state: ${state}`)
             if (!state?.problemNm) {
-                console.error("No problem number found in state")
+                console.warn("[WebviewPanel] No problem number found in state")
                 webviewPanel.dispose()
                 return
             }
@@ -473,7 +478,7 @@ class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
             const panel = new ProblemWebviewPanel(webviewPanel, this._extensionUri, state.problemNm)
             WebviewPanelHandler.registerPanel(state.problemNm, panel)
         } catch (error) {
-            console.error("Error deserializing webview panel:", error)
+            console.error("[WebviewPanel] Error deserializing webview panel: ", error)
             webviewPanel.dispose()
         }
     }

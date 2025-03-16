@@ -7,6 +7,7 @@ import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { jutgeClient } from "@/extension"
 import { readFile } from "fs/promises"
+
 export class SubmissionService {
     /**
      * Submits the currently open file to Jutge.
@@ -16,14 +17,20 @@ export class SubmissionService {
      * @param filePath Path to the file being submitted
      */
     public static async submitProblem(problem: Problem, filePath: string): Promise<void> {
+        console.info(`[SubmissionService] Preparing to submit problem ${problem.problem_id} from file ${filePath}`)
+
         const fileExtension = filePath.split(".").pop() || ""
         const compilerId = getCompilerIdFromExtension(fileExtension)
+        console.debug(`[SubmissionService] Using compiler ID: ${compilerId}`)
 
+        console.info(`[SubmissionService] Running all testcases before submission`)
         const allTestsPassed = await runAllTestcases(problem, filePath)
         if (allTestsPassed) {
+            console.info(`[SubmissionService] All testcases passed, proceeding with submission`)
             SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, SubmissionStatus.PENDING)
 
             try {
+                console.debug(`[SubmissionService] Reading file content`)
                 const code = await readFile(filePath)
                 const file = new File([code], filePath.split("/").pop() || "", { type: "text/x-c" })
                 const codeString = await file.text()
@@ -37,14 +44,18 @@ export class SubmissionService {
                     annotation: `Sent through the API on ${nowDate} at ${nowTime}`,
                 }
 
+                console.info(`[SubmissionService] Submitting to Jutge.org`)
                 const submission_id = await jutgeClient.student.submissions.submit(submission)
+                console.info(`[SubmissionService] Submission successful, ID: ${submission_id}`)
 
                 vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...")
                 SubmissionService.monitorSubmissionStatus(problem, submission_id)
-            } catch (error) {
-                vscode.window.showErrorMessage("Error submitting to Jutge: " + error)
+            } catch (err) {
+                console.error(`[SubmissionService] Error submitting to Jutge: ${err}`)
+                vscode.window.showErrorMessage("Error submitting to Jutge: " + err)
             }
         } else {
+            console.warn(`[SubmissionService] Some testcases failed, submission aborted`)
             vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.")
         }
     }

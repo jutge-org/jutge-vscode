@@ -1,6 +1,5 @@
 import { PythonExtension } from "@vscode/python-extension"
 import * as vscode from "vscode"
-import { channel } from "@/utils/channel"
 
 export class ConfigService {
     private static pythonApi: PythonExtension | null = null
@@ -40,7 +39,7 @@ export class ConfigService {
 
     public static getPythonCommand(): string {
         const env = ConfigService.python.environments.getActiveEnvironmentPath()
-        channel.appendLine(`Python environment is: "${env.path}"`)
+        console.debug(`[ConfigService] Python environment is: "${env.path}"`)
         return env.path
     }
 

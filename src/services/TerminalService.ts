@@ -1,5 +1,4 @@
 import * as vscode from "vscode"
-import * as path from "path"
 
 export class TerminalService {
     private static terminal: vscode.Terminal | undefined
@@ -56,7 +55,7 @@ export class TerminalService {
 
         // Execute the actual command
         terminal.sendText(`${escapedCommand} ${escapedArgs.join(" ")}`, true)
-        console.log(`Executing command: ${escapedCommand} ${escapedArgs.join(" ")}`)
+        console.debug(`[Terminal] Executing: ${escapedCommand} ${escapedArgs.join(" ")}`)
     }
 
     /**
