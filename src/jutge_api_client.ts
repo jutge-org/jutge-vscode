@@ -1,5 +1,5 @@
 /**
- * This file has been automatically generated at 2025-02-13T12:45:24.137Z
+ * This file has been automatically generated at 2025-03-16T08:36:29.766Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -99,6 +99,7 @@ export type BriefAbstractProblem = {
     driver_id: string | null
     type: string | null
     deprecation: string | null
+    created_at: string | string | string | number | null
 }
 
 export type BriefProblem = {
@@ -124,6 +125,7 @@ export type AbstractProblem = {
     driver_id: string | null
     type: string | null
     deprecation: string | null
+    created_at: string | string | string | number | null
     problems: BriefProblemDict
 }
 
@@ -232,10 +234,8 @@ export type AllDistributions = {
     submissions_by_weekday: Distribution
 }
 
-export type DashboardStats = Record<string, number | string>
-
 export type Dashboard = {
-    stats: DashboardStats
+    stats: Distribution
     heatmap: HeatmapCalendar
     distributions: AllDistributions
 }
@@ -430,6 +430,11 @@ export type InstructorCourse = {
     tutors: CourseMembers
 }
 
+export type StudentProfile = {
+    name: string
+    email: string
+}
+
 export type InstructorExamCourse = {
     title: string
     description: string
@@ -441,6 +446,11 @@ export type InstructorExamDocument = {
     document_nm: string
     title: string
     description: string
+}
+
+export type InstructorExamCompiler = {
+    compiler_id: string
+    name: string
 }
 
 export type InstructorExamProblem = {
@@ -538,6 +548,7 @@ export type InstructorExam = {
     anonymous: number
     course: InstructorExamCourse
     documents: InstructorExamDocument[]
+    compilers: InstructorExamCompiler[]
     problems: InstructorExamProblem[]
     students: InstructorExamStudent[]
 }
@@ -693,8 +704,8 @@ export type Name = {
 export type SomeType = {
     a: string
     b: number
-    c: boolean | null
-    d: boolean | null
+    c: boolean
+    d: boolean
 }
 
 // Client types
@@ -705,7 +716,7 @@ export interface Meta {
 }
 
 export interface Download {
-    readonly content: Uint8Array
+    readonly data: Uint8Array
     readonly name: string
     readonly type: string
 }
@@ -790,34 +801,24 @@ export class JutgeApiClient {
             const key = JSON.stringify({ func, input })
             const entry = this.cache.get(key)
             if (entry !== undefined) {
-                if (this.logCache) {
-                    console.log("found")
-                }
+                if (this.logCache) {console.log("found")}
                 const ttl = this.clientTTLs.get(func)!
                 if (entry.epoch + ttl * 1000 > new Date().valueOf()) {
-                    if (this.logCache) {
-                        console.log("used")
-                    }
+                    if (this.logCache) {console.log("used")}
                     return [entry.output, entry.ofiles]
                 } else {
-                    if (this.logCache) {
-                        console.log("expired")
-                    }
+                    if (this.logCache) {console.log("expired")}
                     this.cache.delete(key)
                 }
             }
         }
-        if (this.logCache) {
-            console.log("fetch")
-        }
+        if (this.logCache) {console.log("fetch")}
 
         // prepare form
         const iform = new FormData()
         const idata = { func, input, meta: this.meta }
         iform.append("data", JSON.stringify(idata))
-        for (const index in ifiles) {
-            iform.append(`file_${index}`, ifiles[index])
-        }
+        for (const index in ifiles) {iform.append(`file_${index}`, ifiles[index])}
 
         // send request
         const response = await fetch(this.JUTGE_API_URL, {
@@ -844,7 +845,7 @@ export class JutgeApiClient {
         for (const [key, value] of oform.entries()) {
             if (value instanceof File) {
                 ofiles.push({
-                    content: new Uint8Array(await value.arrayBuffer()),
+                    data: new Uint8Array(await value.arrayBuffer()),
                     name: value.name,
                     type: value.type,
                 })
@@ -853,9 +854,7 @@ export class JutgeApiClient {
 
         // update cache
         if (caching) {
-            if (this.logCache) {
-                console.log("saved")
-            }
+            if (this.logCache) {console.log("saved")}
             const key = JSON.stringify({ func, input })
             this.cache.set(key, { output, ofiles, epoch: new Date().valueOf() })
         }
@@ -880,26 +879,23 @@ export class JutgeApiClient {
     }
 
     /** Simple login */
+
     async login({ email, password }: { email: string; password: string }): Promise<CredentialsOut> {
         const [credentials, _] = await this.execute("auth.login", { email, password })
-        if (credentials.error) {
-            throw new UnauthorizedError(credentials.error)
-        }
+        if (credentials.error) {throw new UnauthorizedError(credentials.error)}
         this.meta = { token: credentials.token, exam: null }
         return credentials
     }
 
     /** Simple logout */
     async logout(): Promise<void> {
-        await this.execute("auth.logout", {})
+        await this.execute("auth.logout", null)
         this.meta = null
     }
 
     /** Clear the contents of the cache */
     clearCache() {
-        if (this.logCache) {
-            console.log("clear")
-        }
+        if (this.logCache) {console.log("clear")}
         this.cache = new Map()
     }
 
@@ -935,8 +931,7 @@ export class JutgeApiClient {
     readonly student: Module_student
     readonly instructor: Module_instructor
     readonly admin: Module_admin
-    readonly check: Module_check
-    readonly playground: Module_playground
+    readonly testing: Module_testing
 
     constructor() {
         this.auth = new Module_auth(this)
@@ -946,9 +941,10 @@ export class JutgeApiClient {
         this.student = new Module_student(this)
         this.instructor = new Module_instructor(this)
         this.admin = new Module_admin(this)
-        this.check = new Module_check(this)
-        this.playground = new Module_playground(this)
+        this.testing = new Module_testing(this)
 
+        this.clientTTLs.set("misc.getAvatarPacks", 3600)
+        this.clientTTLs.set("misc.getExamIcons", 3600)
         this.clientTTLs.set("tables.get", 300)
         this.clientTTLs.set("tables.getLanguages", 300)
         this.clientTTLs.set("tables.getCountries", 300)
@@ -1055,6 +1051,30 @@ class Module_misc {
         const [output, ofiles] = await this.root.execute("misc.getLogo", null)
         return ofiles[0]
     }
+
+    /**
+     * Returns all packs of avatars.
+     *
+     * No authentication
+     * No warnings
+     * Avatars are used in exams and contests to identify students or participants.
+     */
+    async getAvatarPacks(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("misc.getAvatarPacks", null)
+        return output
+    }
+
+    /**
+     * Returns all exam icons.
+     *
+     * No authentication
+     * No warnings
+     * Exam icon are used in exams and contests to identify problems.
+     */
+    async getExamIcons(): Promise<TagsDict> {
+        const [output, ofiles] = await this.root.execute("misc.getExamIcons", null)
+        return output
+    }
 }
 
 /**
@@ -1156,12 +1176,19 @@ class Module_tables {
 
 /**
  *
- *
-Module with endpoints related to problems.
+ * Module with endpoints related to problems.
 
-There are two types of problems: *abstract problems* and *problems*. An abstract problem is a group of problems. A problem is an instance of an abstract problem in a particular language. Abstract problem are identified by a problem_nm (such as 'P68688'), while problems are identified by a problem_id including its language_id (such as 'P68688_en'). Abstract problems have a list of problems, while problems have an abstract problem. Abstract problems have an author, while problems have a translator.
+There are two types of problems: *abstract problems* and *problems*. An abstract
+problem is a group of problems. A problem is an instance of an abstract problem
+in a particular language. Abstract problems are identified by a `problem_nm` (such
+as 'P68688'), while problems are identified by a `problem_id` including its
+`language_id` (such as 'P68688_en'). Abstract problems have a list of problems,
+while problems have an abstract problem. Abstract problems have an author, while
+problems have a translator.
 
-Available problems depend on the actor issuing the request. For example, non authenticated users can only access public problems, while authenticated users can potentially access more problems.
+Available problems depend on the actor issuing the request. For example, non
+authenticated users can only access public problems, while authenticated
+users can potentially access more problems.
 
  *
  */
@@ -1185,7 +1212,7 @@ class Module_problems {
     }
 
     /**
-     * Get available abstract problems whose keys are in `problem_nms` (comma separated list).
+     * Get available abstract problems whose keys are in `problem_nms`.
      *
      * 🔐 Authentication: any
      * No warnings
@@ -1261,7 +1288,8 @@ class Module_problems {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Includes accepted compilers, accepted proglangs, official solutions checks and handler specifications
+     * Includes accepted compilers, accepted proglangs, official solutions
+    checks and handler specifications
      */
     async getProblemSuppl(problem_id: string): Promise<ProblemSuppl> {
         const [output, ofiles] = await this.root.execute("problems.getProblemSuppl", problem_id)
@@ -1285,7 +1313,8 @@ class Module_problems {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Public testcases are like sample testcases, but are not meant to be show in the problem statatement, because of their long length.
+     * Public testcases are like sample testcases, but are not meant to be show
+    in the problem statatement, because of their long length.
      */
     async getPublicTestcases(problem_id: string): Promise<Testcase[]> {
         const [output, ofiles] = await this.root.execute("problems.getPublicTestcases", problem_id)
@@ -1342,6 +1371,8 @@ class Module_problems {
 
     /**
      * Get ZIP archive of a problem.
+
+    This includes the PDF statement and sample testcases.
      *
      * 🔐 Authentication: any
      * No warnings
@@ -1620,8 +1651,20 @@ class Module_student_dashboard {
      * No warnings
      *
      */
-    async getStats(): Promise<DashboardStats> {
+    async getStats(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute("student.dashboard.getStats", null)
+        return output
+    }
+
+    /**
+     * Get fancy Jutge level.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getLevel(): Promise<string> {
+        const [output, ofiles] = await this.root.execute("student.dashboard.getLevel", null)
         return output
     }
 
@@ -1711,14 +1754,26 @@ class Module_student_submissions {
     }
 
     /**
-     * Submit a submission.
+     * Submit a solution to the Judge, easy interface.
      *
      * 🔐 Authentication: user
      * No warnings
      *
      */
-    async submit(data: NewSubmissionIn, ifile: File): Promise<NewSubmissionOut> {
-        const [output, ofiles] = await this.root.execute("student.submissions.submit", data, [ifile])
+    async submit(data: { problem_id: string; compiler_id: string; code: string; annotation: string }): Promise<string> {
+        const [output, ofiles] = await this.root.execute("student.submissions.submit", data)
+        return output
+    }
+
+    /**
+     * Submit a solution to the Judge, full interface.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async submitFull(data: NewSubmissionIn, ifile: File): Promise<NewSubmissionOut> {
+        const [output, ofiles] = await this.root.execute("student.submissions.submitFull", data, [ifile])
         return output
     }
 
@@ -1741,8 +1796,8 @@ class Module_student_submissions {
      * No warnings
      *
      */
-    async getCode(data: { problem_id: string; submission_id: string }): Promise<string> {
-        const [output, ofiles] = await this.root.execute("student.submissions.getCode", data)
+    async getCodeAsB64(data: { problem_id: string; submission_id: string }): Promise<string> {
+        const [output, ofiles] = await this.root.execute("student.submissions.getCodeAsB64", data)
         return output
     }
 
@@ -1750,7 +1805,7 @@ class Module_student_submissions {
      * Get code metrics for a submission as JSON.
      *
      * 🔐 Authentication: user
-     * No warnings
+     * ❌ Warning: TODO: add more documentation
      * See https://github.com/jutge-org/jutge-code-metrics for details.
      */
     async getCodeMetrics(data: { problem_id: string; submission_id: string }): Promise<any> {
@@ -1783,7 +1838,7 @@ class Module_student_submissions {
     }
 
     /**
-     * Get a (public) testcase analysys of a submission.
+     * Get a (public) testcase analysis of a submission.
      *
      * 🔐 Authentication: user
      * No warnings
@@ -2064,11 +2119,23 @@ class Module_instructor_documents {
      *
      * 🔐 Authentication: instructor
      * No warnings
-     * The PDF file is included in the response.
+     * The PDF file is not included in the response.
      */
-    async get(document_nm: string): Promise<[Document, Download]> {
+    async get(document_nm: string): Promise<Document> {
         const [output, ofiles] = await this.root.execute("instructor.documents.get", document_nm)
-        return [output, ofiles[0]]
+        return output
+    }
+
+    /**
+     * Get PDF of a document.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getPdf(document_nm: string): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("instructor.documents.getPdf", document_nm)
+        return ofiles[0]
     }
 
     /**
@@ -2179,6 +2246,42 @@ class Module_instructor_lists {
         const [output, ofiles] = await this.root.execute("instructor.lists.remove", list_nm)
         return output
     }
+
+    /**
+     * Get the list of lists that are archived.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * At some point, endpoints related to archiving lists should change as the archive bit will be an attribute of each list.
+     */
+    async getArchived(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("instructor.lists.getArchived", null)
+        return output
+    }
+
+    /**
+     * Archive a list.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async archive(list_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.lists.archive", list_nm)
+        return output
+    }
+
+    /**
+     * Unarchive a list.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async unarchive(list_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.lists.unarchive", list_nm)
+        return output
+    }
 }
 
 /**
@@ -2284,6 +2387,66 @@ class Module_instructor_courses {
      */
     async sendInviteToTutors(course_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.sendInviteToTutors", course_nm)
+        return output
+    }
+
+    /**
+     * Get the profiles of the students enrolled in the course.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getStudentProfiles(course_nm: string): Promise<Record<string, StudentProfile>> {
+        const [output, ofiles] = await this.root.execute("instructor.courses.getStudentProfiles", course_nm)
+        return output
+    }
+
+    /**
+     * Get the profiles of the tutors enrolled in the course.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getTutorProfiles(course_nm: string): Promise<Record<string, StudentProfile>> {
+        const [output, ofiles] = await this.root.execute("instructor.courses.getTutorProfiles", course_nm)
+        return output
+    }
+
+    /**
+     * Get the list of courses that are archived.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * At some point, endpoints related to archiving courses should change as the archive bit will be an attribute of each course.
+     */
+    async getArchived(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("instructor.courses.getArchived", null)
+        return output
+    }
+
+    /**
+     * Archive a course.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async archive(course_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.courses.archive", course_nm)
+        return output
+    }
+
+    /**
+     * Unarchive a course.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async unarchive(course_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.courses.unarchive", course_nm)
         return output
     }
 }
@@ -2496,6 +2659,42 @@ class Module_instructor_exams {
         const [output, ofiles] = await this.root.execute("instructor.exams.remove", exam_nm)
         return output
     }
+
+    /**
+     * Get the list of exams that are archived.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * At some point, endpoints related to archiving exams should change as the archive bit will be an attribute of each exam.
+     */
+    async getArchived(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("instructor.exams.getArchived", null)
+        return output
+    }
+
+    /**
+     * Archive an exam.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async archive(exam_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.exams.archive", exam_nm)
+        return output
+    }
+
+    /**
+     * Unarchive an exam.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async unarchive(exam_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.exams.unarchive", exam_nm)
+        return output
+    }
 }
 
 /**
@@ -2508,6 +2707,18 @@ class Module_instructor_problems {
 
     constructor(root: JutgeApiClient) {
         this.root = root
+    }
+
+    /**
+     * Get the list of own problems.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getOwnProblems(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("instructor.problems.getOwnProblems", null)
+        return output
     }
 
     /**
@@ -2547,6 +2758,18 @@ class Module_instructor_problems {
     }
 
     /**
+     * Share passcode to a list of users identified by their email.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * No emails are sent. Emails that are not registered in the system are ignored.
+     */
+    async sharePasscode(data: { problem_nm: string; emails: string[] }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.problems.sharePasscode", data)
+        return output
+    }
+
+    /**
      * Deprecate a problem.
      *
      * 🔐 Authentication: instructor
@@ -2571,11 +2794,11 @@ class Module_instructor_problems {
     }
 
     /**
-     * Download a problem.
+     * Download a problem as a ZIP file.
      *
      * 🔐 Authentication: instructor
      * No warnings
-     * Quick and dirty implementation, should be improved. Returns a zip file with the abstract problem and all its problems.
+     * Quick and dirty implementation, should be improved. Returns a ZIP file with the abstract problem and all its problems.
      */
     async download(problem_nm: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute("instructor.problems.download", problem_nm)
@@ -3057,7 +3280,7 @@ class Module_admin_tasks {
      * Purge expired access tokens (call it from time to time, it does not hurt)
      */
     async purgeAuthTokens(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("admin.tasks.purge-auth-tokens", null)
+        const [output, ofiles] = await this.root.execute("admin.tasks.purgeAuthTokens", null)
         return output
     }
 
@@ -3069,7 +3292,7 @@ class Module_admin_tasks {
      *
      */
     async clearCaches(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("admin.tasks.clear-caches", null)
+        const [output, ofiles] = await this.root.execute("admin.tasks.clearCaches", null)
         return output
     }
 
@@ -3385,9 +3608,39 @@ class Module_admin_problems {
      * No warnings
      *
      */
-    async getSolution(data: { problem_id: string; proglang: string }): Promise<string> {
-        const [output, ofiles] = await this.root.execute("admin.problems.getSolution", data)
+    async getSolutionAsB64(data: { problem_id: string; proglang: string }): Promise<string> {
+        const [output, ofiles] = await this.root.execute("admin.problems.getSolutionAsB64", data)
         return output
+    }
+
+    /**
+     * Get official solution for a problem in proglang as a file.
+     *
+     * 🔐 Authentication: admin
+     * No warnings
+     *
+     */
+    async getSolutionAsFile(data: { problem_id: string; proglang: string }): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("admin.problems.getSolutionAsFile", data)
+        return ofiles[0]
+    }
+}
+
+/**
+ *
+ * Module with testing endpoints. Not meant for regular users.
+ *
+ */
+class Module_testing {
+    private readonly root: JutgeApiClient
+
+    readonly check: Module_testing_check
+    readonly playground: Module_testing_playground
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+        this.check = new Module_testing_check(root)
+        this.playground = new Module_testing_playground(root)
     }
 }
 
@@ -3396,7 +3649,7 @@ class Module_admin_problems {
  * This module is intended for internal use and contains functions to check the actor of the query. General public should not rely on it.
  *
  */
-class Module_check {
+class Module_testing_check {
     private readonly root: JutgeApiClient
 
     constructor(root: JutgeApiClient) {
@@ -3411,7 +3664,7 @@ class Module_check {
      *
      */
     async checkUser(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("check.checkUser", null)
+        const [output, ofiles] = await this.root.execute("testing.check.checkUser", null)
         return output
     }
 
@@ -3423,7 +3676,7 @@ class Module_check {
      *
      */
     async checkInstructor(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("check.checkInstructor", null)
+        const [output, ofiles] = await this.root.execute("testing.check.checkInstructor", null)
         return output
     }
 
@@ -3435,7 +3688,7 @@ class Module_check {
      *
      */
     async checkAdmin(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("check.checkAdmin", null)
+        const [output, ofiles] = await this.root.execute("testing.check.checkAdmin", null)
         return output
     }
 
@@ -3447,7 +3700,7 @@ class Module_check {
      *
      */
     async throwError(exception: string): Promise<void> {
-        const [output, ofiles] = await this.root.execute("check.throwError", exception)
+        const [output, ofiles] = await this.root.execute("testing.check.throwError", exception)
         return output
     }
 }
@@ -3457,7 +3710,7 @@ class Module_check {
  * This module is intended for internal use. General users should not rely on it.
  *
  */
-class Module_playground {
+class Module_testing_playground {
     private readonly root: JutgeApiClient
 
     constructor(root: JutgeApiClient) {
@@ -3472,7 +3725,7 @@ class Module_playground {
      *
      */
     async upload(data: Name, ifile: File): Promise<string> {
-        const [output, ofiles] = await this.root.execute("playground.upload", data, [ifile])
+        const [output, ofiles] = await this.root.execute("testing.playground.upload", data, [ifile])
         return output
     }
 
@@ -3484,7 +3737,7 @@ class Module_playground {
      *
      */
     async negate(ifile: File): Promise<Download> {
-        const [output, ofiles] = await this.root.execute("playground.negate", null, [ifile])
+        const [output, ofiles] = await this.root.execute("testing.playground.negate", null, [ifile])
         return ofiles[0]
     }
 
@@ -3496,7 +3749,7 @@ class Module_playground {
      *
      */
     async download(data: Name): Promise<Download> {
-        const [output, ofiles] = await this.root.execute("playground.download", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.download", data)
         return ofiles[0]
     }
 
@@ -3508,7 +3761,7 @@ class Module_playground {
      *
      */
     async download2(data: Name): Promise<[string, Download]> {
-        const [output, ofiles] = await this.root.execute("playground.download2", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.download2", data)
         return [output, ofiles[0]]
     }
 
@@ -3520,7 +3773,7 @@ class Module_playground {
      *
      */
     async ping(): Promise<string> {
-        const [output, ofiles] = await this.root.execute("playground.ping", null)
+        const [output, ofiles] = await this.root.execute("testing.playground.ping", null)
         return output
     }
 
@@ -3532,7 +3785,7 @@ class Module_playground {
      *
      */
     async toUpperCase(s: string): Promise<string> {
-        const [output, ofiles] = await this.root.execute("playground.toUpperCase", s)
+        const [output, ofiles] = await this.root.execute("testing.playground.toUpperCase", s)
         return output
     }
 
@@ -3544,7 +3797,7 @@ class Module_playground {
      *
      */
     async add2i(data: TwoInts): Promise<number> {
-        const [output, ofiles] = await this.root.execute("playground.add2i", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.add2i", data)
         return output
     }
 
@@ -3556,7 +3809,7 @@ class Module_playground {
      *
      */
     async add2f(data: TwoFloats): Promise<number> {
-        const [output, ofiles] = await this.root.execute("playground.add2f", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.add2f", data)
         return output
     }
 
@@ -3568,7 +3821,7 @@ class Module_playground {
      *
      */
     async inc(data: TwoInts): Promise<TwoInts> {
-        const [output, ofiles] = await this.root.execute("playground.inc", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.inc", data)
         return output
     }
 
@@ -3580,7 +3833,7 @@ class Module_playground {
      *
      */
     async add3i(data: { a: number; b: number; c: number }): Promise<number> {
-        const [output, ofiles] = await this.root.execute("playground.add3i", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.add3i", data)
         return output
     }
 
@@ -3592,7 +3845,7 @@ class Module_playground {
      *
      */
     async something(data: SomeType): Promise<SomeType> {
-        const [output, ofiles] = await this.root.execute("playground.something", data)
+        const [output, ofiles] = await this.root.execute("testing.playground.something", data)
         return output
     }
 }

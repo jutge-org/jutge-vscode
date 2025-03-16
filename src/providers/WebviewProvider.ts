@@ -292,10 +292,11 @@ export class ProblemWebviewPanel {
             return this.problem.testcases
         }
         try {
-            const problemExtras = await jutgeClient.problems.getProblemSuppl(this.problem.problem_id)
+            const [problemExtras, problemTestcases] = await Promise.all([
+                jutgeClient.problems.getProblemSuppl(this.problem.problem_id),
+                jutgeClient.problems.getSampleTestcases(this.problem.problem_id),
+            ])
             this.problem.handler = problemExtras.handler.handler
-
-            const problemTestcases = await jutgeClient.problems.getSampleTestcases(this.problem.problem_id)
             this.problem.testcases = problemTestcases
             return problemTestcases
         } catch (error) {
@@ -320,8 +321,10 @@ export class ProblemWebviewPanel {
         const scriptUri = this._getUri("dist", "webview", "main.js")
         const nonce = utils.getNonce()
 
-        const problemStatement = await this._getProblemStatement()
-        const problemTestcases = await this._getProblemTestcases()
+        const [problemStatement, problemTestcases] = await Promise.all([
+            this._getProblemStatement(),
+            this._getProblemTestcases(),
+        ])
         const testcasePanels = generateTestcasePanels(problemTestcases, this.problem.handler)
 
         return `

@@ -6,6 +6,7 @@ import { runAllTestcases } from "@/runners/ProblemRunner"
 import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { jutgeClient } from "@/extension"
+import { readFile } from "fs/promises"
 export class SubmissionService {
     /**
      * Submits the currently open file to Jutge.
@@ -23,23 +24,23 @@ export class SubmissionService {
             SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, SubmissionStatus.PENDING)
 
             try {
-                // Create a File object from the file stream
-                const fileStream = fs.readFileSync(filePath)
-                const file = new File([fileStream], filePath.split("/").pop() || "", {
-                    type: "application/octet-stream",
-                })
+                const code = await readFile(filePath)
+                const file = new File([code], filePath.split("/").pop() || "", { type: "text/x-c" })
+                const codeString = await file.text()
+                const nowDate = new Date().toLocaleDateString()
+                const nowTime = new Date().toLocaleTimeString()
 
-                const response = await jutgeClient.student.submissions.submit(
-                    {
-                        problem_id: problem.problem_id,
-                        compiler_id: compilerId,
-                        annotation: "",
-                    },
-                    file
-                )
+                const submission = {
+                    problem_id: problem.problem_id,
+                    compiler_id: compilerId,
+                    code: codeString,
+                    annotation: `Sent through the API on ${nowDate} at ${nowTime}`,
+                }
+
+                const submission_id = await jutgeClient.student.submissions.submit(submission)
 
                 vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...")
-                SubmissionService.monitorSubmissionStatus(problem, response.submission_id)
+                SubmissionService.monitorSubmissionStatus(problem, submission_id)
             } catch (error) {
                 vscode.window.showErrorMessage("Error submitting to Jutge: " + error)
             }
