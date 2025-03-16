@@ -38,13 +38,23 @@ export class TerminalService {
      * @param command The command to execute
      * @param args The arguments for the command
      * @param cwd The working directory (optional)
+     * @param showTerminal Whether to show the terminal (default: false)
      */
-    public static executeCommand(command: string, args: string[], cwd?: string): void {
+    public static executeCommand(command: string, args: string[], cwd?: string, showTerminal: boolean = false): void {
         const terminal = this.getTerminal()
-        terminal.show(true)
 
+        // Only show terminal if specifically requested
+        if (showTerminal) {
+            terminal.show(true)
+        }
+
+        // Escape the command
         const escapedCommand = this.escapeShellString(command)
+
+        // Escape each argument
         const escapedArgs = args.map((arg) => this.escapeShellString(arg))
+
+        // Execute the actual command
         terminal.sendText(`${escapedCommand} ${escapedArgs.join(" ")}`, true)
         console.log(`Executing command: ${escapedCommand} ${escapedArgs.join(" ")}`)
     }
@@ -54,6 +64,6 @@ export class TerminalService {
      */
     public static clearTerminal(): void {
         const terminal = this.getTerminal()
-        // terminal.sendText("clear", true)
+        terminal.sendText("clear", true)
     }
 }

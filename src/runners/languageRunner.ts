@@ -17,17 +17,24 @@ export class PythonRunner implements LanguageRunner {
         const flags = ConfigService.getPythonFlags()
         const workingDir = getWorkingDirectory(codePath)
 
-        TerminalService.executeCommand(command, [...flags, codePath], workingDir)
-
-        // Also run the command via spawnSync to capture the output for our logic
+        // First run via spawnSync to check for errors
         const result = childProcess.spawnSync(command, [...flags, codePath], {
             input,
             timeout: 5000,
             cwd: workingDir,
         })
 
-        // We don't need to show the errors in terminal separately since the
-        // terminal execution already shows them, but we still need to handle them
+        // Check if there are errors
+        const hasErrors =
+            result.error || (result.stderr && result.stderr.length > 0) || result.signal || result.status !== 0
+
+        // Only execute in terminal if there are errors
+        if (hasErrors) {
+            TerminalService.clearTerminal()
+            TerminalService.executeCommand(command, [...flags, codePath], workingDir, true)
+        }
+
+        // Handle errors for diagnostics
         handleRuntimeErrors(result, document)
 
         if (result.stdout) {
@@ -44,15 +51,22 @@ export class CppRunner implements LanguageRunner {
         const flags = ConfigService.getCppFlags()
         const workingDir = getWorkingDirectory(codePath)
 
-        // Execute the compilation command in the terminal
-        TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], workingDir)
-
-        // Also compile via spawnSync to check for errors
+        // First compile via spawnSync to check for errors
         const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags], {
             cwd: workingDir,
         })
 
-        // Still need to handle compilation errors for our diagnostics
+        // Check if there are compilation errors
+        const hasErrors =
+            result.error || (result.stderr && result.stderr.length > 0) || result.signal || result.status !== 0
+
+        // Only execute in terminal if there are errors
+        if (hasErrors) {
+            TerminalService.clearTerminal()
+            TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], workingDir, true)
+        }
+
+        // Handle compilation errors for diagnostics
         handleCompilationErrors(result, document)
     }
 
@@ -60,22 +74,29 @@ export class CppRunner implements LanguageRunner {
         const binaryPath = codePath + ".out"
         const workingDir = getWorkingDirectory(codePath)
 
-        // Compile first
+        // Compile first - this will show terminal if compile errors
         this.compile(codePath, binaryPath, document)
 
         // Get the binary path relative to working directory for execution
         const binaryName = path.basename(binaryPath)
 
-        // For binary execution, ensure we handle paths with special characters
-        // Use ./ prefix for executable in current directory
-        TerminalService.executeCommand(`./${binaryName}`, [], workingDir)
-
-        // Run via spawnSync to capture output for our logic
+        // Run via spawnSync to check for runtime errors
         const result = childProcess.spawnSync(binaryPath, [], {
             input,
             timeout: 5000,
             cwd: workingDir,
         })
+
+        // Check if there are runtime errors
+        const hasErrors =
+            result.error || (result.stderr && result.stderr.length > 0) || result.signal || result.status !== 0
+
+        // Only execute in terminal if there are errors
+        if (hasErrors) {
+            // If we already showed the terminal for compile errors,
+            // no need to clear it again
+            TerminalService.executeCommand(`./${binaryName}`, [], workingDir, true)
+        }
 
         // Handle runtime errors for diagnostics
         handleRuntimeErrors(result, document)

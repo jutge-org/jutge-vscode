@@ -55,23 +55,17 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
 
     const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath))
     try {
-        // Clear the terminal before running a new test
-        TerminalService.clearTerminal()
-
-        // Show the terminal
-        TerminalService.getTerminal().show(false)
-
         const document = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === filePath)
         if (!document) {
             vscode.window.showErrorMessage("File not found in the workspace.")
             return null
         }
 
-        // Run the test
+        // Run the test - terminal will only show if there are errors
         const output = languageRunner.run(filePath, testcase_input, document)
         return output
     } catch (error: any) {
-        // Show error message in notification but not in terminal
+        // Show error message in notification
         vscode.window.showErrorMessage(`Error running testcase: ${error.toString()}`)
         console.error("Error running testcase: ", error)
         return null

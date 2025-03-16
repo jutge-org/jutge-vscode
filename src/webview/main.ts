@@ -5,6 +5,7 @@ import {
     VSCodeToWebviewMessage,
     WebviewToVSCodeCommand,
 } from "../utils/types"
+import { makeSpecialCharsVisible } from "./utils"
 
 // Warning: this import is important, it will produce a "main.css" file that
 // later we will refer to from the HTML (esbuild does this)
@@ -95,9 +96,19 @@ function addOnClickEventListeners() {
     const copyToClipboardButtons = document.querySelectorAll(".clipboard")
     copyToClipboardButtons.forEach((button) => {
         button.addEventListener("click", () => {
-            const text = button.nextElementSibling as HTMLDivElement
-            const textContent = text.textContent
-            navigator.clipboard.writeText(textContent || "")
+            const textElement = button.nextElementSibling as HTMLDivElement
+            const preElement = textElement.querySelector("pre")
+
+            // Store the original text in a data attribute when generating the HTML
+            const originalText = preElement.getAttribute("data-original-text") || preElement.textContent || ""
+            navigator.clipboard.writeText(originalText)
+
+            // Optional: Show a temporary "Copied!" feedback
+            const originalButtonText = button.textContent
+            button.textContent = "Copied!"
+            setTimeout(() => {
+                button.textContent = originalButtonText
+            }, 1000)
         })
     })
 
@@ -136,14 +147,14 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             testcaseElement.style["border-left-color"] = "green"
             runningText.style.color = "green"
             runningText.textContent = "Passed"
-            outputElement.textContent = output
+            outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
         case "failed":
             testcaseElement.style["border-left-color"] = "red"
             runningText.textContent = "Failed"
             runningText.style.color = "red"
-            outputElement.textContent = output
+            outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
     }
