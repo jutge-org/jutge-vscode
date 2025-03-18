@@ -125,23 +125,23 @@
         "precommit": "lint-staged"
     },
     "devDependencies": {
-        "@types/node": "18.x",
-        "@types/vscode": "^1.87.0",
+        "@types/node": "^18.19.80",
+        "@types/vscode": "^1.98.0",
         "@types/vscode-webview": "^1.57.5",
-        "@typescript-eslint/eslint-plugin": "^7.0.2",
-        "@typescript-eslint/parser": "^7.0.2",
-        "@vscode/vsce": "^2.26.1",
+        "@typescript-eslint/eslint-plugin": "^7.18.0",
+        "@typescript-eslint/parser": "^7.18.0",
+        "@vscode/vsce": "^3.3.0",
         "esbuild": "^0.16.17",
-        "eslint": "^8.56.0",
-        "husky": "^9.0.11",
-        "lint-staged": "^15.2.2",
-        "prettier": "^3.2.5",
-        "typescript": "^5.3.3"
+        "eslint": "^8.57.1",
+        "husky": "^9.1.7",
+        "lint-staged": "^15.5.0",
+        "prettier": "^3.5.3",
+        "typescript": "^5.8.2"
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
         "@vscode/webview-ui-toolkit": "^1.4.0",
-        "yaml": "^2.6.1"
+        "yaml": "^2.7.0"
     },
     "lint-staged": {
         "*.ts": "eslint --cache --fix",
