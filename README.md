@@ -4,6 +4,35 @@ A Visual Studio Code extension for interacting with [Jutge.org](https://jutge.or
 
 ## Installation
 
+### From VSCode Marketplace
+
+Coming soon.
+
+### Building and packaging the extension
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/jutge-org/jutge-vscode.git
+cd jutge-vscode
+```
+
+2. Install dependencies:
+
+```bash
+bun install
+```
+
+3. Build and package the extension:
+
+```bash
+make vsix
+```
+
+4. Install the extension from the `.vsix` file by following the docs in [VSCode Marketplace](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
+
+## Development
+
 ### Prerequisites
 
 -   Node.js v21.7.1 or higher
@@ -11,7 +40,7 @@ A Visual Studio Code extension for interacting with [Jutge.org](https://jutge.or
 -   Visual Studio Code v1.87.0 or higher
 -   [esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) VSCode extension
 
-### From Source
+### Building from source
 
 1. Clone the repository:
 
@@ -26,40 +55,25 @@ cd jutge-vscode
 make
 ```
 
-### From VSCode Marketplace
-
-Coming soon.
-
-## Development
-
-### Building and running the extension (for local development)
-
-1. Open the project in VSCode
-2. Press F5 or select Run > Start Debugging
-
-### Packaging the extension
-
-```bash
-make vsix
-```
+3. Open the project in VSCode and press `F5` or select `Run > Start Debugging`
 
 ### Project Structure
 
 ```
 jutge-vscode/
 ├── src/
-│   ├── extension.ts          # Extension entry point
-│   ├── context.ts           # Extension context management
-│   ├── jutgeClient.ts       # API client for Jutge.org, installed from api.jutge.org/typescript
-│   ├── providers/           # VSCode providers
-│   │   ├── WebviewProvider.ts   # Problem viewer implementation
-│   │   └── TreeViewProvider.ts  # Sidebar tree view
-│   ├── runners/            # Code execution handlers
-│   ├── services/          # Business logic services
-│   ├── utils/            # Helper functions and types
-│   └── webview/          # Webview UI components
-├── dist/                # Compiled extension files
-└── esbuild.js          # Build configuration
+│ ├── extension.ts # Extension entry point
+│ ├── context.ts # Extension context management
+│ ├── jutge_client_api.ts # API client for Jutge.org, installed from api.jutge.org/clients#typescript
+│ ├── providers/ # VSCode providers
+│ │ ├── WebviewProvider.ts # Problem viewer implementation
+│ │ └── TreeViewProvider.ts # Sidebar tree view
+│ ├── runners/ # Code execution handlers
+│ ├── services/ # Business logic services
+│ ├── utils/ # Helper functions and types
+│ └── webview/ # Webview UI components
+├── dist/ # Compiled extension files
+└── esbuild.js # Build configuration
 ```
 
 ### Key Components
@@ -85,7 +99,7 @@ We welcome contributions from the community! Here's how you can help:
 
 -   Follow the installation instructions above to set up your development environment
 -   Familiarize yourself with the project structure and key components
--   Check the GitHub issues for tasks that need assistance
+-   Check the GitHub issues for tasks that need assistance (look for the "help wanted" or "good first issue" labels)
 
 ### Coding Standards
 
