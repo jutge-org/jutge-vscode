@@ -5,6 +5,12 @@ import { Language, Problem } from "@/utils/types"
 import { getDefaultExtensionFromLangId } from "@/runners/LanguageRunner"
 import { jutgeClient } from "@/extension"
 
+function sanitizeProblemTitle(title: string): string {
+    title = title.replace(/ /g, "_") // Replace spaces with underscores
+    title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
+    return title
+}
+
 export class FileService {
     private static async chooseFileLangFromQuickPick(problemNm: string): Promise<Language | undefined> {
         const fileType = await vscode.window.showQuickPick(
@@ -27,7 +33,8 @@ export class FileService {
         }
 
         const fileExtension = getDefaultExtensionFromLangId(fileLang)
-        const suggestedFileName = `${problem.problem_nm}_${problem.title.replace(/ /g, "_")}.${fileExtension}`
+        const sanitizedTitle = sanitizeProblemTitle(problem.title)
+        const suggestedFileName = `${problem.problem_id}_${sanitizedTitle}.${fileExtension}`
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
         if (!workspaceFolder) {
             vscode.window.showErrorMessage("No workspace folder open.")

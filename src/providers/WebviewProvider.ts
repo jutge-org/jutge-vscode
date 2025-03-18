@@ -402,6 +402,7 @@ export class ProblemWebviewPanel {
                 }
                 await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
+                return
             case WebviewToVSCodeCommand.SHOW_DIFF:
                 const { testcaseId, expected, received } = message.data
 
