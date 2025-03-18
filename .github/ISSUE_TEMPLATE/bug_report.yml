@@ -1,0 +1,45 @@
+name: Bug report
+description: Create a report to help jutge-vscode improve
+type: "Bug"
+labels: ["bug"]
+body:
+    - type: textarea
+      attributes:
+          label: Description
+          description: Please provide a concise description of what you're experiencing, what you expected to happen, and any steps to reproduce the behavior.
+          placeholder: |
+              1. In this environment...
+              2. With this config...
+              3. Run '...'
+              4. See error...
+      validations:
+          required: true
+    - type: input
+      id: jutge-vscode
+      attributes:
+          label: jutge-vscode Version
+          description: What version of jutge-vscode are you using?
+          placeholder: 0.0.3
+      validations:
+          required: true
+    - type: textarea
+      id: vscode
+      attributes:
+          label: VS Code Version
+          description: What version of VS Code are you using? Copy from Help -> About
+          placeholder: |
+              Version: 1.98.0-insider
+              Commit: 44028decf1ca81a0cbf99a65ab72cca6735449f2
+              Date: 2025-02-14T05:04:46.748Z
+              Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code-Insiders/1.98.0-insider Chrome/132.0.6834.194 Electron/34.1.0 Safari/537.36
+      validations:
+          required: false
+    - type: textarea
+      attributes:
+          label: Logs, Screenshots, Screen Captures, etc
+          description: |
+              Logs? Links? References? Anything that will give us more context about the issue you are encountering!
+          placeholder: |
+              Please reproduce the issue and use the _Export Logs..._ command in the Output pane's ... menu and select _jutge-vscode_.
+      validations:
+          required: false
