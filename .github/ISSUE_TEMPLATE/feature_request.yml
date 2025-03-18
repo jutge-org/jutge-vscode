@@ -1,0 +1,11 @@
+name: Enhancement or feature request
+description: Suggest an enhancement, feature, or idea for jutge-vscode
+type: "Enhancement"
+labels: ["enhancement", "triage"]
+body:
+    - type: textarea
+      attributes:
+          label: Description
+          description: Please describe the enhancement or feature you'd like to see in jutge-vscode.
+      validations:
+          required: false

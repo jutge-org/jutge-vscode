@@ -1,7 +1,7 @@
 name: Bug report
 description: Create a report to help jutge-vscode improve
 type: "Bug"
-labels: ["bug"]
+labels: ["bug", "triage"]
 body:
     - type: textarea
       attributes:
