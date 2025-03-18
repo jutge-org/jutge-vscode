@@ -117,11 +117,12 @@
         "watch": "node ./esbuild.js --watch",
         "lint": "eslint src --ext ts",
         "clean": "rm -rf out dist",
-        "prepare": "husky install",
-        "format": "prettier --write *",
+        "prepare": "husky",
+        "format": "prettier --write * --ignore-unknown",
         "package": "NODE_ENV=production node ./esbuild.js",
-        "vscode:prepublish": "npm run package",
-        "vscode:package": "vsce package"
+        "vscode:prepublish": "bun package",
+        "vscode:package": "vsce package",
+        "precommit": "lint-staged"
     },
     "devDependencies": {
         "@types/node": "18.x",
@@ -134,15 +135,12 @@
         "eslint": "^8.56.0",
         "husky": "^9.0.11",
         "lint-staged": "^15.2.2",
-        "moxios": "^0.4.0",
         "prettier": "^3.2.5",
         "typescript": "^5.3.3"
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
         "@vscode/webview-ui-toolkit": "^1.4.0",
-        "cache-manager": "^6.3.1",
-        "keyv-file": "^5.1.1",
         "yaml": "^2.6.1"
     },
     "lint-staged": {
