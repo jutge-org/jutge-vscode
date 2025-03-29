@@ -14,3 +14,8 @@ node_modules/**
 src/**
 esbuild.js
 **/test/**
+.github/**
+.eslintcache
+.prettierignore
+Makefile
+.husky/**

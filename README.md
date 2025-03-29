@@ -6,7 +6,7 @@ A Visual Studio Code extension for interacting with [Jutge.org](https://jutge.or
 
 ### From VSCode Marketplace
 
-Coming soon.
+Install the extension from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=jutge-org.jutge-vscode).
 
 ### Building and packaging the extension
 
@@ -35,10 +35,10 @@ make vsix
 
 ### Prerequisites
 
--   Node.js v21.7.1 or higher
--   bun v1.0.0 or higher
--   Visual Studio Code v1.87.0 or higher
--   [esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) VSCode extension
+- Node.js v21.7.1 or higher
+- bun v1.0.0 or higher
+- Visual Studio Code v1.87.0 or higher
+- [esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) VSCode extension
 
 ### Building from source
 
@@ -84,10 +84,10 @@ jutge-vscode/
 
 3. **Services**:
 
--   AuthService: Manages authentication with Jutge.org
--   FileService: Handles file operations
--   SubmissionService: Manages problem submissions
--   ConfigService: Manages configuration
+- AuthService: Manages authentication with Jutge.org
+- FileService: Handles file operations
+- SubmissionService: Manages problem submissions
+- ConfigService: Manages configuration
 
 4. **Runners**: Executes code against test cases for different programming languages
 
@@ -97,15 +97,15 @@ We welcome contributions from the community! Here's how you can help:
 
 ### Development Setup
 
--   Follow the installation instructions above to set up your development environment
--   Familiarize yourself with the project structure and key components
--   Check the GitHub issues for tasks that need assistance (look for the "help wanted" or "good first issue" labels)
+- Follow the installation instructions above to set up your development environment
+- Familiarize yourself with the project structure and key components
+- Check the GitHub issues for tasks that need assistance (look for the "help wanted" or "good first issue" labels)
 
 ### Coding Standards
 
--   The project uses ESLint and Prettier for code formatting and linting
--   Run `bun lint` to check your code for issues
--   Run `bun format` to auto-format code
+- The project uses ESLint and Prettier for code formatting and linting
+- Run `bun lint` to check your code for issues
+- Run `bun format` to auto-format code
 
 ### Pull Request Process
 
