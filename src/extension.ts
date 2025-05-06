@@ -59,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const treeViewProvider = new TreeViewProvider()
     registerTreeDataProvider("jutgeTreeView", treeViewProvider)
 
-    const serializer = new ProblemWebviewPanelSerializer(context.extensionUri)
+    const serializer = new ProblemWebviewPanelSerializer(context)
     registerWebviewPanelSerializer(ProblemWebviewPanel.viewType, serializer)
 
     registerCommand("jutge-vscode.signIn", AuthService.signIn)
@@ -73,12 +73,13 @@ export async function activate(context: vscode.ExtensionContext) {
 /**
  * Logs system information to help with debugging
  */
-function logSystemInfo(context: vscode.ExtensionContext) {
+function logSystemInfo(ctx: vscode.ExtensionContext) {
     const extension = vscode.extensions.getExtension("jutge.jutge-vscode")
     const extensionVersion = extension?.packageJSON.version || "unknown"
 
     console.info("=== jutge-vscode initialization ===")
     console.info(`Extension Version: ${extensionVersion}`)
+    console.info(`Extension URI: ${ctx.extensionUri}`)
     console.info(`VS Code Version: ${vscode.version}`)
     console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
     console.info(`Node.js Version: ${process.version}`)
