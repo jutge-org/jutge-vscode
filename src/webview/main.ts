@@ -121,7 +121,7 @@ function addOnClickEventListeners() {
             if (isMinimized) {
                 icon.classList.remove("codicon-chevron-down")
                 icon.classList.add("codicon-chevron-up")
-                testcaseContent.style.display = "block"
+                testcaseContent.style.display = "flex"
             } else {
                 icon.classList.remove("codicon-chevron-up")
                 icon.classList.add("codicon-chevron-down")
@@ -134,7 +134,7 @@ function addOnClickEventListeners() {
     const compareDiffButtons = document.querySelectorAll(".compare-diff")
     compareDiffButtons.forEach((button) => {
         button.addEventListener("click", () => {
-            const testcaseId = parseInt(button.closest(".case").id.split("-")[1])
+            const testcaseId = parseInt(button.closest(".case")!.id.split("-")[1])
 
             // Get the expected and received output texts
             const testcaseElement = document.getElementById(`testcase-${testcaseId}`)!

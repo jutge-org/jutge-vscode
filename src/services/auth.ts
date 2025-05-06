@@ -7,9 +7,9 @@ export class AuthService {
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
         console.info("[AuthService] Initializing...")
-        this.context = context
+        AuthService.context = context
 
-        const token = await this.getTokenAtActivation()
+        const token = await AuthService.getTokenAtActivation()
         if (token) {
             console.debug("[AuthService] Token found during activation")
             jutgeClient.meta = {
@@ -24,11 +24,11 @@ export class AuthService {
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
-        const token = await this.context.secrets.get("jutgeToken")
+        const token = await AuthService.context.secrets.get("jutgeToken")
         if (!token) {
             return false
         }
-        return await this.isTokenValid(token)
+        return await AuthService.isTokenValid(token)
     }
 
     private static async isTokenValid(token: string): Promise<boolean> {
@@ -44,7 +44,7 @@ export class AuthService {
     }
 
     private static async getTokenFromCredentials(): Promise<string | undefined> {
-        const default_email = (await this.context.secrets.get("email")) || ""
+        const default_email = (await AuthService.context.secrets.get("email")) || ""
         const email = await vscode.window.showInputBox({
             title: "Jutge Sign-In",
             placeHolder: "your email",
@@ -69,7 +69,7 @@ export class AuthService {
 
         try {
             const credentials = await jutgeClient.login({ email, password })
-            await this.context.secrets.store("email", email)
+            await AuthService.context.secrets.store("email", email)
             return credentials.token
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
@@ -88,41 +88,49 @@ export class AuthService {
 
     public static async getTokenAtActivation(): Promise<string | undefined> {
         const tokenSources = [
-            { id: "vscode storage", fn: this.context.secrets.get("jutgeToken") },
-            { id: "~/.config/jutge/token.txt", fn: this.getTokenFromConfigFile() },
+            { id: "vscode storage", fn: AuthService.context.secrets.get("jutgeToken") },
+            { id: "~/.config/jutge/token.txt", fn: AuthService.getTokenFromConfigFile() },
         ]
 
         for (const source of tokenSources) {
             const token = await source.fn
-            if (token && (await this.isTokenValid(token))) {
+            if (token && (await AuthService.isTokenValid(token))) {
                 console.info(`[AuthService] Using token from ${source.id}`)
                 return token
             }
         }
     }
 
-    public static async signIn(): Promise<void> {
-        if (await this.isUserAuthenticated()) {
-            vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
-            return
+    public static signIn(): void {
+        const _signIn = async () => {
+            if (await AuthService.isUserAuthenticated()) {
+                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
+                return
+            }
+
+            const token = await AuthService.getTokenFromCredentials()
+            if (token) {
+                await AuthService.context.secrets.store("jutgeToken", token)
+
+                vscode.commands.executeCommand("jutge-vscode.refreshTree")
+                vscode.window.showInformationMessage("Jutge.org: You have signed in")
+            }
         }
 
-        const token = await this.getTokenFromCredentials()
-        if (token) {
-            await this.context.secrets.store("jutgeToken", token)
-
-            vscode.commands.executeCommand("jutge-vscode.refreshTree")
-            vscode.window.showInformationMessage("Jutge.org: You have signed in")
-        }
+        _signIn()
     }
 
     public static async signOut(): Promise<void> {
-        await this.context.secrets.delete("jutgeToken")
-        await this.context.secrets.delete("email")
+        const _signOut = async () => {
+            await AuthService.context.secrets.delete("jutgeToken")
+            await AuthService.context.secrets.delete("email")
 
-        await jutgeClient.logout()
+            await jutgeClient.logout()
 
-        vscode.commands.executeCommand("jutge-vscode.refreshTree")
-        vscode.window.showInformationMessage("Jutge.org: You have signed out.")
+            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.window.showInformationMessage("Jutge.org: You have signed out.")
+        }
+
+        _signOut()
     }
 }

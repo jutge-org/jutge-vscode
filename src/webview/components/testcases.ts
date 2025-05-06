@@ -50,28 +50,27 @@ export function generateTestcasePanels(problemTestcases: Testcase[], handler: st
 
         <div class="testcase-content">
           <div class="textarea-container input-div">
-            Input:
+            Input
             <div class="clipboard" title="Copy to clipboard">Copy</div>
             <div id="input" class="selectable case-textarea">
                 <pre data-original-text="${inputDecoded}">${inputDisplayed}</pre>
             </div>
           </div>
           <div class="textarea-container expected-div">
-            Expected Output:
+            Expected Output
             <div class="clipboard" title="Copy to clipboard">Copy</div>
             <div id="expected" class="selectable case-textarea">
                 <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
             </div>
           </div>
           <div class="textarea-container received-div">
-            Received Output:
+            Received Output
             <div class="clipboard" title="Copy to clipboard">Copy</div>
             <div class="compare-diff" title="Compare with expected">Compare</div>
             <div id="received" class="selectable case-textarea"><pre></pre></div>
           </div>
         </div>
       </div>
-    </div>
         `
         })
         .join("")

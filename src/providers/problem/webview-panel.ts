@@ -12,7 +12,7 @@ import { generateTestcasePanels } from "@/webview/components/testcases"
 import { WebviewPanelRegistry } from "./webview-panel-registry"
 
 const _info = (msg: string) => {
-    console.info(`[ProblemWebviewPanel] ${msg}`)
+    console.info(`${Date.now()} [ProblemWebviewPanel] ${msg}`)
 }
 
 export class ProblemWebviewPanel {
@@ -20,8 +20,7 @@ export class ProblemWebviewPanel {
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
-    private readonly _extensionUri: vscode.Uri
-    private _disposables: vscode.Disposable[] = []
+    private readonly context: vscode.ExtensionContext
 
     /**
      * Constructor for the problem webview panel.
@@ -32,10 +31,10 @@ export class ProblemWebviewPanel {
      * @param problemNm The problem number.
      * @returns The problem webview panel.
      */
-    public constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, problemNm: string) {
-        _info(`Constructing a webview panel for problem ${problemNm} (${extensionUri})`)
+    public constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, problemNm: string) {
+        _info(`Constructing a webview panel for problem ${problemNm} (${context.extensionUri})`)
         this.panel = panel
-        this._extensionUri = extensionUri
+        this.context = context
 
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),
@@ -56,10 +55,10 @@ export class ProblemWebviewPanel {
             })
 
         // Handle webview messages
-        this.panel.webview.onDidReceiveMessage(this._handleMessage, this, this._disposables)
+        this.panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
 
         // Clean up resources when panel is closed
-        this.panel.onDidDispose(() => this.dispose(), null, this._disposables)
+        this.panel.onDidDispose(() => this.dispose(), null, context.subscriptions)
     }
 
     /**
@@ -69,7 +68,6 @@ export class ProblemWebviewPanel {
     public dispose() {
         WebviewPanelRegistry.remove(this.problem.problem_nm)
         this.panel.dispose()
-        this._disposables.forEach((x) => x.dispose())
     }
 
     /**
@@ -162,7 +160,7 @@ export class ProblemWebviewPanel {
     }
 
     private _getUri(...path: string[]) {
-        const uri = vscode.Uri.joinPath(this._extensionUri, ...path)
+        const uri = vscode.Uri.joinPath(this.context.extensionUri, ...path)
         return this.panel.webview.asWebviewUri(uri)
     }
 
@@ -187,36 +185,33 @@ export class ProblemWebviewPanel {
         return `
             <!DOCTYPE html>
             <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" 
-                    content="
-                        default-src 'none';
-                        style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
-                        script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                        img-src ${this.panel.webview.cspSource} https: data:;
-                        font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                    ">
-                <link rel="stylesheet" href="${styleUri}" />
-                <style>body { font-size: 1rem; }</style>
-            </head>
-            <body>
-                <section id="header" class="component-container">
-                    <h2 id="problem-nm" class="flex-grow-1">
-                        <span class="problem-code">${this.problem.problem_nm}</span> - ${this.problem.title}
-                    </h2>
-                    ${Button("New File", "add", "new-file")}
-                </section>
-                <section id="statement" class="component-container">
-                    ${problemStatement}
-                </section>
-                <vscode-divider></vscode-divider>
-                <section id="testcases" class="component-container">
-                    ${testcasePanels}
-                </section>
-                <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-            </body>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <meta http-equiv="Content-Security-Policy" 
+                        content="
+                            default-src 'none';
+                            style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
+                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                            img-src ${this.panel.webview.cspSource} https: data:;
+                            font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                        ">
+                    <link rel="stylesheet" href="${styleUri}" />
+                    <style>body { font-size: 0.9rem; }</style>
+                </head>
+                <body>
+                    <section id="header" class="component-container">
+                        ${Button("New File", "add", "new-file")}
+                    </section>
+                    <section id="statement" class="component-container">
+                        ${problemStatement}
+                    </section>
+                    <vscode-divider></vscode-divider>
+                    <section id="testcases" class="component-container">
+                        ${testcasePanels}
+                    </section>
+                    <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+                </body>
             </html>
         `
     }

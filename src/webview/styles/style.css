@@ -25,6 +25,10 @@
     margin-top: 0px;
 }
 
+.toggle-minimize:hover {
+    cursor: pointer;
+}
+
 .toggle-minimize:hover .case-title {
     filter: brightness(150%);
 }
@@ -32,6 +36,9 @@
 .case-number {
     font-weight: bolder;
     color: rgb(69, 133, 136) !important;
+}
+.case-title {
+    font-size: 1.1rem;
 }
 
 body.vscode-light .case-number {
@@ -141,11 +148,6 @@ textarea {
     margin-top: 4px;
 }
 
-#header {
-    display: flex;
-    align-items: center;
-}
-
 .testcase-header {
     display: flex;
     align-items: center;
@@ -183,6 +185,7 @@ body.vscode-light textarea:focus {
     background: rgba(0, 0, 0, 0.1);
     padding: 8px;
     margin-bottom: 2px;
+    border: 1px rgba(255, 255, 255, 0.1);
     border-left: 5px solid rgba(69, 133, 136);
 }
 
@@ -239,7 +242,6 @@ body.vscode-light textarea:focus {
 }
 
 .case-textarea pre {
-    font-family: "Courier New", monospace;
     line-height: 1.4;
 }
 
@@ -271,10 +273,74 @@ body.vscode-light textarea:focus {
 
 .clipboard {
     position: absolute;
-    right: 5px;
+    right: 0;
     top: 0;
 }
 
 .problem-code {
     opacity: 50%;
+}
+
+#header {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1em;
+}
+#header h2 {
+    margin: 0;
+}
+
+#statement {
+    max-width: 42em;
+    margin: auto;
+    margin-bottom: 2em;
+    line-height: 145%;
+}
+#statement h3 {
+    font-size: 2rem;
+    margin: 0.6em 0 1.2em;
+}
+#statement h4 {
+    margin-block-end: 0.6em;
+}
+#statement p + p {
+    margin-top: 0.6em;
+}
+
+#testcases .testcase-header {
+    padding: 0.8em 0 0.8em;
+}
+#testcases .testcase-header h2 {
+    margin: 0;
+}
+#testcases .testcase-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4em;
+    padding: 0.5em;
+}
+#testcases .testcase-panels .case .testcase-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 1.2em;
+    padding: 0.4em;
+}
+#testcases .testcase-panels .case .testcase-content .textarea-container {
+    flex: 1;
+}
+#testcases .case-textarea {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0 0.1em 0 0.1em;
+}
+
+.font-normal {
+    font-weight: normal;
+}
+.text-sm {
+    font-size: 0.85rem;
+}
+.case-textarea pre .text-muted {
+    color: rgba(255, 255, 255, 0.25);
 }
