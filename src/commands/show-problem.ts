@@ -15,18 +15,16 @@ export const commandShowProblem = (context: vscode.ExtensionContext) => async (p
     }
 
     // If the command is called from the command palette, ask for the problem number.
-    if (!problemNm) {
-        const inputProblemNm = await vscode.window.showInputBox({
-            title: "Jutge Problem",
+    if (problemNm === undefined) {
+        problemNm = await vscode.window.showInputBox({
+            title: "Jutge Problem ID",
             placeHolder: "P12345",
-            prompt: "Please write the problem number.",
+            prompt: "Please write the problem ID.",
             value: "",
         })
-        if (!inputProblemNm) {
-            return
-        }
-        problemNm = inputProblemNm
     }
 
-    WebviewPanelRegistry.createOrShow(context.extensionUri, problemNm)
+    if (problemNm) {
+        WebviewPanelRegistry.createOrShow(context, problemNm)
+    }
 }
