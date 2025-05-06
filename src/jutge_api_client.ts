@@ -1,5 +1,5 @@
 /**
- * This file has been automatically generated at 2025-03-16T08:36:29.766Z
+ * This file has been automatically generated at 2025-05-06T08:35:43.681Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -40,6 +40,16 @@ export type HomepageStats = {
     contests: number
 }
 
+export type ColorMapping = Record<string, Record<string, string>>
+
+export type ApiVersion = {
+    version: string
+    mode: string
+    gitHash: string
+    gitBranch: string
+    gitDate: string
+}
+
 export type Language = {
     language_id: string
     eng_name: string
@@ -74,6 +84,7 @@ export type Verdict = {
     verdict_id: string
     name: string
     description: string
+    emoji: string
 }
 
 export type Proglang = {
@@ -435,13 +446,6 @@ export type StudentProfile = {
     email: string
 }
 
-export type InstructorExamCourse = {
-    title: string
-    description: string
-    course_nm: string
-    annotation: string
-}
-
 export type InstructorExamDocument = {
     document_nm: string
     title: string
@@ -477,9 +481,16 @@ export type InstructorExamStudent = {
     invited: number
 }
 
-export type InstructorNewExam = {
+export type InstructorExamCreation = {
     exam_nm: string
-    course_nm: string
+    title: string
+    description: string
+    place: string
+    exp_time_start: string | string | string | number
+}
+
+export type InstructorExamUpdate = {
+    exam_nm: string
     title: string
     place: string
     description: string
@@ -509,6 +520,8 @@ export type InstructorExamSubmissionsOptions = {
     include_pdf: boolean
     include_metadata: boolean
     only_last: boolean
+    font_size: number
+    layout: string
 }
 
 export type Pack = {
@@ -546,11 +559,53 @@ export type InstructorExam = {
     instructions: string | null
     avatars: string | null
     anonymous: number
-    course: InstructorExamCourse
     documents: InstructorExamDocument[]
     compilers: InstructorExamCompiler[]
     problems: InstructorExamProblem[]
     students: InstructorExamStudent[]
+}
+
+export type ExamStatisticsEntry = {
+    minute: number
+    ok: number
+    ko: number
+}
+
+export type ExamStatistics = {
+    submissions: Record<string, Record<string, number>>
+    statuses: Record<string, Record<string, number>>
+    timeline: ExamStatisticsEntry[]
+    compilers: Record<string, Record<string, number>>
+    proglangs: Record<string, Record<string, number>>
+}
+
+export type RankingResult = {
+    problem_nm: string
+    historic: string
+    submissions: number
+    verdict: string | null
+    score: number
+    time: number
+    penalty: number
+    wrongs: number
+}
+
+export type RankingRow = {
+    position: number | null
+    name: string
+    avatar: string | null
+    score: number
+    time: number
+    invited: boolean
+    submissions: number
+    rankingResults: RankingResult[]
+}
+
+export type Ranking = RankingRow[]
+
+export type WebStream = {
+    title: string
+    id: string
 }
 
 export type SubmissionQuery = {
@@ -801,34 +856,24 @@ export class JutgeApiClient {
             const key = JSON.stringify({ func, input })
             const entry = this.cache.get(key)
             if (entry !== undefined) {
-                if (this.logCache) {
-                    console.log("found")
-                }
+                if (this.logCache) {console.log("found")}
                 const ttl = this.clientTTLs.get(func)!
                 if (entry.epoch + ttl * 1000 > new Date().valueOf()) {
-                    if (this.logCache) {
-                        console.log("used")
-                    }
+                    if (this.logCache) {console.log("used")}
                     return [entry.output, entry.ofiles]
                 } else {
-                    if (this.logCache) {
-                        console.log("expired")
-                    }
+                    if (this.logCache) {console.log("expired")}
                     this.cache.delete(key)
                 }
             }
         }
-        if (this.logCache) {
-            console.log("fetch")
-        }
+        if (this.logCache) {console.log("fetch")}
 
         // prepare form
         const iform = new FormData()
         const idata = { func, input, meta: this.meta }
         iform.append("data", JSON.stringify(idata))
-        for (const index in ifiles) {
-            iform.append(`file_${index}`, ifiles[index])
-        }
+        for (const index in ifiles) {iform.append(`file_${index}`, ifiles[index])}
 
         // send request
         const response = await fetch(this.JUTGE_API_URL, {
@@ -864,9 +909,7 @@ export class JutgeApiClient {
 
         // update cache
         if (caching) {
-            if (this.logCache) {
-                console.log("saved")
-            }
+            if (this.logCache) {console.log("saved")}
             const key = JSON.stringify({ func, input })
             this.cache.set(key, { output, ofiles, epoch: new Date().valueOf() })
         }
@@ -894,9 +937,7 @@ export class JutgeApiClient {
 
     async login({ email, password }: { email: string; password: string }): Promise<CredentialsOut> {
         const [credentials, _] = await this.execute("auth.login", { email, password })
-        if (credentials.error) {
-            throw new UnauthorizedError(credentials.error)
-        }
+        if (credentials.error) {throw new UnauthorizedError(credentials.error)}
         this.meta = { token: credentials.token, exam: null }
         return credentials
     }
@@ -909,9 +950,7 @@ export class JutgeApiClient {
 
     /** Clear the contents of the cache */
     clearCache() {
-        if (this.logCache) {
-            console.log("clear")
-        }
+        if (this.logCache) {console.log("clear")}
         this.cache = new Map()
     }
 
@@ -961,6 +1000,7 @@ export class JutgeApiClient {
 
         this.clientTTLs.set("misc.getAvatarPacks", 3600)
         this.clientTTLs.set("misc.getExamIcons", 3600)
+        this.clientTTLs.set("misc.getDemosForCompiler", 3600)
         this.clientTTLs.set("tables.get", 300)
         this.clientTTLs.set("tables.getLanguages", 300)
         this.clientTTLs.set("tables.getCountries", 300)
@@ -1018,6 +1058,18 @@ class Module_misc {
 
     constructor(root: JutgeApiClient) {
         this.root = root
+    }
+
+    /**
+     * Get version information of the API.
+     *
+     * No authentication
+     * No warnings
+     *
+     */
+    async getApiVersion(): Promise<ApiVersion> {
+        const [output, ofiles] = await this.root.execute("misc.getApiVersion", null)
+        return output
     }
 
     /**
@@ -1089,6 +1141,42 @@ class Module_misc {
      */
     async getExamIcons(): Promise<TagsDict> {
         const [output, ofiles] = await this.root.execute("misc.getExamIcons", null)
+        return output
+    }
+
+    /**
+     * Returns color mappings using colornames notation.
+     *
+     * No authentication
+     * No warnings
+     * Color mappings may be used to colorize keys in the frontends. Color names are as defined in https://github.com/timoxley/colornames
+     */
+    async getColors(): Promise<ColorMapping> {
+        const [output, ofiles] = await this.root.execute("misc.getColors", null)
+        return output
+    }
+
+    /**
+     * Returns color mappings using hexadecimal color notation.
+     *
+     * No authentication
+     * No warnings
+     * Color mappings may be used to colorize keys in the frontends.
+     */
+    async getHexColors(): Promise<ColorMapping> {
+        const [output, ofiles] = await this.root.execute("misc.getHexColors", null)
+        return output
+    }
+
+    /**
+     * Returns code demos for a given compiler as a dictionary of base64 codes indexed by problem_nm.
+     *
+     * No authentication
+     * No warnings
+     *
+     */
+    async getDemosForCompiler(compiler_id: string): Promise<Record<string, string>> {
+        const [output, ofiles] = await this.root.execute("misc.getDemosForCompiler", compiler_id)
         return output
     }
 }
@@ -2471,7 +2559,7 @@ class Module_instructor_courses {
  *
  *
 
-This module manages the exams that an instructor is teaching. It allows the instructor to manage the exam, including getting and updating its course, documents, problems, students and submissions.
+This module manages the exams that an instructor is teaching. It allows the instructor to manage the exam, including getting and updating its documents, problems, students and submissions.
 
 Exams objects are quite complex. Thus, this interface is also a bit complex. Each part of an exam can be get or updated in a separate endpoint. The main endpoint is the get endpoint, which returns the full exam object.
 
@@ -2521,18 +2609,6 @@ class Module_instructor_exams {
     }
 
     /**
-     * Get course of an exam.
-     *
-     * 🔐 Authentication: instructor
-     * No warnings
-     *
-     */
-    async getCourse(exam_nm: string): Promise<InstructorExamCourse> {
-        const [output, ofiles] = await this.root.execute("instructor.exams.getCourse", exam_nm)
-        return output
-    }
-
-    /**
      * Get problems of an exam.
      *
      * 🔐 Authentication: instructor
@@ -2573,10 +2649,22 @@ class Module_instructor_exams {
      *
      * 🔐 Authentication: instructor
      * No warnings
-     * This endpoint prepares a ZIP file to download the submissions of an exam. Preparing the ZIP file takes some time, an href link to the ZIP will be returned. This ZIP file will be available for download for a limited time.
+     *
      */
-    async getSubmissions(data: { exam_nm: string; options: InstructorExamSubmissionsOptions }): Promise<Pack> {
+    async getSubmissions(data: { exam_nm: string; options: InstructorExamSubmissionsOptions }): Promise<WebStream> {
         const [output, ofiles] = await this.root.execute("instructor.exams.getSubmissions", data)
+        return output
+    }
+
+    /**
+     * Get statistics of an exam.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getStatistics(exam_nm: string): Promise<ExamStatistics> {
+        const [output, ofiles] = await this.root.execute("instructor.exams.getStatistics", exam_nm)
         return output
     }
 
@@ -2587,7 +2675,7 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async create(data: InstructorNewExam): Promise<void> {
+    async create(data: InstructorExamCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.create", data)
         return output
     }
@@ -2599,7 +2687,7 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async update(data: InstructorNewExam): Promise<void> {
+    async update(data: InstructorExamUpdate): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.update", data)
         return output
     }
@@ -2613,6 +2701,18 @@ class Module_instructor_exams {
      */
     async updateDocuments(data: { exam_nm: string; document_nms: string[] }): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.updateDocuments", data)
+        return output
+    }
+
+    /**
+     * Update compilers of an exam.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async updateCompilers(data: { exam_nm: string; compiler_ids: string[] }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.exams.updateCompilers", data)
         return output
     }
 
@@ -2709,6 +2809,18 @@ class Module_instructor_exams {
      */
     async unarchive(exam_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.unarchive", exam_nm)
+        return output
+    }
+
+    /**
+     * Get the ranking.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * Under development.
+     */
+    async getRanking(exam_nm: string): Promise<Ranking> {
+        const [output, ofiles] = await this.root.execute("instructor.exams.getRanking", exam_nm)
         return output
     }
 }
@@ -2838,10 +2950,38 @@ class Module_instructor_problems {
      *
      * 🔐 Authentication: instructor
      * No warnings
-     * At some point, this endpoint will be deprecated. It is a bit slow (about one minute). Does not provide any feedback.
+     * At some point, this endpoint will be deprecated. Does not provide any feedback.
      */
     async legacyUpdate(problem_nm: string, ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.problems.legacyUpdate", problem_nm, [ifile])
+        return output
+    }
+
+    /**
+     * Create a problem from a ZIP archive using old PHP code using terminal streaming.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * At some point, this endpoint will be deprecated. Returns a Terminal from which the problem feedback is streamed.
+     */
+    async legacyCreateWithTerminal(passcode: string, ifile: File): Promise<WebStream> {
+        const [output, ofiles] = await this.root.execute("instructor.problems.legacyCreateWithTerminal", passcode, [
+            ifile,
+        ])
+        return output
+    }
+
+    /**
+     * Update a problem from a ZIP archive using old PHP code using terminal streaming.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     * At some point, this endpoint will be deprecated. Returns an id from which the problem feedback is streamed under /terminals.
+     */
+    async legacyUpdateWithTerminal(problem_nm: string, ifile: File): Promise<WebStream> {
+        const [output, ofiles] = await this.root.execute("instructor.problems.legacyUpdateWithTerminal", problem_nm, [
+            ifile,
+        ])
         return output
     }
 }
@@ -3862,6 +4002,18 @@ class Module_testing_playground {
      */
     async something(data: SomeType): Promise<SomeType> {
         const [output, ofiles] = await this.root.execute("testing.playground.something", data)
+        return output
+    }
+
+    /**
+     * Get a webstream with clok data.
+     *
+     * No authentication
+     * No warnings
+     *
+     */
+    async clock(): Promise<WebStream> {
+        const [output, ofiles] = await this.root.execute("testing.playground.clock", null)
         return output
     }
 }
