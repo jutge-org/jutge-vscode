@@ -1,6 +1,6 @@
 all:
-	bun install
-	bun compile
+	npm install
+	npm compile
 
 vsix:
 	bun vscode:package
