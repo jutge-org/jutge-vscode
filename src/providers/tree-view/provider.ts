@@ -4,6 +4,10 @@ import { AuthService } from "@/services/auth"
 import { getDefaultProblemId } from "@/utils/helpers"
 import { jutgeClient } from "@/extension"
 import { JutgeTreeItem } from "./item"
+import { ConfigService } from "@/services/config"
+import { BriefProblem, BriefProblemDict, Problem } from "@/jutge_api_client"
+
+const _error = (msg: string) => console.error(`[TreeViewProvider] ${msg}`)
 
 export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<JutgeTreeItem | undefined | null | void> =
@@ -87,36 +91,60 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
         try {
-            const [list_info, all_statuses] = await Promise.all([
-                jutgeClient.student.lists.get(listKey),
+            console.debug(`[TreeViewProvider] Getting Problems for list '${listKey}'`)
+
+            const [problemsResult, allStatusesResult] = await Promise.allSettled([
+                jutgeClient.problems.getAbstractProblemsInList(listKey),
                 jutgeClient.student.statuses.getAll(),
             ])
 
-            const promises = list_info.items.map(async (problem) => {
-                const { problem_nm } = problem
+            if (problemsResult.status == "rejected") {
+                _error(`Could not load list of problems`)
+                return []
+            }
+            if (allStatusesResult.status == "rejected") {
+                _error(`Could not load the statuses`)
+                return []
+            }
+
+            const problems = problemsResult.value
+            const allStatuses = allStatusesResult.value
+
+            const items: JutgeTreeItem[] = []
+
+            for (const [problem_nm, abstractProblem] of Object.entries(problems)) {
                 if (problem_nm === null) {
-                    return new JutgeTreeItem("Problem name unavailable", vscode.TreeItemCollapsibleState.None)
+                    items.push(new JutgeTreeItem("Problem name unavailable", vscode.TreeItemCollapsibleState.None))
+                    continue
                 }
 
                 const problemItem = new JutgeTreeItem(problem_nm, vscode.TreeItemCollapsibleState.None)
-                const problem_id = getDefaultProblemId(problem_nm)
-                const problemInfo = await jutgeClient.problems.getProblem(problem_id)
+                const langCode = ConfigService.getPreferredLangCode()
+                const preferredId = `${problem_nm}_${langCode}`
+
+                let problem: BriefProblem | undefined = undefined
+                if (preferredId in abstractProblem.problems) {
+                    problem = abstractProblem.problems[preferredId]
+                } else {
+                    problem = Object.values(abstractProblem.problems)[0]
+                }
 
                 // Get status for this problem
-                const status = all_statuses[problem_nm]?.status
+                const status = allStatuses[problem_nm]?.status
 
                 problemItem.contextValue = "problem"
                 problemItem.itemKey = problem_nm
-                problemItem.label = `${this._getIconForStatus(status)} ${problemInfo.title}`
+                problemItem.label = `${this._getIconForStatus(status)} ${problem.title}`
                 problemItem.command = {
                     command: "jutge-vscode.showProblem",
                     title: "Open Problem",
                     arguments: [problem_nm],
                 }
-                return problemItem
-            })
+                items.push(problemItem)
+            }
 
-            return Promise.all(promises)
+            return items
+            //
         } catch (error) {
             console.error("Error getting problems from list:", error)
             return []
