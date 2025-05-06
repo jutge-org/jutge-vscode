@@ -1,3 +1,4 @@
+import { LanguageCode } from "@/utils/types"
 import { PythonExtension } from "@vscode/python-extension"
 import * as vscode from "vscode"
 
@@ -57,5 +58,17 @@ export class ConfigService {
 
     public static getPreferredLang(): string {
         return ConfigService.getString("problem.preferredLang")
+    }
+
+    private static codes: Record<string, LanguageCode> = {
+        Català: LanguageCode.ca,
+        Castellà: LanguageCode.es,
+        Anglès: LanguageCode.en,
+        Francès: LanguageCode.fr,
+        Alemany: LanguageCode.de,
+    }
+
+    public static getPreferredLangCode(): LanguageCode {
+        return this.codes[this.getPreferredLang()] || "??"
     }
 }

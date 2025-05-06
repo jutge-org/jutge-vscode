@@ -3,30 +3,30 @@ import { CppRunner } from "./cpp"
 import { PythonRunner } from "./python"
 import { LanguageRunner } from "./runner"
 
-export enum Language {
+export enum Proglang {
     CPP = "C++",
     PYTHON = "Python",
 }
 
-export function getLangIdFromFilePath(filePath: string): Language {
+export function getLangIdFromFilePath(filePath: string): Proglang {
     const extension = filePath.split(".").pop()
     switch (extension) {
         case "py":
-            return Language.PYTHON
+            return Proglang.PYTHON
         case "cc":
         case "cpp":
-            return Language.CPP
+            return Proglang.CPP
         default:
             vscode.window.showErrorMessage("Language not supported.")
             throw new Error("Language not supported.")
     }
 }
 
-export function getDefaultExtensionFromLangId(languageId: Language): string {
+export function getDefaultExtensionFromLangId(languageId: Proglang): string {
     switch (languageId) {
-        case Language.PYTHON:
+        case Proglang.PYTHON:
             return "py"
-        case Language.CPP:
+        case Proglang.CPP:
             return "cc"
         default:
             vscode.window.showErrorMessage("Language not supported.")
@@ -34,12 +34,12 @@ export function getDefaultExtensionFromLangId(languageId: Language): string {
     }
 }
 
-export function getLangRunnerFromLangId(languageId: Language): LanguageRunner {
+export function getLangRunnerFromLangId(languageId: Proglang): LanguageRunner {
     // NOTE: Not sure if vscode has native functionality to detect the language of a file.
     switch (languageId) {
-        case Language.PYTHON:
+        case Proglang.PYTHON:
             return new PythonRunner()
-        case Language.CPP:
+        case Proglang.CPP:
             return new CppRunner()
         default:
             vscode.window.showErrorMessage("Language not supported.")

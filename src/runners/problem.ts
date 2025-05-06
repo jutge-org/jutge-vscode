@@ -4,7 +4,8 @@ import * as vscode from "vscode"
 import { jutgeClient } from "@/extension"
 import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
 import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
-import { Problem, Testcase, TestcaseStatus, VSCodeToWebviewCommand } from "@/utils/types"
+import { Problem, TestcaseStatus, VSCodeToWebviewCommand } from "@/utils/types"
+import { Testcase } from "@/jutge_api_client"
 
 /**
  * Sends a message to the webview to update the status of a testcase.

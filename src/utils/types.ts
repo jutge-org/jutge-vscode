@@ -1,7 +1,11 @@
-export type Testcase = {
-    name: string
-    input_b64: string
-    correct_b64: string
+import { Testcase } from "@/jutge_api_client"
+
+export enum LanguageCode {
+    ca = "ca",
+    es = "es",
+    en = "en",
+    fr = "fr",
+    de = "de",
 }
 
 export enum TestcaseStatus {

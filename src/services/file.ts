@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 import fs from "fs"
 
 import { Problem } from "@/utils/types"
-import { getDefaultExtensionFromLangId, Language } from "@/runners/language/languages"
+import { getDefaultExtensionFromLangId, Proglang } from "@/runners/language/languages"
 import { jutgeClient } from "@/extension"
 
 function sanitizeProblemTitle(title: string): string {
@@ -12,9 +12,9 @@ function sanitizeProblemTitle(title: string): string {
 }
 
 export class FileService {
-    private static async chooseFileLangFromQuickPick(problemNm: string): Promise<Language | undefined> {
+    private static async chooseFileLangFromQuickPick(problemNm: string): Promise<Proglang | undefined> {
         const fileType = await vscode.window.showQuickPick(
-            Object.values(Language).map((lang) => ({
+            Object.values(Proglang).map((lang) => ({
                 label: `${lang} File`,
                 description: lang,
             })),
@@ -55,8 +55,8 @@ export class FileService {
 
         // TODO: If extension is changed by user in the save dialog, update fileLang?
         const langComment = {
-            [Language.CPP]: "//",
-            [Language.PYTHON]: "#",
+            [Proglang.CPP]: "//",
+            [Proglang.PYTHON]: "#",
         }[fileLang]
 
         const profile = await jutgeClient.student.profile.get()

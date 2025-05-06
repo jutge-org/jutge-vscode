@@ -1,17 +1,14 @@
 import * as vscode from "vscode"
 
+import { jutgeClient } from "@/extension"
 import { BriefProblem } from "@/jutge_api_client"
+import { runAllTestcases, runSingleTestcase } from "@/runners/problem"
 import { FileService } from "@/services/file"
 import { SubmissionService } from "@/services/submission"
-
-import { jutgeClient } from "@/extension"
-import { runAllTestcases, runSingleTestcase } from "@/runners/problem"
-
 import * as utils from "@/utils/helpers"
 import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
-
-import { Button } from "@/webview/components/Button"
-import { generateTestcasePanels } from "@/webview/components/testcasePanels"
+import { Button } from "@/webview/components/button"
+import { generateTestcasePanels } from "@/webview/components/testcases"
 import { WebviewPanelHandler } from "./panel-handler"
 
 export class ProblemWebviewPanel {
@@ -53,11 +50,11 @@ export class ProblemWebviewPanel {
                 vscode.window.showErrorMessage("Failed to load problem information")
             })
 
+        // Handle webview messages
+        this.panel.webview.onDidReceiveMessage(this._handleMessage, this, this._disposables)
+
         // Clean up resources when panel is closed
         this.panel.onDidDispose(() => this.dispose(), null, this._disposables)
-
-        // Handle webview messages
-        this.panel.webview.onDidReceiveMessage(this._handleMessage.bind(this), null, this._disposables)
     }
 
     /**
@@ -66,15 +63,8 @@ export class ProblemWebviewPanel {
      */
     public dispose() {
         WebviewPanelHandler.removePanel(this.problem.problem_nm)
-
         this.panel.dispose()
-
-        while (this._disposables.length) {
-            const x = this._disposables.pop()
-            if (x) {
-                x.dispose()
-            }
-        }
+        this._disposables.forEach((x) => x.dispose())
     }
 
     /**
@@ -222,7 +212,7 @@ export class ProblemWebviewPanel {
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.debug(`[WebviewPanel] Received message from webview: ${message.command}`)
+        console.debug(`[ProblemWebviewPanel] Received message from webview: ${message.command}`)
 
         switch (message.command) {
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
@@ -312,8 +302,10 @@ export class ProblemWebviewPanel {
                         disposable.dispose()
                     }
                 })
-
                 return
+
+            default:
+                console.warn(`[ProblemWebviewPanel] Don't know how to handle message: {message.command}`)
         }
     }
 }

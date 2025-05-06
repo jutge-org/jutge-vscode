@@ -47,6 +47,10 @@ export class WebviewPanelHandler {
         return this.createdPanels.get(problemNm)
     }
 
+    public static registerPanel(problemNm: string, panel: ProblemWebviewPanel) {
+        this.createdPanels.set(problemNm, panel)
+    }
+
     public static getPanel(problemNm: string) {
         return this.createdPanels.get(problemNm)
     }
@@ -62,9 +66,5 @@ export class WebviewPanelHandler {
         } else {
             console.error(`Panel ${problemNm} not found.`)
         }
-    }
-
-    public static registerPanel(problemNm: string, panel: ProblemWebviewPanel) {
-        this.createdPanels.set(problemNm, panel)
     }
 }

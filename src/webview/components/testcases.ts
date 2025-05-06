@@ -1,7 +1,7 @@
-import { Testcase } from "@/utils/types"
-import { Button } from "./Button"
-import { warningIcon } from "./icons"
 import { makeSpecialCharsVisible } from "../utils"
+import { Button } from "./button"
+import { warningIcon } from "./icons"
+import { Testcase } from "../../jutge_api_client"
 
 export function generateTestcasePanels(problemTestcases: Testcase[], handler: string | null): string {
     if (handler !== "std") {
