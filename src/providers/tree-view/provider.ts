@@ -3,27 +3,12 @@ import * as vscode from "vscode"
 import { AuthService } from "@/services/AuthService"
 import { getDefaultProblemId } from "@/utils/helpers"
 import { jutgeClient } from "@/extension"
-
-export function registerTreeViewCommands(context: vscode.ExtensionContext) {
-    const treeViewProvider = new TreeViewProvider()
-    context.subscriptions.push(vscode.window.registerTreeDataProvider("jutgeTreeView", treeViewProvider))
-    context.subscriptions.push(
-        vscode.commands.registerCommand("jutge-vscode.refreshTree", () => treeViewProvider.refresh())
-    )
-}
-
-class JutgeTreeItem extends vscode.TreeItem {
-    // API-related ID for the tree item (courseKey, listKey, or problemNm).
-    public itemKey?: string
-
-    constructor(label: string, collapsibleState: vscode.TreeItemCollapsibleState) {
-        super(label, collapsibleState)
-    }
-}
+import { JutgeTreeItem } from "./item"
 
 export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<JutgeTreeItem | undefined | null | void> =
         new vscode.EventEmitter<JutgeTreeItem | undefined | null | void>()
+
     readonly onDidChangeTreeData: vscode.Event<JutgeTreeItem | undefined | null | void> =
         this._onDidChangeTreeData.event
 
@@ -139,10 +124,9 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
     }
 
     private _getIconForStatus(status: string | undefined): string {
-        if (status === "") {
-            return ""
-        }
         switch (status) {
+            case "":
+                return ""
             case "accepted":
                 return "🟢"
             case "rejected":

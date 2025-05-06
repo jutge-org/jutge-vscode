@@ -1,8 +1,8 @@
 import * as vscode from "vscode"
 import * as fs from "fs"
 
-import { WebviewPanelHandler } from "@/providers/WebviewProvider"
-import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/LanguageRunner"
+import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
+import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
 
 import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types"
 

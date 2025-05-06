@@ -1,8 +1,8 @@
 import * as vscode from "vscode"
 import fs from "fs"
 
-import { Language, Problem } from "@/utils/types"
-import { getDefaultExtensionFromLangId } from "@/runners/LanguageRunner"
+import { Problem } from "@/utils/types"
+import { getDefaultExtensionFromLangId, Language } from "@/runners/language/languages"
 import { jutgeClient } from "@/extension"
 
 function sanitizeProblemTitle(title: string): string {

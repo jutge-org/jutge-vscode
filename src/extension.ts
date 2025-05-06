@@ -1,14 +1,34 @@
-import * as vscode from "vscode"
 import * as os from "os"
+import * as vscode from "vscode"
 
+import { TreeViewProvider } from "@/providers/tree-view/provider"
+import { ProblemWebviewPanel } from "@/providers/web-view/problem-panel"
 import { AuthService } from "@/services/AuthService"
 import { ConfigService } from "@/services/ConfigService"
 import { JutgeApiClient } from "./jutge_api_client"
-
-import { registerWebviewCommands } from "@/providers/WebviewProvider"
-import { registerTreeViewCommands } from "@/providers/TreeViewProvider"
+import { ProblemWebviewPanelSerializer } from "./providers/web-view/problem-panel-serializer"
+import { jutgeVSCodeShowProblemCommand } from "./commands/show-problem"
 
 export const jutgeClient = new JutgeApiClient()
+
+/**
+ * Get the webview options for the webview panel.
+ *
+ * @param extensionUri The uri of the extension.
+ * @returns The webview options.
+ */
+export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
+    return {
+        // Enable javascript in the webview
+        enableScripts: true,
+
+        // Restrict the webview to only loading content from the extension's `webview` directory.
+        localResourceRoots: [
+            vscode.Uri.joinPath(extensionUri, "src", "webview"),
+            vscode.Uri.joinPath(extensionUri, "dist"),
+        ],
+    }
+}
 
 /**
  * Works as entrypoint when the extension is activated.
@@ -21,9 +41,21 @@ export async function activate(context: vscode.ExtensionContext) {
     await AuthService.initialize(context) // needs to await token validation
     ConfigService.initialize()
 
-    registerWebviewCommands(context)
-    registerTreeViewCommands(context)
+    // Register WebView Commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand("jutge-vscode.showProblem", jutgeVSCodeShowProblemCommand(context))
+    )
+    vscode.window.registerWebviewPanelSerializer(
+        ProblemWebviewPanel.viewType,
+        new ProblemWebviewPanelSerializer(context.extensionUri)
+    )
 
+    // Register TreeView Commands
+    const treeViewProvider = new TreeViewProvider()
+    context.subscriptions.push(vscode.window.registerTreeDataProvider("jutgeTreeView", treeViewProvider))
+    context.subscriptions.push(
+        vscode.commands.registerCommand("jutge-vscode.refreshTree", () => treeViewProvider.refresh())
+    )
     console.info("[Extension] jutge-vscode is now active")
 }
 

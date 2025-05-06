@@ -1,160 +1,18 @@
 import * as vscode from "vscode"
 
+import { BriefProblem } from "@/jutge_api_client"
 import { FileService } from "@/services/FileService"
 import { SubmissionService } from "@/services/SubmissionService"
-import { AuthService } from "@/services/AuthService"
-import { BriefProblem } from "@/jutge_api_client"
 
 import { jutgeClient } from "@/extension"
 import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner"
 
-import { Problem, VSCodeToWebviewMessage, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
 import * as utils from "@/utils/helpers"
+import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
 
 import { Button } from "@/webview/components/Button"
 import { generateTestcasePanels } from "@/webview/components/testcasePanels"
-
-/**
- * Registers commands to control the webview.
- *
- * @param context Provides access to utilities to manage the extension's lifecycle.
- */
-export function registerWebviewCommands(context: vscode.ExtensionContext) {
-    context.subscriptions.push(
-        vscode.commands.registerCommand("jutge-vscode.showProblem", async (problemNm: string | undefined) => {
-            if (!(await AuthService.isUserAuthenticated())) {
-                vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
-                return
-            }
-
-            // If the command is called from the command palette, ask for the problem number.
-            if (!problemNm) {
-                const inputProblemNm = await vscode.window.showInputBox({
-                    title: "Jutge Problem",
-                    placeHolder: "P12345",
-                    prompt: "Please write the problem number.",
-                    value: "",
-                })
-                if (!inputProblemNm) {
-                    return
-                }
-                problemNm = inputProblemNm
-            }
-            WebviewPanelHandler.createOrShow(context.extensionUri, problemNm)
-        })
-    )
-
-    vscode.window.registerWebviewPanelSerializer(
-        ProblemWebviewPanel.viewType,
-        new ProblemWebviewPanelSerializer(context.extensionUri)
-    )
-}
-
-/**
- * Get the webview options for the webview panel.
- *
- * @param extensionUri The uri of the extension.
- * @returns The webview options.
- */
-export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
-    return {
-        // Enable javascript in the webview
-        enableScripts: true,
-
-        // Restrict the webview to only loading content from the extension's `webview` directory.
-        localResourceRoots: [
-            vscode.Uri.joinPath(extensionUri, "src", "webview"),
-            vscode.Uri.joinPath(extensionUri, "dist"),
-        ],
-    }
-}
-
-export class WebviewPanelHandler {
-    private static createdPanels: Map<string, ProblemWebviewPanel> = new Map()
-
-    /**
-     * Creates a new problem webview panel.
-     *
-     * @param extensionUri The uri of the extension.
-     * @param problemNm The problem number.
-     */
-    public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
-        console.debug(`[WebviewPanel] Attempting to show problem ${problemNm}`)
-
-        if (!(await utils.isProblemValidAndAccessible(problemNm))) {
-            console.warn(`[WebviewPanel] Problem ${problemNm} not valid or accessible`)
-            vscode.window.showErrorMessage("Problem not valid or accessible.")
-            return
-        }
-
-        const column = this._getColumn()
-
-        // If we already have a panel, show it.
-        if (this.createdPanels.has(problemNm)) {
-            console.debug(`[WebviewPanel] Reusing existing panel for ${problemNm}`)
-            let panel = this.createdPanels.get(problemNm) as ProblemWebviewPanel
-            panel.panel.reveal(column, true)
-            return this.createdPanels.get(problemNm)
-        }
-
-        console.debug(`[WebviewPanel] Creating new panel for ${problemNm}`)
-        const panel = vscode.window.createWebviewPanel(
-            ProblemWebviewPanel.viewType,
-            problemNm,
-            { viewColumn: column, preserveFocus: true },
-            getWebviewOptions(extensionUri)
-        )
-
-        this.createdPanels.set(problemNm, new ProblemWebviewPanel(panel, extensionUri, problemNm))
-        return this.createdPanels.get(problemNm)
-    }
-
-    // Returns column beside or the column of an existing panel.
-    private static _getColumn() {
-        if (WebviewPanelHandler.createdPanels.size === 0) {
-            return vscode.ViewColumn.Beside
-        } else {
-            return WebviewPanelHandler.createdPanels.values().next().value.panel.viewColumn
-        }
-    }
-
-    public static getPanel(problemNm: string) {
-        return this.createdPanels.get(problemNm)
-    }
-
-    public static removePanel(problemNm: string) {
-        this.createdPanels.delete(problemNm)
-    }
-
-    public static sendMessageToPanel(problemNm: string, message: VSCodeToWebviewMessage) {
-        const panel = this.createdPanels.get(problemNm)
-        if (panel) {
-            panel.panel.webview.postMessage(message)
-        } else {
-            console.error(`Panel ${problemNm} not found.`)
-        }
-    }
-
-    private async _getProblemInfo(problemNm: string): Promise<Problem> {
-        const problem_id = utils.getDefaultProblemId(problemNm)
-        const problem = await jutgeClient.problems.getProblem(problem_id)
-        const statementHtml = await jutgeClient.problems.getHtmlStatement(problem_id)
-
-        return {
-            problem_id: problem_id,
-            problem_nm: problemNm,
-            title: problem.title,
-            language_id: problem.language_id,
-            statementHtml: statementHtml,
-            testcases: null,
-            handler: null,
-        }
-    }
-
-    public static registerPanel(problemNm: string, panel: ProblemWebviewPanel) {
-        this.createdPanels.set(problemNm, panel)
-    }
-}
+import { WebviewPanelHandler } from "./panel-handler"
 
 export class ProblemWebviewPanel {
     public static readonly viewType = "problemWebview"
@@ -196,13 +54,7 @@ export class ProblemWebviewPanel {
             })
 
         // Clean up resources when panel is closed
-        this.panel.onDidDispose(
-            () => {
-                this.dispose()
-            },
-            null,
-            this._disposables
-        )
+        this.panel.onDidDispose(() => this.dispose(), null, this._disposables)
 
         // Handle webview messages
         this.panel.webview.onDidReceiveMessage(this._handleMessage.bind(this), null, this._disposables)
@@ -339,11 +191,13 @@ export class ProblemWebviewPanel {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta http-equiv="Content-Security-Policy" 
-                    content="default-src 'none';
-                            style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
-                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                            img-src ${this.panel.webview.cspSource} https: data:;
-                            font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;">
+                    content="
+                        default-src 'none';
+                        style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
+                        script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                        img-src ${this.panel.webview.cspSource} https: data:;
+                        font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                    ">
                 <link rel="stylesheet" href="${styleUri}" />
                 <style>body { font-size: 1rem; }</style>
             </head>
@@ -379,6 +233,7 @@ export class ProblemWebviewPanel {
                 }
                 runAllTestcases(this.problem, all_test_editor.document.uri.fsPath)
                 return
+
             case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
                 let submit_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
                 if (!submit_editor) {
@@ -387,6 +242,7 @@ export class ProblemWebviewPanel {
                 }
                 SubmissionService.submitProblem(this.problem, submit_editor.document.uri.fsPath)
                 return
+
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 let test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
                 if (!test_editor) {
@@ -395,6 +251,7 @@ export class ProblemWebviewPanel {
                 }
                 runSingleTestcase(message.data.testcaseId, this.problem, test_editor.document.uri.fsPath)
                 return
+
             case WebviewToVSCodeCommand.NEW_FILE:
                 const fileUri = await FileService.createNewFileForProblem(this.problem)
                 if (!fileUri) {
@@ -403,6 +260,7 @@ export class ProblemWebviewPanel {
                 await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
                 return
+
             case WebviewToVSCodeCommand.SHOW_DIFF:
                 const { testcaseId, expected, received } = message.data
 
@@ -456,31 +314,6 @@ export class ProblemWebviewPanel {
                 })
 
                 return
-        }
-    }
-}
-
-class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
-    private readonly _extensionUri: vscode.Uri
-
-    constructor(extensionUri: vscode.Uri) {
-        this._extensionUri = extensionUri
-    }
-
-    async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
-        try {
-            console.debug(`[WebviewPanel] Deserializing webview panel with state: ${state}`)
-            if (!state?.problemNm) {
-                console.warn("[WebviewPanel] No problem number found in state")
-                webviewPanel.dispose()
-                return
-            }
-
-            const panel = new ProblemWebviewPanel(webviewPanel, this._extensionUri, state.problemNm)
-            WebviewPanelHandler.registerPanel(state.problemNm, panel)
-        } catch (error) {
-            console.error("[WebviewPanel] Error deserializing webview panel: ", error)
-            webviewPanel.dispose()
         }
     }
 }

@@ -169,6 +169,7 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             runningText.style.color = "yellow"
             runningText.textContent = "Running..."
             break
+
         case "passed":
             testcaseElement.style["border-left-color"] = "green"
             runningText.style.color = "green"
@@ -177,6 +178,7 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             outputElement.textContent = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
+
         case "failed":
             testcaseElement.style["border-left-color"] = "red"
             runningText.textContent = "Failed"
@@ -194,6 +196,7 @@ function updateSubmissionStatus(status: SubmissionStatus) {
         case SubmissionStatus.PENDING:
             submissionStatusElement.disabled = true
             break
+
         default:
             submissionStatusElement.disabled = false
             break

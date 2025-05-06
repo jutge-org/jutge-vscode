@@ -50,8 +50,3 @@ export enum WebviewToVSCodeCommand {
     RUN_TESTCASE = "run-testcase",
     SHOW_DIFF = "show-diff",
 }
-
-export enum Language {
-    CPP = "C++",
-    PYTHON = "Python",
-}
