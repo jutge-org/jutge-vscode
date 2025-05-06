@@ -20,7 +20,7 @@ cd jutge-vscode
 2. Install dependencies:
 
 ```bash
-bun install
+npm install
 ```
 
 3. Build and package the extension:
