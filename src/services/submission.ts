@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 
 import { jutgeClient } from "@/extension"
 import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
-import { runAllTestcases } from "@/runners/ProblemRunner"
+import { runAllTestcases } from "@/runners/problem"
 import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { readFile } from "fs/promises"
@@ -88,10 +88,10 @@ Veredict: ${response.veredict}
             .showInformationMessage(
                 SubmissionService.getVerdict(response.veredict!) + " " + response.veredict,
                 { modal: true, detail },
-                "View in jutge.org"
+                { title: "View in jutge.org" }
             )
             .then((selection) => {
-                if (selection === "View in jutge.org") {
+                if (selection?.title === "View in jutge.org") {
                     vscode.env.openExternal(
                         vscode.Uri.parse(
                             `https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`
@@ -104,29 +104,21 @@ Veredict: ${response.veredict}
     private static sendUpdateSubmissionStatus(problemNm: string, status: SubmissionStatus) {
         const message = {
             command: VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS,
-            data: {
-                status: status,
-            },
+            data: { status },
         }
         WebviewPanelHandler.sendMessageToPanel(problemNm, message)
     }
 
+    private static _verdictIcon: Map<string, string> = new Map([
+        ["AC", "🟢"],
+        ["WA", "🔴"],
+        ["EE", "💣"],
+        ["CE", "🛠"],
+        ["IE", "🔥"],
+        ["Pending", "⏳"],
+    ])
+
     private static getVerdict(verdict: string): string {
-        switch (verdict) {
-            case "AC":
-                return "🟢"
-            case "WA":
-                return "🔴"
-            case "EE":
-                return "💣"
-            case "CE":
-                return "🛠"
-            case "IE":
-                return "🔥"
-            case "Pending":
-                return "⏳"
-            default:
-                return "🔴"
-        }
+        return SubmissionService._verdictIcon.get(verdict) || "❓"
     }
 }

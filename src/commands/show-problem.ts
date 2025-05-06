@@ -1,5 +1,5 @@
 import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
-import { AuthService } from "@/services/AuthService"
+import { AuthService } from "@/services/auth"
 import * as vscode from "vscode"
 
 export const jutgeVSCodeShowProblemCommand =

@@ -1,11 +1,11 @@
 import * as vscode from "vscode"
 
 import { BriefProblem } from "@/jutge_api_client"
-import { FileService } from "@/services/FileService"
-import { SubmissionService } from "@/services/SubmissionService"
+import { FileService } from "@/services/file"
+import { SubmissionService } from "@/services/submission"
 
 import { jutgeClient } from "@/extension"
-import { runAllTestcases, runSingleTestcase } from "@/runners/ProblemRunner"
+import { runAllTestcases, runSingleTestcase } from "@/runners/problem"
 
 import * as utils from "@/utils/helpers"
 import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"

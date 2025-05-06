@@ -1,13 +1,10 @@
-import * as vscode from "vscode"
 import * as fs from "fs"
-
-import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
-import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
-
-import { Testcase, TestcaseStatus, VSCodeToWebviewCommand, Problem } from "@/utils/types"
+import * as vscode from "vscode"
 
 import { jutgeClient } from "@/extension"
-import { TerminalService } from "@/services/TerminalService"
+import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
+import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
+import { Problem, Testcase, TestcaseStatus, VSCodeToWebviewCommand } from "@/utils/types"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -25,11 +22,7 @@ function sendUpdateTestcaseMessage(
 ) {
     const message = {
         command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
-        data: {
-            testcaseId: testcaseId,
-            status: status,
-            output: output,
-        },
+        data: { testcaseId, status, output },
     }
     WebviewPanelHandler.sendMessageToPanel(problemNm, message)
 }

@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 
-import { AuthService } from "@/services/AuthService"
+import { AuthService } from "@/services/auth"
 import { getDefaultProblemId } from "@/utils/helpers"
 import { jutgeClient } from "@/extension"
 import { JutgeTreeItem } from "./item"
