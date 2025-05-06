@@ -6,9 +6,9 @@
     "configurations": [
         {
             "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-            "name": "Launch Extension",
+            "name": "Debug Extension",
             "outFiles": ["${workspaceFolder}/out/**/*.js"],
-            "preLaunchTask": "bun: compile",
+            "preLaunchTask": "npm: compile",
             "request": "launch",
             "type": "extensionHost"
         }

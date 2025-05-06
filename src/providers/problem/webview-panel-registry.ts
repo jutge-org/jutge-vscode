@@ -3,9 +3,9 @@ import * as vscode from "vscode"
 import { getWebviewOptions } from "@/extension"
 import * as utils from "@/utils/helpers"
 import { VSCodeToWebviewMessage } from "@/utils/types"
-import { ProblemWebviewPanel } from "./problem-panel"
+import { ProblemWebviewPanel } from "./webview-panel"
 
-export class WebviewPanelHandler {
+export class WebviewPanelRegistry {
     private static createdPanels: Map<string, ProblemWebviewPanel> = new Map()
 
     /**
@@ -15,51 +15,51 @@ export class WebviewPanelHandler {
      * @param problemNm The problem number.
      */
     public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
-        console.debug(`[WebviewPanel] Attempting to show problem ${problemNm}`)
+        console.debug(`[WebviewPanelRegistry] Attempting to show panel for problem ${problemNm}`)
 
         if (!(await utils.isProblemValidAndAccessible(problemNm))) {
-            console.warn(`[WebviewPanel] Problem ${problemNm} not valid or accessible`)
+            console.warn(`[WebviewPanelRegistry] Problem ${problemNm} not valid or accessible`)
             vscode.window.showErrorMessage("Problem not valid or accessible.")
             return
         }
 
-        // Get column
-        const [existingPanel] = [...WebviewPanelHandler.createdPanels.values()]
-        const column = existingPanel?.panel.viewColumn || vscode.ViewColumn.Beside
+        // Get an existing panel if it exists
+        const [existingPanel] = [...this.createdPanels.values()]
+        const viewColumn = existingPanel?.panel.viewColumn || vscode.ViewColumn.Beside
 
         // If we already have a panel, show it.
         if (this.createdPanels.has(problemNm)) {
-            console.debug(`[WebviewPanel] Reusing existing panel for ${problemNm}`)
+            console.debug(`[WebviewPanelRegistry] Reusing existing panel for ${problemNm}`)
             let panel = this.createdPanels.get(problemNm) as ProblemWebviewPanel
-            panel.panel.reveal(column, true)
+            panel.panel.reveal(viewColumn, true)
             return this.createdPanels.get(problemNm)
         }
 
-        console.debug(`[WebviewPanel] Creating new panel for ${problemNm}`)
-        const panel = vscode.window.createWebviewPanel(
+        console.debug(`[WebviewPanelRegistry] Creating new panel for ${problemNm}`)
+        const webviewPanel = vscode.window.createWebviewPanel(
             ProblemWebviewPanel.viewType,
             problemNm,
-            { viewColumn: column, preserveFocus: true },
+            { viewColumn, preserveFocus: true },
             getWebviewOptions(extensionUri)
         )
-
-        this.createdPanels.set(problemNm, new ProblemWebviewPanel(panel, extensionUri, problemNm))
-        return this.createdPanels.get(problemNm)
+        const panel = new ProblemWebviewPanel(webviewPanel, extensionUri, problemNm)
+        this.createdPanels.set(problemNm, panel)
+        return panel
     }
 
-    public static registerPanel(problemNm: string, panel: ProblemWebviewPanel) {
+    public static register(problemNm: string, panel: ProblemWebviewPanel) {
         this.createdPanels.set(problemNm, panel)
     }
 
-    public static getPanel(problemNm: string) {
+    public static get(problemNm: string) {
         return this.createdPanels.get(problemNm)
     }
 
-    public static removePanel(problemNm: string) {
+    public static remove(problemNm: string) {
         this.createdPanels.delete(problemNm)
     }
 
-    public static sendMessageToPanel(problemNm: string, message: VSCodeToWebviewMessage) {
+    public static sendMessage(problemNm: string, message: VSCodeToWebviewMessage) {
         const panel = this.createdPanels.get(problemNm)
         if (panel) {
             panel.panel.webview.postMessage(message)

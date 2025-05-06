@@ -274,3 +274,7 @@ body.vscode-light textarea:focus {
     right: 5px;
     top: 0;
 }
+
+.problem-code {
+    opacity: 50%;
+}

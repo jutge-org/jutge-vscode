@@ -2,10 +2,10 @@ import * as fs from "fs"
 import * as vscode from "vscode"
 
 import { jutgeClient } from "@/extension"
-import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
 import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
 import { Problem, TestcaseStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { Testcase } from "@/jutge_api_client"
+import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -25,7 +25,7 @@ function sendUpdateTestcaseMessage(
         command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
         data: { testcaseId, status, output },
     }
-    WebviewPanelHandler.sendMessageToPanel(problemNm, message)
+    WebviewPanelRegistry.sendMessage(problemNm, message)
 }
 
 /**

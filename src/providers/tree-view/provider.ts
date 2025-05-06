@@ -1,11 +1,10 @@
 import * as vscode from "vscode"
 
-import { AuthService } from "@/services/auth"
-import { getDefaultProblemId } from "@/utils/helpers"
 import { jutgeClient } from "@/extension"
-import { JutgeTreeItem } from "./item"
+import { BriefProblem } from "@/jutge_api_client"
+import { AuthService } from "@/services/auth"
 import { ConfigService } from "@/services/config"
-import { BriefProblem, BriefProblemDict, Problem } from "@/jutge_api_client"
+import { JutgeTreeItem } from "./item"
 
 const _error = (msg: string) => console.error(`[TreeViewProvider] ${msg}`)
 

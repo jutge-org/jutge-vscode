@@ -97,7 +97,7 @@ function addOnClickEventListeners() {
     copyToClipboardButtons.forEach((button) => {
         button.addEventListener("click", () => {
             const textElement = button.nextElementSibling as HTMLDivElement
-            const preElement = textElement.querySelector("pre")
+            const preElement = textElement.querySelector("pre")! // we know there is a pre... don't we? ;)
 
             // Store the original text in a data attribute when generating the HTML
             const originalText = preElement.getAttribute("data-original-text") || preElement.textContent || ""
@@ -137,9 +137,9 @@ function addOnClickEventListeners() {
             const testcaseId = parseInt(button.closest(".case").id.split("-")[1])
 
             // Get the expected and received output texts
-            const testcaseElement = document.getElementById(`testcase-${testcaseId}`)
-            const expectedElement = testcaseElement.querySelector(".expected-div pre")
-            const receivedElement = testcaseElement.querySelector(".received-div pre")
+            const testcaseElement = document.getElementById(`testcase-${testcaseId}`)!
+            const expectedElement = testcaseElement.querySelector(".expected-div pre")!
+            const receivedElement = testcaseElement.querySelector(".received-div pre")!
 
             // Original text (without special chars visualization)
             const expectedText = expectedElement.getAttribute("data-original-text") || expectedElement.textContent || ""

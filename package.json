@@ -3,7 +3,7 @@
     "displayName": "jutge-vscode",
     "publisher": "jutge-org",
     "description": "Visual Studio Code extension for Jutge.org",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "repository": "https://github.com/jutge-org/jutge-vscode",
     "license": "See license in LICENSE",
     "icon": "resources/jutge.png",
@@ -38,7 +38,7 @@
             "jutge": [
                 {
                     "id": "jutgeTreeView",
-                    "name": "jutge-vscode",
+                    "name": "Courses",
                     "icon": "resources/lightbulb-regular.svg",
                     "contextualTitle": "Jutge.org"
                 }
@@ -55,20 +55,20 @@
         },
         "commands": [
             {
-                "command": "jutge-vscode.showProblem",
-                "title": "Jutge - Show Problem"
-            },
-            {
                 "command": "jutge-vscode.signIn",
-                "title": "Jutge - Sign In"
+                "title": "Jutge.org: Sign In"
             },
             {
                 "command": "jutge-vscode.signOut",
-                "title": "Jutge - Sign Out"
+                "title": "Jutge.org: Sign Out"
+            },
+            {
+                "command": "jutge-vscode.showProblem",
+                "title": "Jutge.org: Show Problem"
             },
             {
                 "command": "jutge-vscode.refreshTree",
-                "title": "Jutge - Refresh Tree",
+                "title": "Jutge.org: Refresh Tree",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"

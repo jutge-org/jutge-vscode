@@ -2,12 +2,12 @@ import * as os from "os"
 import * as vscode from "vscode"
 
 import { TreeViewProvider } from "@/providers/tree-view/provider"
-import { ProblemWebviewPanel } from "@/providers/web-view/problem-panel"
+import { ProblemWebviewPanel } from "@/providers/problem/webview-panel"
 import { AuthService } from "@/services/auth"
 import { ConfigService } from "@/services/config"
 import { JutgeApiClient } from "./jutge_api_client"
-import { ProblemWebviewPanelSerializer } from "./providers/web-view/problem-panel-serializer"
-import { jutgeVSCodeShowProblemCommand } from "./commands/show-problem"
+import { ProblemWebviewPanelSerializer } from "./providers/problem/webview-panel-serializer"
+import { commandRefreshTree, commandShowProblem } from "./commands/show-problem"
 
 export const jutgeClient = new JutgeApiClient()
 
@@ -41,21 +41,32 @@ export async function activate(context: vscode.ExtensionContext) {
     await AuthService.initialize(context) // needs to await token validation
     ConfigService.initialize()
 
-    // Register WebView Commands
-    context.subscriptions.push(
-        vscode.commands.registerCommand("jutge-vscode.showProblem", jutgeVSCodeShowProblemCommand(context))
-    )
-    vscode.window.registerWebviewPanelSerializer(
-        ProblemWebviewPanel.viewType,
-        new ProblemWebviewPanelSerializer(context.extensionUri)
-    )
+    const registerCommand = (command: string, callback: (...args: any[]) => any) => {
+        const disposable = vscode.commands.registerCommand(command, callback)
+        context.subscriptions.push(disposable)
+    }
 
-    // Register TreeView Commands
+    const registerTreeDataProvider = (viewId: string, provider: vscode.TreeDataProvider<any>) => {
+        const disposable = vscode.window.registerTreeDataProvider(viewId, provider)
+        context.subscriptions.push(disposable)
+    }
+
+    const registerWebviewPanelSerializer = (viewType: string, serializer: vscode.WebviewPanelSerializer) => {
+        const disposable = vscode.window.registerWebviewPanelSerializer(viewType, serializer)
+        context.subscriptions.push(disposable)
+    }
+
     const treeViewProvider = new TreeViewProvider()
-    context.subscriptions.push(vscode.window.registerTreeDataProvider("jutgeTreeView", treeViewProvider))
-    context.subscriptions.push(
-        vscode.commands.registerCommand("jutge-vscode.refreshTree", () => treeViewProvider.refresh())
-    )
+    registerTreeDataProvider("jutgeTreeView", treeViewProvider)
+
+    const serializer = new ProblemWebviewPanelSerializer(context.extensionUri)
+    registerWebviewPanelSerializer(ProblemWebviewPanel.viewType, serializer)
+
+    registerCommand("jutge-vscode.signIn", AuthService.signIn)
+    registerCommand("jutge-vscode.signOut", AuthService.signOut)
+    registerCommand("jutge-vscode.showProblem", commandShowProblem(context))
+    registerCommand("jutge-vscode.refreshTree", commandRefreshTree(treeViewProvider))
+
     console.info("[Extension] jutge-vscode is now active")
 }
 

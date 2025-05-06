@@ -9,14 +9,17 @@ import * as utils from "@/utils/helpers"
 import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
 import { Button } from "@/webview/components/button"
 import { generateTestcasePanels } from "@/webview/components/testcases"
-import { WebviewPanelHandler } from "./panel-handler"
+import { WebviewPanelRegistry } from "./webview-panel-registry"
+
+const _info = (msg: string) => {
+    console.info(`[ProblemWebviewPanel] ${msg}`)
+}
 
 export class ProblemWebviewPanel {
     public static readonly viewType = "problemWebview"
+
     public readonly panel: vscode.WebviewPanel
-
     public problem: Problem
-
     private readonly _extensionUri: vscode.Uri
     private _disposables: vscode.Disposable[] = []
 
@@ -30,8 +33,10 @@ export class ProblemWebviewPanel {
      * @returns The problem webview panel.
      */
     public constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, problemNm: string) {
+        _info(`Constructing a webview panel for problem ${problemNm} (${extensionUri})`)
         this.panel = panel
         this._extensionUri = extensionUri
+
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),
             problem_nm: problemNm,
@@ -62,7 +67,7 @@ export class ProblemWebviewPanel {
      * This method is called when the panel is closed (either by the user or programmatically).
      */
     public dispose() {
-        WebviewPanelHandler.removePanel(this.problem.problem_nm)
+        WebviewPanelRegistry.remove(this.problem.problem_nm)
         this.panel.dispose()
         this._disposables.forEach((x) => x.dispose())
     }
@@ -71,6 +76,7 @@ export class ProblemWebviewPanel {
      * Gets the problem info.
      */
     private async _getProblemInfo(): Promise<void> {
+        _info(`Getting problem info for ${this.problem.problem_nm}`)
         try {
             const abstractProblem = await jutgeClient.problems.getAbstractProblem(this.problem.problem_nm)
             const langProblems = abstractProblem.problems
@@ -91,7 +97,7 @@ export class ProblemWebviewPanel {
             if (availableLangIds[preferredLangId]) {
                 finalProblem = availableLangIds[preferredLangId]
             } else {
-                console.warn("[WebviewPanel] Preferred language not available. Trying with fallback languages.")
+                console.warn("[ProblemWebviewPanel] Preferred language not available. Trying with fallback languages.")
                 for (const langId of utils.fallbackLangOrder) {
                     if (availableLangIds[langId]) {
                         finalProblem = availableLangIds[langId]
@@ -106,7 +112,7 @@ export class ProblemWebviewPanel {
             this.problem.title = finalProblem.title
             this.problem.language_id = finalProblem.language_id
         } catch (error) {
-            console.error("[WebviewPanel] Error getting problem info: ", error)
+            console.error("[ProblemWebviewPanel] Error getting problem info: ", error)
         }
     }
 
@@ -116,11 +122,13 @@ export class ProblemWebviewPanel {
      * @param problemNm The problem number.
      */
     private async _updateWebviewContents(problemNm: string) {
+        _info(`Updating webview contents for ${problemNm}`)
         this.panel.title = problemNm
         this.panel.webview.html = await this._getHtmlForWebview()
     }
 
     private async _getProblemStatement() {
+        _info(`Getting problem statement for ${this.problem.problem_nm}`)
         if (this.problem.statementHtml) {
             return this.problem.statementHtml
         }
@@ -135,6 +143,7 @@ export class ProblemWebviewPanel {
     }
 
     private async _getProblemTestcases() {
+        _info(`Getting problem testcases for ${this.problem.problem_nm}`)
         if (this.problem.testcases) {
             return this.problem.testcases
         }
@@ -164,6 +173,7 @@ export class ProblemWebviewPanel {
      * @returns The html content for the webview panel.
      */
     private async _getHtmlForWebview(): Promise<string> {
+        _info(`Getting HTML for ${this.problem.problem_nm}`)
         const styleUri = this._getUri("dist", "webview", "main.css")
         const scriptUri = this._getUri("dist", "webview", "main.js")
         const nonce = utils.getNonce()
@@ -194,7 +204,7 @@ export class ProblemWebviewPanel {
             <body>
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="flex-grow-1">
-                        ${this.problem.problem_nm} - ${this.problem.title}
+                        <span class="problem-code">${this.problem.problem_nm}</span> - ${this.problem.title}
                     </h2>
                     ${Button("New File", "add", "new-file")}
                 </section>

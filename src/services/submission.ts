@@ -1,11 +1,11 @@
 import * as vscode from "vscode"
 
 import { jutgeClient } from "@/extension"
-import { WebviewPanelHandler } from "@/providers/web-view/panel-handler"
 import { runAllTestcases } from "@/runners/problem"
 import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { readFile } from "fs/promises"
+import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
 
 export class SubmissionService {
     /**
@@ -106,7 +106,7 @@ Veredict: ${response.veredict}
             command: VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS,
             data: { status },
         }
-        WebviewPanelHandler.sendMessageToPanel(problemNm, message)
+        WebviewPanelRegistry.sendMessage(problemNm, message)
     }
 
     private static _verdictIcon: Map<string, string> = new Map([

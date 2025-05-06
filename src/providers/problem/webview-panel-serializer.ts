@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
-import { WebviewPanelHandler } from "./panel-handler"
-import { ProblemWebviewPanel } from "./problem-panel"
+import { WebviewPanelRegistry } from "./webview-panel-registry"
+import { ProblemWebviewPanel } from "./webview-panel"
 
 export class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
     private readonly _extensionUri: vscode.Uri
@@ -11,7 +11,9 @@ export class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSeriali
 
     async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
         try {
-            console.debug(`[WebviewPanel] Deserializing webview panel with state: ${state}`)
+            console.debug(
+                `[ProblemWebviewPanelSerializer] Deserializing webview panel with state: ${JSON.stringify(state)}`
+            )
             if (!state?.problemNm) {
                 console.warn("[WebviewPanel] No problem number found in state")
                 webviewPanel.dispose()
@@ -19,7 +21,7 @@ export class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSeriali
             }
 
             const panel = new ProblemWebviewPanel(webviewPanel, this._extensionUri, state.problemNm)
-            WebviewPanelHandler.registerPanel(state.problemNm, panel)
+            WebviewPanelRegistry.register(state.problemNm, panel)
         } catch (error) {
             console.error("[WebviewPanel] Error deserializing webview panel: ", error)
             webviewPanel.dispose()
