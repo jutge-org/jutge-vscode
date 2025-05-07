@@ -155,11 +155,12 @@ export class JutgeService {
     static staleWhileRevalidate<T>(key: string, getData: () => Promise<T>): StaleWhileRevalidateResult<T> {
         const result: StaleWhileRevalidateResult<T> = {
             data: undefined,
-            onUpdate: (_) => {}, // do nothing: should be replaced later
+            onUpdate: (_) => {}, // <- should be replaced later by the caller
         }
 
         const _revalidate = async () => {
             const newData: T = await getData()
+            // Don't call update or save if data is identical
             if (!deepEqual(result.data, newData)) {
                 this.context_.globalState.update(key, newData)
                 result.onUpdate(newData)
@@ -206,7 +207,7 @@ export class JutgeService {
         )
     }
 
-    static getAbstractProblemsInListWithStatus(listKey: string) {
+    static getAbstractProblemsInList(listKey: string) {
         return this.staleWhileRevalidate<Record<string, j.AbstractProblem>>(
             `getAbstractProblemsInListWithStatus(${listKey})`,
             async () => jutgeClient.problems.getAbstractProblemsInList(listKey)
@@ -219,24 +220,32 @@ export class JutgeService {
         )
     }
 
-    static async getProfile(): Promise<j.Profile> {
-        return jutgeClient.student.profile.get()
+    static getProfile() {
+        return this.staleWhileRevalidate<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
     }
 
-    static async getAbstractProblem(problemNm: string): Promise<j.AbstractProblem> {
-        return jutgeClient.problems.getAbstractProblem(problemNm)
+    static getAbstractProblem(problemNm: string) {
+        return this.staleWhileRevalidate<j.AbstractProblem>(`getAbstractProblem(${problemNm})`, async () =>
+            jutgeClient.problems.getAbstractProblem(problemNm)
+        )
     }
 
-    static async getHtmlStatement(problemId: string): Promise<string> {
-        return jutgeClient.problems.getHtmlStatement(problemId)
+    static getHtmlStatement(problemId: string) {
+        return this.staleWhileRevalidate<string>(`getHtmlStatement(${problemId})`, async () =>
+            jutgeClient.problems.getHtmlStatement(problemId)
+        )
     }
 
-    static async getProblemSuppl(problemId: string): Promise<j.ProblemSuppl> {
-        return jutgeClient.problems.getProblemSuppl(problemId)
+    static getProblemSuppl(problemId: string) {
+        return this.staleWhileRevalidate<j.ProblemSuppl>(`getProblemSuppl(${problemId})`, async () =>
+            jutgeClient.problems.getProblemSuppl(problemId)
+        )
     }
 
-    static async getSampleTestcases(problemId: string): Promise<j.Testcase[]> {
-        return jutgeClient.problems.getSampleTestcases(problemId)
+    static getSampleTestcases(problemId: string) {
+        return this.staleWhileRevalidate<j.Testcase[]>(`getSampleTestcases(${problemId})`, async () =>
+            jutgeClient.problems.getSampleTestcases(problemId)
+        )
     }
 
     static async submit(data: {

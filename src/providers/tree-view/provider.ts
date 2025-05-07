@@ -83,7 +83,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
         try {
             console.debug(`[TreeViewProvider] Getting Problems for list '${listElem.itemKey}'`)
 
-            const problemsRes = JutgeService.getAbstractProblemsInListWithStatus(listElem.itemKey)
+            const problemsRes = JutgeService.getAbstractProblemsInList(listElem.itemKey)
             problemsRes.onUpdate = () => this.refresh(listElem)
 
             const statusRes = JutgeService.getAllStatuses()

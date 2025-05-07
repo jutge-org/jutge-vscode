@@ -10,6 +10,7 @@ import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils
 import { Button } from "@/webview/components/button"
 import { generateTestcases } from "@/webview/components/testcases"
 import { WebviewPanelRegistry } from "./webview-panel-registry"
+import { AbstractProblem } from "@/jutge_api_client"
 
 const _info = (msg: string) => {
     console.info(`[ProblemWebviewPanel] ${msg}`)
@@ -59,30 +60,23 @@ export class ProblemWebviewPanel {
         this.panel.dispose()
     }
 
-    private async _updateWebviewContents() {
+    private _updateWebviewContents() {
         _info(`Updating webview contents for ${this.problem.problem_nm}`)
 
-        await Promise.allSettled([
-            this._getConcreteProblem(),
-            this._getProblemHandler(),
-            this._getProblemTestcases(),
-            this._getProblemHTMLStatement(),
-        ])
+        this._getConcreteProblem()
+        this._getProblemHandler()
+        this._getProblemTestcases()
+        this._getProblemHTMLStatement()
 
         this.panel.title = `${this.problem.problem_nm} - ${this.problem.title}`
         // this.panel.iconPath = this._getUri("dist", "webview", "icon.png")
 
-        await this._updateHtmlForWebview()
+        this._updateHtmlForWebview()
     }
 
-    private async _getConcreteProblem(): Promise<void> {
-        _info(`Getting problem info for ${this.problem.problem_nm}`)
-        try {
-            const abstractProblem = await JutgeService.getAbstractProblem(this.problem.problem_nm)
-            const concreteProblems = abstractProblem.problems
-            const problemNm = this.problem.problem_nm
-            const langId = ConfigService.getPreferredLangId()
-
+    private _getConcreteProblem(): void {
+        const __getConcreteProblem = (problemNm: string, langId: string, absProb: AbstractProblem) => {
+            const concreteProblems = absProb.problems
             let problem
             let id = `${problemNm}_${langId}`
             if (concreteProblems[id]) {
@@ -100,6 +94,19 @@ export class ProblemWebviewPanel {
             if (!problem) {
                 throw new Error("No problem found in any language.")
             }
+            return problem
+        }
+
+        _info(`Getting problem info for ${this.problem.problem_nm}`)
+        try {
+            const res = JutgeService.getAbstractProblem(this.problem.problem_nm)
+            const absProblem = res.data
+            if (absProblem === undefined) {
+                throw new Error(`_getConcreteProblem: Data is undefined`)
+            }
+
+            const langId = ConfigService.getPreferredLangId()
+            const problem = __getConcreteProblem(this.problem.problem_nm, langId, absProblem)
 
             this.problem.problem_id = problem.problem_id
             this.problem.title = problem.title
@@ -110,11 +117,16 @@ export class ProblemWebviewPanel {
         }
     }
 
-    private async _getProblemHTMLStatement() {
+    private _getProblemHTMLStatement() {
         _info(`Getting problem statement for ${this.problem.problem_nm}`)
         if (!this.problem.statementHtml) {
             try {
-                this.problem.statementHtml = await JutgeService.getHtmlStatement(this.problem.problem_id)
+                const htmlRes = JutgeService.getHtmlStatement(this.problem.problem_id)
+                htmlRes.onUpdate = (html) => {
+                    this.problem.statementHtml = html
+                    this._updateHtmlForWebview()
+                }
+                this.problem.statementHtml = htmlRes.data!
             } catch (error) {
                 console.error("Error getting problem statement: ", error)
                 this.problem.statementHtml = "<p>Error getting problem statement.</p>"
@@ -122,23 +134,32 @@ export class ProblemWebviewPanel {
         }
     }
 
-    private async _getProblemHandler() {
+    private _getProblemHandler() {
         _info(`Getting problem handler for ${this.problem.problem_nm}`)
         if (!this.problem.handler) {
             try {
-                const suppl = await JutgeService.getProblemSuppl(this.problem.problem_id)
-                this.problem.handler = suppl.handler.handler
+                const supplRes = JutgeService.getProblemSuppl(this.problem.problem_id)
+                supplRes.onUpdate = (data) => {
+                    this.problem.handler = data.handler.handler
+                    this._updateHtmlForWebview()
+                }
+                this.problem.handler = supplRes.data?.handler.handler
             } catch (error) {
                 console.error("Error getting problem handler: ", error)
             }
         }
     }
 
-    private async _getProblemTestcases() {
+    private _getProblemTestcases() {
         _info(`Getting problem testcases for ${this.problem.problem_nm}`)
         if (!this.problem.testcases) {
             try {
-                this.problem.testcases = await JutgeService.getSampleTestcases(this.problem.problem_id)
+                const testcasesRes = JutgeService.getSampleTestcases(this.problem.problem_id)
+                testcasesRes.onUpdate = (testcases) => {
+                    this.problem.testcases = testcases
+                    this._updateHtmlForWebview()
+                }
+                this.problem.testcases = testcasesRes.data!
             } catch (error) {
                 console.error("Error getting problem testcases: ", error)
                 return []
@@ -151,8 +172,10 @@ export class ProblemWebviewPanel {
         return this.panel.webview.asWebviewUri(uri)
     }
 
-    private async _updateHtmlForWebview(): Promise<void> {
+    private _updateHtmlForWebview(): void {
         _info(`Updating HTML for ${this.problem.problem_nm}`)
+
+        this.panel.title = `${this.problem.problem_nm} - ${this.problem.title}`
 
         const data = {
             problemNm: this.problem.problem_nm,
