@@ -42,7 +42,7 @@ export class WebviewPanelRegistry {
             { viewColumn, preserveFocus: true },
             getWebviewOptions(context.extensionUri)
         )
-        const panel = new ProblemWebviewPanel(webviewPanel, context, problemNm)
+        const panel = new ProblemWebviewPanel(webviewPanel, context, { problemNm })
         this.createdPanels.set(problemNm, panel)
         return panel
     }

@@ -24,7 +24,7 @@ export class ConfigService {
         let config = ConfigService.config.get<string>(key)
         if (config === undefined || config === "") {
             vscode.window.showWarningMessage(`Warning: '${key}' setting is undefined.`)
-            config = "python3" // set to default
+            config = "<undefined>" // set to default
         }
         return config
     }
@@ -68,7 +68,7 @@ export class ConfigService {
         Alemany: LanguageCode.de,
     }
 
-    public static getPreferredLangCode(): LanguageCode {
+    public static getPreferredLangId(): LanguageCode {
         return this.codes[this.getPreferredLang()] || "??"
     }
 }

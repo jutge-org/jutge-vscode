@@ -50,8 +50,11 @@ window.addEventListener("message", (event) => {
 function main() {
     addOnClickEventListeners()
 
-    const problemNm = document.getElementById("problem-nm")?.textContent?.split(" - ")[0].trim()
-    vscode.setState({ problemNm })
+    const data = document.getElementById("data")!.dataset
+    vscode.setState({
+        problemNm: data.problemNm,
+        title: data.title,
+    })
 }
 
 function addOnClickEventListeners() {
