@@ -12,7 +12,7 @@ import { generateTestcases } from "@/webview/components/testcases"
 import { WebviewPanelRegistry } from "./webview-panel-registry"
 
 const _info = (msg: string) => {
-    console.info(`${Date.now()} [ProblemWebviewPanel] ${msg}`)
+    console.info(`[ProblemWebviewPanel] ${msg}`)
 }
 
 type ProblemWebviewState = {
@@ -33,10 +33,12 @@ export class ProblemWebviewPanel {
         { problemNm, title }: ProblemWebviewState
     ) {
         _info(`Constructing a webview panel for problem ${problemNm} (${context.extensionUri})`)
+
         this.context_ = context
 
         this.panel = panel
-        this.context = context
+        this.panel.onDidDispose(() => this.dispose(), null, context.subscriptions)
+        this.panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
 
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),

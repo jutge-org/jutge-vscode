@@ -67,7 +67,6 @@ export async function activate(context: vscode.ExtensionContext) {
     registerTreeDataProvider("jutgeTreeView", treeViewProvider)
 
     const serializer = new ProblemWebviewPanelSerializer(context)
-    const serializer = new ProblemWebviewPanelSerializer(context)
     registerWebviewPanelSerializer(ProblemWebviewPanel.viewType, serializer)
 
     registerCommand("jutge-vscode.signIn", JutgeService.signIn)

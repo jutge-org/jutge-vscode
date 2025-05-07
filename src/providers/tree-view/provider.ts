@@ -1,7 +1,6 @@
 import * as vscode from "vscode"
 
 import { BriefProblem } from "@/jutge_api_client"
-import { AuthService } from "@/services/auth"
 import { ConfigService } from "@/services/config"
 import { JutgeTreeItem } from "./item"
 import { JutgeService } from "@/services/jutge"
