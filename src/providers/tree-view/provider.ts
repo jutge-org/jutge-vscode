@@ -118,7 +118,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
                 }
 
                 const problemItem = new JutgeTreeItem(problem_nm, vscode.TreeItemCollapsibleState.None)
-                const langCode = ConfigService.getPreferredLangCode()
+                const langCode = ConfigService.getPreferredLangId()
                 const preferredId = `${problem_nm}_${langCode}`
 
                 let problem: BriefProblem | undefined = undefined
