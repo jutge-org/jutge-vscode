@@ -62,18 +62,18 @@ make
 ```
 jutge-vscode/
 ├── src/
-│ ├── extension.ts # Extension entry point
-│ ├── context.ts # Extension context management
-│ ├── jutge_client_api.ts # API client for Jutge.org, installed from api.jutge.org/clients#typescript
-│ ├── providers/ # VSCode providers
-│ │ ├── WebviewProvider.ts # Problem viewer implementation
-│ │ └── TreeViewProvider.ts # Sidebar tree view
-│ ├── runners/ # Code execution handlers
-│ ├── services/ # Business logic services
-│ ├── utils/ # Helper functions and types
-│ └── webview/ # Webview UI components
-├── dist/ # Compiled extension files
-└── esbuild.js # Build configuration
+│   ├── extension.ts             # Extension entry point
+│   ├── context.ts               # Extension context management
+│   ├── jutge_client_api.ts      # API client (https://api.jutge.org/clients#typescript)
+│   ├── providers/               # VSCode providers
+│   │   ├── WebviewProvider.ts   # Problem viewer implementation
+│   │   └── TreeViewProvider.ts  # Sidebar tree view
+│   ├── runners/                 # Code execution handlers
+│   ├── services/                # Business logic services
+│   ├── utils/                   # Helper functions and types
+│   └── webview/                 # Webview UI components
+├── dist/                        # Compiled extension files
+└── esbuild.js                   # Build configuration
 ```
 
 ### Key Components

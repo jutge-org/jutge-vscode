@@ -8,8 +8,14 @@
 import * as j from "@/jutge_api_client"
 import * as fs from "fs"
 import * as vscode from "vscode"
+import deepEqual from "deep-equal"
 
 const jutgeClient = new j.JutgeApiClient()
+
+type StaleWhileRevalidateResult<T> = {
+    data: T | undefined
+    onUpdate: (data: T) => void
+}
 
 export class JutgeService {
     static context_: vscode.ExtensionContext
@@ -144,6 +150,75 @@ export class JutgeService {
         await JutgeService.context_.secrets.store("jutgeToken", token)
     }
 
+    // ---
+
+    static staleWhileRevalidate<T>(key: string, getData: () => Promise<T>): StaleWhileRevalidateResult<T> {
+        const result: StaleWhileRevalidateResult<T> = {
+            data: undefined,
+            onUpdate: (_) => {}, // do nothing: should be replaced later
+        }
+
+        const _revalidate = async () => {
+            const newData: T = await getData()
+            if (!deepEqual(result.data, newData)) {
+                this.context_.globalState.update(key, newData)
+                result.onUpdate(newData)
+            }
+        }
+
+        _revalidate() // launch revalidation
+
+        // But return what we have in cache
+        result.data = this.context_.globalState.get<T>(key)
+        return result
+    }
+
+    static getCourses() {
+        return this.staleWhileRevalidate<Record<string, j.BriefCourse>>("getCourses", async () =>
+            jutgeClient.student.courses.indexEnrolled()
+        )
+    }
+
+    static getCourse(courseKey: string) {
+        return this.staleWhileRevalidate<{ course: j.Course; lists: j.BriefList[] }>(
+            `getCourse(${courseKey})`,
+            async () => {
+                const [courseRes, listsRes] = await Promise.allSettled([
+                    jutgeClient.student.courses.getEnrolled(courseKey),
+                    jutgeClient.student.lists.getAll(),
+                ])
+                if (courseRes.status === "rejected" || listsRes.status === "rejected") {
+                    throw new Error(`[JutgeService] getCourse: Could not load course or all lists`)
+                }
+                const course = courseRes.value
+                const allLists = listsRes.value
+                return {
+                    course,
+                    lists: course.lists.map((key) => allLists[key]),
+                }
+            }
+        )
+    }
+
+    static getAllLists() {
+        return this.staleWhileRevalidate<Record<string, j.BriefList>>(`getAllLists()`, async () =>
+            jutgeClient.student.lists.getAll()
+        )
+    }
+
+    static getAbstractProblemsInListWithStatus(listKey: string) {
+        return this.staleWhileRevalidate<Record<string, j.AbstractProblem>>(
+            `getAbstractProblemsInListWithStatus(${listKey})`,
+            async () => jutgeClient.problems.getAbstractProblemsInList(listKey)
+        )
+    }
+
+    static getAllStatuses() {
+        return this.staleWhileRevalidate<Record<string, j.AbstractStatus>>(`getAllStatuses()`, async () =>
+            jutgeClient.student.statuses.getAll()
+        )
+    }
+
     static async getProfile(): Promise<j.Profile> {
         return jutgeClient.student.profile.get()
     }
@@ -162,26 +237,6 @@ export class JutgeService {
 
     static async getSampleTestcases(problemId: string): Promise<j.Testcase[]> {
         return jutgeClient.problems.getSampleTestcases(problemId)
-    }
-
-    static async getCourses(): Promise<Record<string, j.BriefCourse>> {
-        return jutgeClient.student.courses.indexEnrolled()
-    }
-
-    static async getCourse(courseKey: string): Promise<j.Course> {
-        return jutgeClient.student.courses.getEnrolled(courseKey)
-    }
-
-    static async getAllLists(): Promise<Record<string, j.BriefList>> {
-        return jutgeClient.student.lists.getAll()
-    }
-
-    static async getAbstractProblemsInList(listKey: string): Promise<Record<string, j.AbstractProblem>> {
-        return jutgeClient.problems.getAbstractProblemsInList(listKey)
-    }
-
-    static async getAllStatuses(): Promise<Record<string, j.AbstractStatus>> {
-        return jutgeClient.student.statuses.getAll()
     }
 
     static async submit(data: {

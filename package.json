@@ -128,6 +128,7 @@
         "precommit": "lint-staged"
     },
     "devDependencies": {
+        "@types/deep-equal": "^1.0.4",
         "@types/node": "^18.19.80",
         "@types/vscode": "^1.87.0",
         "@types/vscode-webview": "^1.57.5",
@@ -144,6 +145,7 @@
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
         "@vscode/webview-ui-toolkit": "^1.4.0",
+        "deep-equal": "^2.2.3",
         "yaml": "^2.7.0"
     },
     "lint-staged": {

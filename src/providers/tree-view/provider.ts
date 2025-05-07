@@ -14,8 +14,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
     readonly onDidChangeTreeData: vscode.Event<JutgeTreeItem | undefined | null | void> =
         this._onDidChangeTreeData.event
 
-    refresh(): void {
-        this._onDidChangeTreeData.fire()
+    refresh(item?: JutgeTreeItem): void {
+        this._onDidChangeTreeData.fire(item)
     }
 
     // Get TreeItem representation of the element (part of the TreeDataProvider interface).
@@ -35,23 +35,22 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
         if (!element) {
             return this._getEnrolledCourseList()
         } else if (element.contextValue === "course") {
-            return this._getListsFromCourseNm(element.itemKey as string)
+            return this._getListsFromCourseNm(element)
         } else if (element.contextValue === "list") {
-            return this._getProblemsFromListNm(element.itemKey as string)
+            return this._getProblemsFromListNm(element)
         }
         return []
     }
 
     private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
         try {
-            const courses = await JutgeService.getCourses()
-            return Object.keys(courses).map((courseKey) => {
-                const course = courses[courseKey]
-                const courseItem = new JutgeTreeItem(course.course_nm, vscode.TreeItemCollapsibleState.Collapsed)
-                courseItem.contextValue = "course"
-                courseItem.itemKey = courseKey
-                return courseItem
-            })
+            const result = JutgeService.getCourses()
+            const courses = result.data || {}
+            result.onUpdate = () => this.refresh() // all
+
+            return Object.entries(courses).map(
+                ([key, course]) => new JutgeTreeItem(course.course_nm, "collapsed", key, "course")
+            )
         } catch (error) {
             console.error(error)
             vscode.window.showErrorMessage("Failed to get enrolled courses")
@@ -59,64 +58,52 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
         }
     }
 
-    private async _getListsFromCourseNm(courseKey: string): Promise<JutgeTreeItem[]> {
+    private async _getListsFromCourseNm(courseElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
         try {
-            const [course_info, all_lists] = await Promise.all([
-                JutgeService.getCourse(courseKey),
-                JutgeService.getAllLists(),
-            ])
-            const lists = course_info.lists
+            const courseRes = JutgeService.getCourse(courseElem.itemKey)
+            courseRes.onUpdate = () => this.refresh(courseElem)
 
-            return lists.map((listKey) => {
-                const list = all_lists[listKey]
-                if (!list) {
-                    console.warn(`List with key ${listKey} not found in all_lists`)
-                    return new JutgeTreeItem(listKey, vscode.TreeItemCollapsibleState.None)
-                }
+            const course = courseRes.data
+            if (course === undefined) {
+                return []
+            }
 
-                const listTitle = list.title || listKey
-                const listItem = new JutgeTreeItem(listTitle, vscode.TreeItemCollapsibleState.Collapsed)
-                listItem.contextValue = "list"
-                listItem.itemKey = listKey
-                return listItem
+            return course.lists.map((list) => {
+                return new JutgeTreeItem(list.title || list.list_nm, "collapsed", list.list_nm, "list")
             })
+            //
         } catch (error) {
             console.error(error)
-            vscode.window.showErrorMessage("Failed to get lists from course: " + courseKey)
+            vscode.window.showErrorMessage(`Failed to get lists from course: ${courseElem.itemKey}`)
             return []
         }
     }
 
-    private async _getProblemsFromListNm(listKey: string): Promise<JutgeTreeItem[]> {
+    private async _getProblemsFromListNm(listElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
         try {
-            console.debug(`[TreeViewProvider] Getting Problems for list '${listKey}'`)
+            console.debug(`[TreeViewProvider] Getting Problems for list '${listElem.itemKey}'`)
 
-            const [problemsResult, allStatusesResult] = await Promise.allSettled([
-                JutgeService.getAbstractProblemsInList(listKey),
-                JutgeService.getAllStatuses(),
-            ])
+            const problemsRes = JutgeService.getAbstractProblemsInListWithStatus(listElem.itemKey)
+            problemsRes.onUpdate = () => this.refresh(listElem)
 
-            if (problemsResult.status === "rejected") {
-                _error(`Could not load list of problems`)
-                return []
-            }
-            if (allStatusesResult.status === "rejected") {
-                _error(`Could not load the statuses`)
-                return []
+            const statusRes = JutgeService.getAllStatuses()
+
+            if (problemsRes.data === undefined || statusRes.data === undefined) {
+                throw new Error(`_getProblemsFromListNm: Error loading problems + statuses`)
             }
 
-            const problems = problemsResult.value
-            const allStatuses = allStatusesResult.value
+            const problems = problemsRes.data
+            const allStatuses = statusRes.data
 
             const items: JutgeTreeItem[] = []
 
             for (const [problem_nm, abstractProblem] of Object.entries(problems)) {
                 if (problem_nm === null) {
-                    items.push(new JutgeTreeItem("Problem name unavailable", vscode.TreeItemCollapsibleState.None))
+                    items.push(new JutgeTreeItem("Problem name unavailable", "none", problem_nm, "problem"))
                     continue
                 }
 
-                const problemItem = new JutgeTreeItem(problem_nm, vscode.TreeItemCollapsibleState.None)
+                const problemItem = new JutgeTreeItem(problem_nm, "none", problem_nm, "problem")
                 const langCode = ConfigService.getPreferredLangId()
                 const preferredId = `${problem_nm}_${langCode}`
 
@@ -130,8 +117,6 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
                 // Get status for this problem
                 const status = allStatuses[problem_nm]?.status
 
-                problemItem.contextValue = "problem"
-                problemItem.itemKey = problem_nm
                 problemItem.label = `${this._getIconForStatus(status)} ${problem.title}`
                 problemItem.command = {
                     command: "jutge-vscode.showProblem",

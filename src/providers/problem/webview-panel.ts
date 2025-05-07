@@ -62,14 +62,15 @@ export class ProblemWebviewPanel {
     private async _updateWebviewContents() {
         _info(`Updating webview contents for ${this.problem.problem_nm}`)
 
-        await this._getConcreteProblem()
+        await Promise.allSettled([
+            this._getConcreteProblem(),
+            this._getProblemHandler(),
+            this._getProblemTestcases(),
+            this._getProblemHTMLStatement(),
+        ])
 
         this.panel.title = `${this.problem.problem_nm} - ${this.problem.title}`
         // this.panel.iconPath = this._getUri("dist", "webview", "icon.png")
-
-        await this._getProblemHandler()
-        await this._getProblemTestcases()
-        await this._getProblemHTMLStatement()
 
         await this._updateHtmlForWebview()
     }
@@ -111,42 +112,37 @@ export class ProblemWebviewPanel {
 
     private async _getProblemHTMLStatement() {
         _info(`Getting problem statement for ${this.problem.problem_nm}`)
-        if (this.problem.statementHtml) {
-            return this.problem.statementHtml
-        }
-        try {
-            this.problem.statementHtml = await JutgeService.getHtmlStatement(this.problem.problem_id)
-        } catch (error) {
-            console.error("Error getting problem statement: ", error)
-            return "<p>Error getting problem statement.</p>"
+        if (!this.problem.statementHtml) {
+            try {
+                this.problem.statementHtml = await JutgeService.getHtmlStatement(this.problem.problem_id)
+            } catch (error) {
+                console.error("Error getting problem statement: ", error)
+                this.problem.statementHtml = "<p>Error getting problem statement.</p>"
+            }
         }
     }
 
     private async _getProblemHandler() {
         _info(`Getting problem handler for ${this.problem.problem_nm}`)
-        if (this.problem.handler) {
-            return this.problem.handler
-        }
-        try {
-            const suppl = await JutgeService.getProblemSuppl(this.problem.problem_id)
-            this.problem.handler = suppl.handler.handler
-            _info(`Handler is: ${JSON.stringify(this.problem.handler)}`)
-        } catch (error) {
-            console.error("Error getting problem handler: ", error)
-            return "<p>Error getting problem handler.</p>"
+        if (!this.problem.handler) {
+            try {
+                const suppl = await JutgeService.getProblemSuppl(this.problem.problem_id)
+                this.problem.handler = suppl.handler.handler
+            } catch (error) {
+                console.error("Error getting problem handler: ", error)
+            }
         }
     }
 
     private async _getProblemTestcases() {
         _info(`Getting problem testcases for ${this.problem.problem_nm}`)
-        if (this.problem.testcases) {
-            return this.problem.testcases
-        }
-        try {
-            this.problem.testcases = await JutgeService.getSampleTestcases(this.problem.problem_id)
-        } catch (error) {
-            console.error("Error getting problem testcases: ", error)
-            return []
+        if (!this.problem.testcases) {
+            try {
+                this.problem.testcases = await JutgeService.getSampleTestcases(this.problem.problem_id)
+            } catch (error) {
+                console.error("Error getting problem testcases: ", error)
+                return []
+            }
         }
     }
 
