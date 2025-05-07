@@ -1,15 +1,12 @@
 import * as os from "os"
 import * as vscode from "vscode"
 
-import { TreeViewProvider } from "@/providers/tree-view/provider"
 import { ProblemWebviewPanel } from "@/providers/problem/webview-panel"
-import { AuthService } from "@/services/auth"
+import { TreeViewProvider } from "@/providers/tree-view/provider"
 import { ConfigService } from "@/services/config"
-import { JutgeApiClient } from "./jutge_api_client"
-import { ProblemWebviewPanelSerializer } from "./providers/problem/webview-panel-serializer"
 import { commandRefreshTree, commandShowProblem } from "./commands/show-problem"
-
-export const jutgeClient = new JutgeApiClient()
+import { ProblemWebviewPanelSerializer } from "./providers/problem/webview-panel-serializer"
+import { JutgeService } from "./services/jutge"
 
 /**
  * Get the webview options for the webview panel.
@@ -37,8 +34,18 @@ export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptio
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
-    logSystemInfo(context)
-    await AuthService.initialize(context) // needs to await token validation
+    const extension = vscode.extensions.getExtension("jutge.jutge-vscode")
+    const extensionVersion = extension?.packageJSON.version || "unknown"
+
+    console.info("=== jutge-vscode initialization ===")
+    console.info(`Extension Version: ${extensionVersion}`)
+    console.info(`VS Code Version: ${vscode.version}`)
+    console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
+    console.info(`Node.js Version: ${process.version}`)
+    console.info(`Date: ${new Date().toISOString()}`)
+    console.info("===================================")
+
+    await JutgeService.initialize(context)
     ConfigService.initialize()
 
     const registerCommand = (command: string, callback: (...args: any[]) => any) => {
@@ -60,29 +67,13 @@ export async function activate(context: vscode.ExtensionContext) {
     registerTreeDataProvider("jutgeTreeView", treeViewProvider)
 
     const serializer = new ProblemWebviewPanelSerializer(context)
+    const serializer = new ProblemWebviewPanelSerializer(context)
     registerWebviewPanelSerializer(ProblemWebviewPanel.viewType, serializer)
 
-    registerCommand("jutge-vscode.signIn", AuthService.signIn)
-    registerCommand("jutge-vscode.signOut", AuthService.signOut)
+    registerCommand("jutge-vscode.signIn", JutgeService.signIn)
+    registerCommand("jutge-vscode.signOut", JutgeService.signOut)
     registerCommand("jutge-vscode.showProblem", commandShowProblem(context))
     registerCommand("jutge-vscode.refreshTree", commandRefreshTree(treeViewProvider))
 
     console.info("[Extension] jutge-vscode is now active")
-}
-
-/**
- * Logs system information to help with debugging
- */
-function logSystemInfo(ctx: vscode.ExtensionContext) {
-    const extension = vscode.extensions.getExtension("jutge.jutge-vscode")
-    const extensionVersion = extension?.packageJSON.version || "unknown"
-
-    console.info("=== jutge-vscode initialization ===")
-    console.info(`Extension Version: ${extensionVersion}`)
-    console.info(`Extension URI: ${ctx.extensionUri}`)
-    console.info(`VS Code Version: ${vscode.version}`)
-    console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
-    console.info(`Node.js Version: ${process.version}`)
-    console.info(`Date: ${new Date().toISOString()}`)
-    console.info("===================================")
 }

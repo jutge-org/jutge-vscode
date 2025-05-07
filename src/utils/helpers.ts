@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
-import { jutgeClient } from "@/extension"
 import { dirname } from "path"
+import { JutgeService } from "@/services/jutge"
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -49,7 +49,7 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
     try {
-        await jutgeClient.problems.getAbstractProblem(problemNm)
+        await JutgeService.getAbstractProblem(problemNm)
         return true
     } catch (error) {
         return false

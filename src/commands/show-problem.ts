@@ -1,6 +1,6 @@
 import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
 import { TreeViewProvider } from "@/providers/tree-view/provider"
-import { AuthService } from "@/services/auth"
+import { JutgeService } from "@/services/jutge"
 import * as vscode from "vscode"
 
 export const commandRefreshTree = (treeProvider: TreeViewProvider) => () => {
@@ -9,7 +9,7 @@ export const commandRefreshTree = (treeProvider: TreeViewProvider) => () => {
 
 export const commandShowProblem = (context: vscode.ExtensionContext) => async (problemNm: string | undefined) => {
     console.debug(`[commandShowProblem] Problem ${problemNm}`)
-    if (!(await AuthService.isUserAuthenticated())) {
+    if (!(await JutgeService.isUserAuthenticated())) {
         vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
         return
     }
