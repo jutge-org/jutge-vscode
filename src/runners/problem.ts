@@ -1,11 +1,11 @@
 import * as fs from "fs"
 import * as vscode from "vscode"
 
-import { jutgeClient } from "@/extension"
 import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
 import { Problem, TestcaseStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { Testcase } from "@/jutge_api_client"
 import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
+import { JutgeService } from "@/services/jutge"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -86,7 +86,7 @@ async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undef
         return problem.testcases
     }
     try {
-        const problemTestcases = await jutgeClient.problems.getSampleTestcases(problem.problem_id)
+        const problemTestcases = await JutgeService.getSampleTestcases(problem.problem_id)
         return problemTestcases
     } catch (error) {
         console.error("Error getting problem testcases: ", error)

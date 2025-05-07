@@ -11,10 +11,10 @@ export class WebviewPanelRegistry {
     /**
      * Creates a new problem webview panel.
      *
-     * @param extensionUri The uri of the extension.
+     * @param context The context of the extension.
      * @param problemNm The problem number.
      */
-    public static async createOrShow(extensionUri: vscode.Uri, problemNm: string) {
+    public static async createOrShow(context: vscode.ExtensionContext, problemNm: string) {
         console.debug(`[WebviewPanelRegistry] Attempting to show panel for problem ${problemNm}`)
 
         if (!(await utils.isProblemValidAndAccessible(problemNm))) {
@@ -40,9 +40,9 @@ export class WebviewPanelRegistry {
             ProblemWebviewPanel.viewType,
             problemNm,
             { viewColumn, preserveFocus: true },
-            getWebviewOptions(extensionUri)
+            getWebviewOptions(context.extensionUri)
         )
-        const panel = new ProblemWebviewPanel(webviewPanel, extensionUri, problemNm)
+        const panel = new ProblemWebviewPanel(webviewPanel, context, problemNm)
         this.createdPanels.set(problemNm, panel)
         return panel
     }

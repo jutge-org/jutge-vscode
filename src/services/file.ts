@@ -3,7 +3,7 @@ import fs from "fs"
 
 import { Problem } from "@/utils/types"
 import { getDefaultExtensionFromLangId, Proglang } from "@/runners/language/languages"
-import { jutgeClient } from "@/extension"
+import { JutgeService } from "./jutge"
 
 function sanitizeProblemTitle(title: string): string {
     title = title.replace(/ /g, "_") // Replace spaces with underscores
@@ -59,7 +59,7 @@ export class FileService {
             [Proglang.PYTHON]: "#",
         }[fileLang]
 
-        const profile = await jutgeClient.student.profile.get()
+        const profile = await JutgeService.getProfile()
         const problemIdComment = `${langComment} ${problem.problem_id}`
         const problemTitleComment = `${langComment} ${problem.title}`
         const UrlComment = `${langComment} https://jutge.org/problems/${problem.problem_id}`

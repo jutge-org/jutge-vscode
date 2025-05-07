@@ -134,7 +134,7 @@ function addOnClickEventListeners() {
     const compareDiffButtons = document.querySelectorAll(".compare-diff")
     compareDiffButtons.forEach((button) => {
         button.addEventListener("click", () => {
-            const testcaseId = parseInt(button.closest(".case").id.split("-")[1])
+            const testcaseId = parseInt(button.closest(".case")!.id.split("-")[1])
 
             // Get the expected and received output texts
             const testcaseElement = document.getElementById(`testcase-${testcaseId}`)!

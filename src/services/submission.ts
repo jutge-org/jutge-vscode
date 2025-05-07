@@ -1,11 +1,11 @@
 import * as vscode from "vscode"
 
-import { jutgeClient } from "@/extension"
 import { runAllTestcases } from "@/runners/problem"
 import { getCompilerIdFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
 import { readFile } from "fs/promises"
 import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
+import { JutgeService } from "./jutge"
 
 export class SubmissionService {
     /**
@@ -44,7 +44,7 @@ export class SubmissionService {
                 }
 
                 console.info(`[SubmissionService] Submitting to Jutge.org`)
-                const submission_id = await jutgeClient.student.submissions.submit(submission)
+                const submission_id = await JutgeService.submit(submission)
                 console.info(`[SubmissionService] Submission successful, ID: ${submission_id}`)
 
                 vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...")
@@ -61,7 +61,7 @@ export class SubmissionService {
 
     private static async monitorSubmissionStatus(problem: Problem, submissionId: string): Promise<void> {
         try {
-            const response = await jutgeClient.student.submissions.get({
+            const response = await JutgeService.getSubmission({
                 problem_id: problem.problem_id,
                 submission_id: submissionId,
             })

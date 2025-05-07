@@ -3,10 +3,10 @@ import { WebviewPanelRegistry } from "./webview-panel-registry"
 import { ProblemWebviewPanel } from "./webview-panel"
 
 export class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
-    private readonly _extensionUri: vscode.Uri
+    private readonly _context: vscode.ExtensionContext
 
-    constructor(extensionUri: vscode.Uri) {
-        this._extensionUri = extensionUri
+    constructor(context: vscode.ExtensionContext) {
+        this._context = context
     }
 
     async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
@@ -20,7 +20,7 @@ export class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSeriali
                 return
             }
 
-            const panel = new ProblemWebviewPanel(webviewPanel, this._extensionUri, state.problemNm)
+            const panel = new ProblemWebviewPanel(webviewPanel, this._context, state.problemNm)
             WebviewPanelRegistry.register(state.problemNm, panel)
         } catch (error) {
             console.error("[WebviewPanel] Error deserializing webview panel: ", error)

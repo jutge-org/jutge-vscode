@@ -1,10 +1,10 @@
 import * as vscode from "vscode"
 
-import { jutgeClient } from "@/extension"
 import { BriefProblem } from "@/jutge_api_client"
 import { AuthService } from "@/services/auth"
 import { ConfigService } from "@/services/config"
 import { JutgeTreeItem } from "./item"
+import { JutgeService } from "@/services/jutge"
 
 const _error = (msg: string) => console.error(`[TreeViewProvider] ${msg}`)
 
@@ -30,7 +30,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
      * viewsWelcome are defined in `package.json`.
      */
     async getChildren(element?: JutgeTreeItem): Promise<JutgeTreeItem[]> {
-        if (!(await AuthService.isUserAuthenticated())) {
+        if (!(await JutgeService.isUserAuthenticated())) {
             return []
         }
         if (!element) {
@@ -45,7 +45,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
         try {
-            const courses = await jutgeClient.student.courses.indexEnrolled()
+            const courses = await JutgeService.getCourses()
             return Object.keys(courses).map((courseKey) => {
                 const course = courses[courseKey]
                 const courseItem = new JutgeTreeItem(course.course_nm, vscode.TreeItemCollapsibleState.Collapsed)
@@ -63,8 +63,8 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
     private async _getListsFromCourseNm(courseKey: string): Promise<JutgeTreeItem[]> {
         try {
             const [course_info, all_lists] = await Promise.all([
-                jutgeClient.student.courses.getEnrolled(courseKey),
-                jutgeClient.student.lists.getAll(),
+                JutgeService.getCourse(courseKey),
+                JutgeService.getAllLists(),
             ])
             const lists = course_info.lists
 
@@ -93,15 +93,15 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
             console.debug(`[TreeViewProvider] Getting Problems for list '${listKey}'`)
 
             const [problemsResult, allStatusesResult] = await Promise.allSettled([
-                jutgeClient.problems.getAbstractProblemsInList(listKey),
-                jutgeClient.student.statuses.getAll(),
+                JutgeService.getAbstractProblemsInList(listKey),
+                JutgeService.getAllStatuses(),
             ])
 
-            if (problemsResult.status == "rejected") {
+            if (problemsResult.status === "rejected") {
                 _error(`Could not load list of problems`)
                 return []
             }
-            if (allStatusesResult.status == "rejected") {
+            if (allStatusesResult.status === "rejected") {
                 _error(`Could not load the statuses`)
                 return []
             }

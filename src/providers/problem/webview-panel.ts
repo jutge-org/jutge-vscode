@@ -1,6 +1,5 @@
 import * as vscode from "vscode"
 
-import { jutgeClient } from "@/extension"
 import { BriefProblem } from "@/jutge_api_client"
 import { runAllTestcases, runSingleTestcase } from "@/runners/problem"
 import { FileService } from "@/services/file"
@@ -10,9 +9,10 @@ import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils
 import { Button } from "@/webview/components/button"
 import { generateTestcasePanels } from "@/webview/components/testcases"
 import { WebviewPanelRegistry } from "./webview-panel-registry"
+import { JutgeService } from "@/services/jutge"
 
 const _info = (msg: string) => {
-    console.info(`[ProblemWebviewPanel] ${msg}`)
+    console.info(`${Date.now()} [ProblemWebviewPanel] ${msg}`)
 }
 
 export class ProblemWebviewPanel {
@@ -32,10 +32,10 @@ export class ProblemWebviewPanel {
      * @param problemNm The problem number.
      * @returns The problem webview panel.
      */
-    public constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, problemNm: string) {
-        _info(`Constructing a webview panel for problem ${problemNm} (${extensionUri})`)
+    public constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, problemNm: string) {
+        _info(`Constructing a webview panel for problem ${problemNm} (${context.extensionUri})`)
         this.panel = panel
-        this._extensionUri = extensionUri
+        this._extensionUri = context.extensionUri
 
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),
@@ -78,7 +78,7 @@ export class ProblemWebviewPanel {
     private async _getProblemInfo(): Promise<void> {
         _info(`Getting problem info for ${this.problem.problem_nm}`)
         try {
-            const abstractProblem = await jutgeClient.problems.getAbstractProblem(this.problem.problem_nm)
+            const abstractProblem = await JutgeService.getAbstractProblem(this.problem.problem_nm)
             const langProblems = abstractProblem.problems
             const availableLangIds = Object.values(langProblems).reduce(
                 (acc: Record<string, BriefProblem>, problem: BriefProblem) => {
@@ -133,7 +133,7 @@ export class ProblemWebviewPanel {
             return this.problem.statementHtml
         }
         try {
-            const problemStatement = await jutgeClient.problems.getHtmlStatement(this.problem.problem_id)
+            const problemStatement = await JutgeService.getHtmlStatement(this.problem.problem_id)
             this.problem.statementHtml = problemStatement
             return problemStatement
         } catch (error) {
@@ -149,8 +149,8 @@ export class ProblemWebviewPanel {
         }
         try {
             const [problemExtras, problemTestcases] = await Promise.all([
-                jutgeClient.problems.getProblemSuppl(this.problem.problem_id),
-                jutgeClient.problems.getSampleTestcases(this.problem.problem_id),
+                JutgeService.getProblemSuppl(this.problem.problem_id),
+                JutgeService.getSampleTestcases(this.problem.problem_id),
             ])
             this.problem.handler = problemExtras.handler.handler
             this.problem.testcases = problemTestcases
@@ -187,36 +187,34 @@ export class ProblemWebviewPanel {
         return `
             <!DOCTYPE html>
             <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" 
-                    content="
-                        default-src 'none';
-                        style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
-                        script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                        img-src ${this.panel.webview.cspSource} https: data:;
-                        font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                    ">
-                <link rel="stylesheet" href="${styleUri}" />
-                <style>body { font-size: 1rem; }</style>
-            </head>
-            <body>
-                <section id="header" class="component-container">
-                    <h2 id="problem-nm" class="flex-grow-1">
-                        <span class="problem-code">${this.problem.problem_nm}</span> - ${this.problem.title}
-                    </h2>
-                    ${Button("New File", "add", "new-file")}
-                </section>
-                <section id="statement" class="component-container">
-                    ${problemStatement}
-                </section>
-                <vscode-divider></vscode-divider>
-                <section id="testcases" class="component-container">
-                    ${testcasePanels}
-                </section>
-                <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-            </body>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <meta http-equiv="Content-Security-Policy" 
+                        content="
+                            default-src 'none';
+                            style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
+                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                            img-src ${this.panel.webview.cspSource} https: data:;
+                            font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
+                        ">
+                    <link rel="stylesheet" href="${styleUri}" />
+                    <style>body { font-size: 0.9rem; }</style>
+                </head>
+                <body>
+                    <section id="header" class="component-container">
+                        <h2 id="problem-nm" class="font-normal flex-grow-1">${this.problem.problem_nm}</h2>
+                        ${Button("New File", "add", "new-file")}
+                    </section>
+                    <section id="statement" class="component-container">
+                        ${problemStatement}
+                    </section>
+                    <vscode-divider></vscode-divider>
+                    <section id="testcases" class="component-container">
+                        ${testcasePanels}
+                    </section>
+                    <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+                </body>
             </html>
         `
     }
