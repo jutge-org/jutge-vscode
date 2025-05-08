@@ -85,13 +85,18 @@ async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undef
     if (problem.testcases) {
         return problem.testcases
     }
-    try {
-        const problemTestcases = await JutgeService.getSampleTestcases(problem.problem_id)
-        return problemTestcases
-    } catch (error) {
-        console.error("Error getting problem testcases: ", error)
-        return
-    }
+    return new Promise((resolve, reject) => {
+        try {
+            const problemTestcasesRes = JutgeService.getSampleTestcasesSWR(problem.problem_id)
+            if (problemTestcasesRes.data) {
+                resolve(problemTestcasesRes.data)
+            }
+            problemTestcasesRes.onUpdate = (data) => resolve(data)
+        } catch (error) {
+            console.error("Error getting problem testcases: ", error)
+            reject(error)
+        }
+    })
 }
 
 /**
@@ -119,6 +124,7 @@ export async function runSingleTestcase(testcaseId: number, problem: Problem, fi
 
     const passed = output !== null && output === expected
     const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED
+
     sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, status, output)
 
     return passed

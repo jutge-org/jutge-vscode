@@ -44,7 +44,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
         try {
-            const result = JutgeService.getCourses()
+            const result = JutgeService.getCoursesSWR()
             const courses = result.data || {}
             result.onUpdate = () => this.refresh() // all
 
@@ -60,7 +60,7 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
     private async _getListsFromCourseNm(courseElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
         try {
-            const courseRes = JutgeService.getCourse(courseElem.itemKey)
+            const courseRes = JutgeService.getCourseSWR(courseElem.itemKey)
             courseRes.onUpdate = () => this.refresh(courseElem)
 
             const course = courseRes.data
@@ -83,10 +83,10 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
         try {
             console.debug(`[TreeViewProvider] Getting Problems for list '${listElem.itemKey}'`)
 
-            const problemsRes = JutgeService.getAbstractProblemsInList(listElem.itemKey)
+            const problemsRes = JutgeService.getAbstractProblemsInListSWR(listElem.itemKey)
             problemsRes.onUpdate = () => this.refresh(listElem)
 
-            const statusRes = JutgeService.getAllStatuses()
+            const statusRes = JutgeService.getAllStatusesSWR()
 
             if (problemsRes.data === undefined || statusRes.data === undefined) {
                 throw new Error(`_getProblemsFromListNm: Error loading problems + statuses`)

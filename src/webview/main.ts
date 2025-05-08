@@ -178,7 +178,7 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             runningText.style.color = "green"
             runningText.textContent = "Passed"
             outputElement.setAttribute("data-original-text", output)
-            outputElement.textContent = makeSpecialCharsVisible(output)
+            outputElement.innerHTML = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
 
@@ -187,7 +187,7 @@ function updateTestcase(testcaseId: number, status: string, output: string) {
             runningText.textContent = "Failed"
             runningText.style.color = "red"
             outputElement.setAttribute("data-original-text", output)
-            outputElement.textContent = makeSpecialCharsVisible(output)
+            outputElement.innerHTML = makeSpecialCharsVisible(output)
             receivedDiv.style.display = "block"
             break
     }

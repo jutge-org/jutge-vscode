@@ -49,7 +49,7 @@ export function getCompilerIdFromExtension(extension: string): string {
  */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
     try {
-        await JutgeService.getAbstractProblem(problemNm)
+        await JutgeService.getAbstractProblemSWR(problemNm)
         return true
     } catch (error) {
         return false

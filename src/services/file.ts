@@ -59,15 +59,24 @@ export class FileService {
             [Proglang.PYTHON]: "#",
         }[fileLang]
 
-        const profile = await JutgeService.getProfile()
-        const problemIdComment = `${langComment} ${problem.problem_id}`
-        const problemTitleComment = `${langComment} ${problem.title}`
-        const UrlComment = `${langComment} https://jutge.org/problems/${problem.problem_id}`
-        const createdComment = `${langComment} Created ${new Date().toLocaleString()} by ${profile.name}`
-        const fileHeader = [problemIdComment, problemTitleComment, UrlComment, createdComment].join("\n").concat("\n\n")
+        const profileRes = JutgeService.getProfileSWR()
+        const profile = profileRes.data
+
+        const fileHeader = [
+            `${langComment} ${problem.problem_id}\n`,
+            `${langComment} ${problem.title}\n`,
+            `${langComment} https://jutge.org/problems/${problem.problem_id}\n`,
+            `${langComment} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
+            `\n`,
+        ].join("")
+
+        let body = ""
+        if (fileLang === Proglang.CPP) {
+            body = `#include <iostream>\nusing namespace std;\n\nint main() {\n\n}\n`
+        }
 
         try {
-            fs.writeFileSync(uri.fsPath, fileHeader, { flag: "w" })
+            fs.writeFileSync(uri.fsPath, fileHeader + body, { flag: "w" })
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
             throw error

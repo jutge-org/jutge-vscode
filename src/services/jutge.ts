@@ -12,7 +12,7 @@ import deepEqual from "deep-equal"
 
 const jutgeClient = new j.JutgeApiClient()
 
-type StaleWhileRevalidateResult<T> = {
+type SwrResult<T> = {
     data: T | undefined
     onUpdate: (data: T) => void
 }
@@ -125,6 +125,8 @@ export class JutgeService {
 
                 vscode.commands.executeCommand("jutge-vscode.refreshTree")
                 vscode.window.showInformationMessage("Jutge.org: You have signed in")
+
+                JutgeService.getProfileSWR() // cache this for later
             }
         }
 
@@ -152,8 +154,8 @@ export class JutgeService {
 
     // ---
 
-    static staleWhileRevalidate<T>(key: string, getData: () => Promise<T>): StaleWhileRevalidateResult<T> {
-        const result: StaleWhileRevalidateResult<T> = {
+    static SWR<T>(key: string, getData: () => Promise<T>): SwrResult<T> {
+        const result: SwrResult<T> = {
             data: undefined,
             onUpdate: (_) => {}, // <- should be replaced later by the caller
         }
@@ -174,76 +176,86 @@ export class JutgeService {
         return result
     }
 
-    static getCourses() {
-        return this.staleWhileRevalidate<Record<string, j.BriefCourse>>("getCourses", async () =>
+    static getCoursesSWR() {
+        return this.SWR<Record<string, j.BriefCourse>>("getCourses", async () =>
             jutgeClient.student.courses.indexEnrolled()
         )
     }
 
-    static getCourse(courseKey: string) {
-        return this.staleWhileRevalidate<{ course: j.Course; lists: j.BriefList[] }>(
-            `getCourse(${courseKey})`,
-            async () => {
-                const [courseRes, listsRes] = await Promise.allSettled([
-                    jutgeClient.student.courses.getEnrolled(courseKey),
-                    jutgeClient.student.lists.getAll(),
-                ])
-                if (courseRes.status === "rejected" || listsRes.status === "rejected") {
-                    throw new Error(`[JutgeService] getCourse: Could not load course or all lists`)
-                }
-                const course = courseRes.value
-                const allLists = listsRes.value
-                return {
-                    course,
-                    lists: course.lists.map((key) => allLists[key]),
-                }
+    static getCourseSWR(courseKey: string) {
+        return this.SWR<{ course: j.Course; lists: j.BriefList[] }>(`getCourse(${courseKey})`, async () => {
+            const [courseRes, listsRes] = await Promise.allSettled([
+                jutgeClient.student.courses.getEnrolled(courseKey),
+                jutgeClient.student.lists.getAll(),
+            ])
+            if (courseRes.status === "rejected" || listsRes.status === "rejected") {
+                throw new Error(`[JutgeService] getCourse: Could not load course or all lists`)
             }
-        )
+            const course = courseRes.value
+            const allLists = listsRes.value
+            return {
+                course,
+                lists: course.lists.map((key) => allLists[key]),
+            }
+        })
     }
 
-    static getAllLists() {
-        return this.staleWhileRevalidate<Record<string, j.BriefList>>(`getAllLists()`, async () =>
-            jutgeClient.student.lists.getAll()
-        )
+    static getAllListsSWR() {
+        return this.SWR<Record<string, j.BriefList>>(`getAllLists()`, async () => jutgeClient.student.lists.getAll())
     }
 
-    static getAbstractProblemsInList(listKey: string) {
-        return this.staleWhileRevalidate<Record<string, j.AbstractProblem>>(
+    static getAbstractProblemsInListSWR(listKey: string) {
+        return this.SWR<Record<string, j.AbstractProblem>>(
             `getAbstractProblemsInListWithStatus(${listKey})`,
             async () => jutgeClient.problems.getAbstractProblemsInList(listKey)
         )
     }
 
-    static getAllStatuses() {
-        return this.staleWhileRevalidate<Record<string, j.AbstractStatus>>(`getAllStatuses()`, async () =>
+    static getAllStatusesSWR() {
+        return this.SWR<Record<string, j.AbstractStatus>>(`getAllStatuses()`, async () =>
             jutgeClient.student.statuses.getAll()
         )
     }
 
-    static getProfile() {
-        return this.staleWhileRevalidate<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
+    static getProfileSWR() {
+        return this.SWR<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
     }
 
-    static getAbstractProblem(problemNm: string) {
-        return this.staleWhileRevalidate<j.AbstractProblem>(`getAbstractProblem(${problemNm})`, async () =>
+    static getAbstractProblemSWR(problemNm: string) {
+        return this.SWR<j.AbstractProblem>(`getAbstractProblem(${problemNm})`, async () =>
             jutgeClient.problems.getAbstractProblem(problemNm)
         )
     }
 
-    static getHtmlStatement(problemId: string) {
-        return this.staleWhileRevalidate<string>(`getHtmlStatement(${problemId})`, async () =>
+    static getAbstractProblem(problemNm: string): Promise<j.AbstractProblem> {
+        return new Promise((resolve, reject) => {
+            try {
+                const res = this.getAbstractProblemSWR(problemNm)
+                if (res.data) {
+                    resolve(res.data)
+                } else {
+                    res.onUpdate = (data) => resolve(data)
+                }
+            } catch (e) {
+                reject(e)
+            }
+        })
+    }
+
+    static getHtmlStatementSWR(problemId: string) {
+        return this.SWR<string>(`getHtmlStatement(${problemId})`, async () =>
             jutgeClient.problems.getHtmlStatement(problemId)
         )
     }
 
-    static getProblemSuppl(problemId: string) {
-        return this.staleWhileRevalidate<j.ProblemSuppl>(`getProblemSuppl(${problemId})`, async () =>
+    static getProblemSupplSWR(problemId: string) {
+        return this.SWR<j.ProblemSuppl>(`getProblemSuppl(${problemId})`, async () =>
             jutgeClient.problems.getProblemSuppl(problemId)
         )
     }
 
-    static getSampleTestcases(problemId: string) {
-        return this.staleWhileRevalidate<j.Testcase[]>(`getSampleTestcases(${problemId})`, async () =>
+    static getSampleTestcasesSWR(problemId: string) {
+        return this.SWR<j.Testcase[]>(`getSampleTestcases(${problemId})`, async () =>
             jutgeClient.problems.getSampleTestcases(problemId)
         )
     }

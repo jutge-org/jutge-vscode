@@ -344,3 +344,7 @@ body.vscode-light textarea:focus {
 .case-textarea pre .text-muted {
     color: rgba(255, 255, 255, 0.25);
 }
+
+.case .testcase-metadata span.case-title {
+    margin-right: 0.4em;
+}
