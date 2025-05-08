@@ -154,7 +154,9 @@ export class JutgeService {
 
     // ---
 
-    static SWR<T>(key: string, getData: () => Promise<T>): SwrResult<T> {
+    static SWR<T>(funcCallId: string, getData: () => Promise<T>): SwrResult<T> {
+        const dbkey = `JutgeService.${funcCallId}`
+
         const result: SwrResult<T> = {
             data: undefined,
             onUpdate: (_) => {}, // <- should be replaced later by the caller
@@ -164,7 +166,7 @@ export class JutgeService {
             const newData: T = await getData()
             // Don't call update or save if data is identical
             if (!deepEqual(result.data, newData)) {
-                this.context_.globalState.update(key, newData)
+                this.context_.globalState.update(dbkey, newData)
                 result.onUpdate(newData)
             }
         }
@@ -172,7 +174,7 @@ export class JutgeService {
         _revalidate() // launch revalidation
 
         // But return what we have in cache
-        result.data = this.context_.globalState.get<T>(key)
+        result.data = this.context_.globalState.get<T>(dbkey)
         return result
     }
 
