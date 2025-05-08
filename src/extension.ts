@@ -2,7 +2,7 @@ import * as os from "os"
 import * as vscode from "vscode"
 
 import { ProblemWebviewPanel } from "@/providers/problem/webview-panel"
-import { TreeViewProvider } from "@/providers/tree-view/provider"
+import { CourseDataProvider } from "@/providers/tree-view/provider"
 import { ConfigService } from "@/services/config"
 import { commandRefreshTree, commandShowProblem } from "./commands/show-problem"
 import { ProblemWebviewPanelSerializer } from "./providers/problem/webview-panel-serializer"
@@ -63,8 +63,22 @@ export async function activate(context: vscode.ExtensionContext) {
         context.subscriptions.push(disposable)
     }
 
-    const treeViewProvider = new TreeViewProvider()
-    registerTreeDataProvider("jutgeTreeView", treeViewProvider)
+    const courseDataProvider = new CourseDataProvider(context)
+    const treeView = vscode.window.createTreeView("jutgeTreeView", {
+        showCollapseAll: true,
+        treeDataProvider: courseDataProvider,
+    })
+
+    treeView.onDidExpandElement((e) => {
+        console.log(`Expanded -> ${e.element.itemKey}!`)
+        context.globalState.update(`itemState:${e.element.itemKey}`, "expanded")
+    })
+    treeView.onDidCollapseElement((e) => {
+        console.log(`Collapsed -> ${e.element.itemKey}`)
+        context.globalState.update(`itemState:${e.element.itemKey}`, "collapsed")
+    })
+
+    // registerTreeDataProvider("jutgeTreeView", courseDataProvider)
 
     const serializer = new ProblemWebviewPanelSerializer(context)
     registerWebviewPanelSerializer(ProblemWebviewPanel.viewType, serializer)
@@ -72,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
     registerCommand("jutge-vscode.signIn", JutgeService.signIn)
     registerCommand("jutge-vscode.signOut", JutgeService.signOut)
     registerCommand("jutge-vscode.showProblem", commandShowProblem(context))
-    registerCommand("jutge-vscode.refreshTree", commandRefreshTree(treeViewProvider))
+    registerCommand("jutge-vscode.refreshTree", commandRefreshTree(courseDataProvider))
 
     console.info("[Extension] jutge-vscode is now active")
 }

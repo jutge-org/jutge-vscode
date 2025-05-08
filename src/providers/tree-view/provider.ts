@@ -7,12 +7,18 @@ import { JutgeService } from "@/services/jutge"
 
 const _error = (msg: string) => console.error(`[TreeViewProvider] ${msg}`)
 
-export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
+export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<JutgeTreeItem | undefined | null | void> =
         new vscode.EventEmitter<JutgeTreeItem | undefined | null | void>()
 
     readonly onDidChangeTreeData: vscode.Event<JutgeTreeItem | undefined | null | void> =
         this._onDidChangeTreeData.event
+
+    private context_: vscode.ExtensionContext
+
+    constructor(context: vscode.ExtensionContext) {
+        this.context_ = context
+    }
 
     refresh(item?: JutgeTreeItem): void {
         this._onDidChangeTreeData.fire(item)
@@ -48,9 +54,10 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
             const courses = result.data || {}
             result.onUpdate = () => this.refresh() // all
 
-            return Object.entries(courses).map(
-                ([key, course]) => new JutgeTreeItem(course.course_nm, "collapsed", key, "course")
-            )
+            return Object.entries(courses).map(([key, course]) => {
+                const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
+                return new JutgeTreeItem(course.course_nm, state || "collapsed", key, "course")
+            })
         } catch (error) {
             console.error(error)
             vscode.window.showErrorMessage("Failed to get enrolled courses")
@@ -69,7 +76,9 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
             }
 
             return course.lists.map((list) => {
-                return new JutgeTreeItem(list.title || list.list_nm, "collapsed", list.list_nm, "list")
+                const key = list.list_nm
+                const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
+                return new JutgeTreeItem(list.title || list.list_nm, state || "collapsed", key, "list")
             })
             //
         } catch (error) {

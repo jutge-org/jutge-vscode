@@ -1,9 +1,9 @@
 import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
-import { TreeViewProvider } from "@/providers/tree-view/provider"
+import { CourseDataProvider } from "@/providers/tree-view/provider"
 import { JutgeService } from "@/services/jutge"
 import * as vscode from "vscode"
 
-export const commandRefreshTree = (treeProvider: TreeViewProvider) => () => {
+export const commandRefreshTree = (treeProvider: CourseDataProvider) => () => {
     treeProvider.refresh()
 }
 

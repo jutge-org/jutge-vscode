@@ -38,9 +38,9 @@
             "jutge": [
                 {
                     "id": "jutgeTreeView",
+                    "contextualTitle": "Jutge.org",
                     "name": "Courses",
-                    "icon": "resources/lightbulb-regular.svg",
-                    "contextualTitle": "Jutge.org"
+                    "icon": "resources/lightbulb-regular.svg"
                 }
             ]
         },
