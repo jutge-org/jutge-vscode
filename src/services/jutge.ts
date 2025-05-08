@@ -207,10 +207,27 @@ export class JutgeService {
     }
 
     static getAbstractProblemsInListSWR(listKey: string) {
-        return this.SWR<Record<string, j.AbstractProblem>>(
-            `getAbstractProblemsInListWithStatus(${listKey})`,
-            async () => jutgeClient.problems.getAbstractProblemsInList(listKey)
-        )
+        return this.SWR<j.AbstractProblem[]>(`getAbstractProblemsInListWithStatus(${listKey})`, async () => {
+            const [resList, resAbsProblems] = await Promise.allSettled([
+                jutgeClient.student.lists.get(listKey),
+                jutgeClient.problems.getAbstractProblemsInList(listKey),
+            ])
+            if (resAbsProblems.status === "rejected" || resList.status === "rejected") {
+                throw new Error(`[JutgeService] getAbstractProblemsInListSWR: Failed to load abs. problems or list`)
+            }
+            const problems = resAbsProblems.value
+            const listItems = resList.value.items
+
+            // Put abstract problems in the order in which they appear in the list
+            const result: j.AbstractProblem[] = []
+            for (const { problem_nm } of listItems) {
+                if (problem_nm != null && problem_nm in problems) {
+                    result.push(problems[problem_nm])
+                }
+            }
+
+            return result
+        })
     }
 
     static getAllStatusesSWR() {

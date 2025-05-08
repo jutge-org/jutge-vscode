@@ -97,15 +97,11 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
 
             const items: JutgeTreeItem[] = []
 
-            for (const [problem_nm, abstractProblem] of Object.entries(problems)) {
-                if (problem_nm === null) {
-                    items.push(new JutgeTreeItem("Problem name unavailable", "none", problem_nm, "problem"))
-                    continue
-                }
-
-                const problemItem = new JutgeTreeItem(problem_nm, "none", problem_nm, "problem")
+            for (const abstractProblem of problems) {
+                const nm = abstractProblem.problem_nm
+                const problemItem = new JutgeTreeItem(nm, "none", nm, "problem")
                 const langCode = ConfigService.getPreferredLangId()
-                const preferredId = `${problem_nm}_${langCode}`
+                const preferredId = `${nm}_${langCode}`
 
                 let problem: BriefProblem | undefined = undefined
                 if (preferredId in abstractProblem.problems) {
@@ -115,13 +111,13 @@ export class TreeViewProvider implements vscode.TreeDataProvider<JutgeTreeItem> 
                 }
 
                 // Get status for this problem
-                const status = allStatuses[problem_nm]?.status
+                const status = allStatuses[nm]?.status
 
                 problemItem.label = `${this._getIconForStatus(status)} ${problem.title}`
                 problemItem.command = {
                     command: "jutge-vscode.showProblem",
                     title: "Open Problem",
-                    arguments: [problem_nm],
+                    arguments: [nm],
                 }
                 items.push(problemItem)
             }
