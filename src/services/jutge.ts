@@ -14,7 +14,8 @@ const jutgeClient = new j.JutgeApiClient()
 
 type SwrResult<T> = {
     data: T | undefined
-    onUpdate: (data: T) => void
+    onUpdate: (data: T | null) => void
+    // TODO: Put an onError and handle it!
 }
 
 export class JutgeService {
@@ -164,14 +165,19 @@ export class JutgeService {
 
         const _revalidate = async () => {
             console.log(`Revalidating '${funcCallId}'...`)
-            const newData: T = await getData()
-            // Don't call update or save if data is identical
-            if (!deepEqual(result.data, newData)) {
-                console.log(`Revalidated '${funcCallId}': updating content.`)
-                this.context_.globalState.update(dbkey, newData)
-                result.onUpdate(newData)
-            } else {
-                console.log(`Revalidated '${funcCallId}': content was the same.`)
+            try {
+                const newData: T = await getData()
+                // Don't call update or save if data is identical
+                if (!deepEqual(result.data, newData)) {
+                    console.log(`Revalidated '${funcCallId}': updating content.`)
+                    this.context_.globalState.update(dbkey, newData)
+                    result.onUpdate(newData)
+                } else {
+                    console.log(`Revalidated '${funcCallId}': content was the same.`)
+                }
+            } catch (e) {
+                console.log(`Error getting data: ${e}`)
+                result.onUpdate(null)
             }
         }
 
@@ -192,7 +198,11 @@ export class JutgeService {
                 } else {
                     res.onUpdate = (data) => {
                         console.log(`promisify: Resolved with an update`)
-                        resolve(data)
+                        if (data === null) {
+                            reject(`Could not load data`)
+                        } else {
+                            resolve(data)
+                        }
                     }
                 }
             } catch (e) {

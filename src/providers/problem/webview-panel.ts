@@ -71,36 +71,38 @@ export class ProblemWebviewPanel {
                 cancellable: false,
             },
             async (progress) => {
+                const problemNm = this.problem.problem_nm
+
+                let problemTitle: string = ""
+                let statementHtml: string = ""
+                let testcases: Testcase[] = []
+                let handler: string = ""
+
+                const updateWebview = () => {
+                    _info(`Updating HTML for ${this.problem.problem_nm}`)
+
+                    this.panel.webview.html = htmlForWebview({
+                        problemNm,
+                        problemTitle,
+                        nonce: utils.getNonce(),
+                        statementHtml,
+                        testcasesHtml: htmlForAllTestcases(testcases, handler),
+                        styleUri: this._getUri("dist", "webview", "main.css"),
+                        scriptUri: this._getUri("dist", "webview", "main.js"),
+                        cspSource: this.panel.webview.cspSource,
+                    })
+                }
                 try {
                     progress.report({ increment: 0, message: "Loading..." })
 
-                    const problemNm = this.problem.problem_nm
                     _info(`Updating webview contents for ${problemNm}`)
 
                     progress.report({ increment: 20, message: "Getting concrete problem..." })
                     const absProb = await JutgeService.getAbstractProblem(problemNm)
-                    const { problem_id, title: problemTitle } = this.__chooseConcreteProblem(problemNm, absProb)
+                    const { problem_id, title } = this.__chooseConcreteProblem(problemNm, absProb)
+                    problemTitle = title
 
                     this.panel.title = `${this.problem.problem_nm} - ${problemTitle}`
-
-                    let statementHtml: string = ""
-                    let testcases: Testcase[] = []
-                    let handler: string = ""
-
-                    const updateWebview = () => {
-                        _info(`Updating HTML for ${this.problem.problem_nm}`)
-
-                        this.panel.webview.html = htmlForWebview({
-                            problemNm,
-                            problemTitle,
-                            nonce: utils.getNonce(),
-                            statementHtml,
-                            testcasesHtml: htmlForAllTestcases(testcases, handler),
-                            styleUri: this._getUri("dist", "webview", "main.css"),
-                            scriptUri: this._getUri("dist", "webview", "main.js"),
-                            cspSource: this.panel.webview.cspSource,
-                        })
-                    }
 
                     const _loadHandler = async () => {
                         const suppl = await JutgeService.getProblemSuppl(problem_id)
@@ -127,6 +129,7 @@ export class ProblemWebviewPanel {
                     //
                 } catch (e) {
                     console.error(e)
+                    updateWebview()
                 }
             }
         )
