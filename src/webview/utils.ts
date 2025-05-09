@@ -25,3 +25,9 @@ export function makeSpecialCharsVisible(str: string): string {
     }
     return result
 }
+
+export async function waitMilliseconds(time_ms: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => resolve(), time_ms)
+    })
+}

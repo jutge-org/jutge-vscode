@@ -169,11 +169,11 @@ export class JutgeService {
                 const newData: T = await getData()
                 // Don't call update or save if data is identical
                 if (!deepEqual(result.data, newData)) {
-                    console.log(`Revalidated '${funcCallId}': updating content.`)
+                    console.log(`Revalidated '${funcCallId}': update!`)
                     this.context_.globalState.update(dbkey, newData)
                     result.onUpdate(newData)
                 } else {
-                    console.log(`Revalidated '${funcCallId}': content was the same.`)
+                    console.log(`Revalidated '${funcCallId}': no changes.`)
                 }
             } catch (e) {
                 console.log(`Error getting data: ${e}`)
@@ -193,11 +193,9 @@ export class JutgeService {
             try {
                 const res = swrFunc()
                 if (res.data !== undefined) {
-                    console.log(`promisify: Resolved instantly`)
                     resolve(res.data)
                 } else {
                     res.onUpdate = (data) => {
-                        console.log(`promisify: Resolved with an update`)
                         if (data === null) {
                             reject(`Could not load data`)
                         } else {
@@ -313,13 +311,15 @@ export class JutgeService {
         return this.promisify(() => this.getSampleTestcasesSWR(problemId))
     }
 
-    static async submit(data: {
-        problem_id: string
-        compiler_id: string
-        code: string
-        annotation: string
-    }): Promise<string> {
-        return jutgeClient.student.submissions.submit(data)
+    static async submit(
+        file: File,
+        data: {
+            problem_id: string
+            compiler_id: string
+            annotation: string
+        }
+    ): Promise<j.NewSubmissionOut> {
+        return jutgeClient.student.submissions.submitFull(data, file)
     }
 
     static async getSubmission(data: { problem_id: string; submission_id: string }): Promise<j.Submission> {

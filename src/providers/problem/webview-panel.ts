@@ -49,9 +49,9 @@ export class ProblemWebviewPanel {
             problem_nm: problemNm,
             title: title || "",
             language_id: null,
+            handler: null,
             statementHtml: null,
             testcases: null,
-            handler: null,
         }
 
         // Initialize problem info and update webview
@@ -73,20 +73,16 @@ export class ProblemWebviewPanel {
             async (progress) => {
                 const problemNm = this.problem.problem_nm
 
-                let problemTitle: string = ""
-                let statementHtml: string = ""
-                let testcases: Testcase[] = []
-                let handler: string = ""
-
                 const updateWebview = () => {
                     _info(`Updating HTML for ${this.problem.problem_nm}`)
 
                     this.panel.webview.html = htmlForWebview({
-                        problemNm,
-                        problemTitle,
+                        problemNm: this.problem.problem_nm,
+                        problemTitle: this.problem.title,
+                        statementHtml: this.problem.statementHtml || "",
+                        testcasesHtml: htmlForAllTestcases(this.problem.testcases || [], this.problem.handler),
+
                         nonce: utils.getNonce(),
-                        statementHtml,
-                        testcasesHtml: htmlForAllTestcases(testcases, handler),
                         styleUri: this._getUri("dist", "webview", "main.css"),
                         scriptUri: this._getUri("dist", "webview", "main.js"),
                         cspSource: this.panel.webview.cspSource,
@@ -100,24 +96,21 @@ export class ProblemWebviewPanel {
                     progress.report({ increment: 20, message: "Getting concrete problem..." })
                     const absProb = await JutgeService.getAbstractProblem(problemNm)
                     const { problem_id, title } = this.__chooseConcreteProblem(problemNm, absProb)
-                    problemTitle = title
+                    this.problem.title = title
 
-                    this.panel.title = `${this.problem.problem_nm} - ${problemTitle}`
+                    this.panel.title = `${this.problem.problem_nm} - ${title}`
 
                     const _loadHandler = async () => {
                         const suppl = await JutgeService.getProblemSuppl(problem_id)
-                        handler = suppl.handler.handler
-                        _info("  A")
+                        this.problem.handler = suppl.handler.handler
                         progress.report({ increment: 20, message: "Loaded handler" })
                     }
                     const _loadTestcases = async () => {
-                        testcases = await JutgeService.getSampleTestcases(problem_id)
-                        _info("  B")
+                        this.problem.testcases = await JutgeService.getSampleTestcases(problem_id)
                         progress.report({ increment: 20, message: "Loaded testcases" })
                     }
                     const _loadStatementHtml = async () => {
-                        statementHtml = await JutgeService.getHtmlStatement(problem_id)
-                        _info("  C")
+                        this.problem.statementHtml = await JutgeService.getHtmlStatement(problem_id)
                         progress.report({ increment: 20, message: "Loaded HTML statement" })
                     }
 

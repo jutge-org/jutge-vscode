@@ -81,7 +81,7 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
  *
  * @returns The testcases for the problem.
  */
-async function getProblemTestcases(problem: Problem): Promise<Testcase[] | undefined> {
+async function getProblemTestcases(problem: Problem): Promise<Testcase[] | null> {
     if (problem.testcases) {
         return problem.testcases
     }

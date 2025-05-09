@@ -1,13 +1,24 @@
 import * as vscode from "vscode"
 
-import { runAllTestcases } from "@/runners/problem"
-import { getCompilerIdFromExtension } from "@/utils/helpers"
-import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
-import { readFile } from "fs/promises"
 import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
+import { runAllTestcases } from "@/runners/problem"
+import { getLangInfoFromExtension } from "@/utils/helpers"
+import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
+import { waitMilliseconds } from "@/webview/utils"
+import { readFile } from "fs/promises"
+import { basename, extname } from "path"
 import { JutgeService } from "./jutge"
 
 export class SubmissionService {
+    private static MONITOR_INTERVAL_MS = 5000
+
+    private static _info(msg: string) {
+        console.info(`[${this.name}]: ${msg}`)
+    }
+    private static _debug(msg: string) {
+        console.debug(`[${this.name}]: ${msg}`)
+    }
+
     /**
      * Submits the currently open file to Jutge.
      * Before submitting, it runs all testcases to ensure correctness.
@@ -16,97 +27,118 @@ export class SubmissionService {
      * @param filePath Path to the file being submitted
      */
     public static async submitProblem(problem: Problem, filePath: string): Promise<void> {
-        console.info(`[SubmissionService] Preparing to submit problem ${problem.problem_id} from file ${filePath}`)
+        vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Submitting ${problem.problem_nm}`,
+                cancellable: false,
+            },
+            async (progress) => {
+                const { problem_nm, problem_id } = problem
 
-        const fileExtension = filePath.split(".").pop() || ""
-        const compilerId = getCompilerIdFromExtension(fileExtension)
-        console.debug(`[SubmissionService] Using compiler ID: ${compilerId}`)
+                this._info(`Preparing to submit problem ${problem_id} from file ${filePath}`)
 
-        console.info(`[SubmissionService] Running all testcases before submission`)
-        const allTestsPassed = await runAllTestcases(problem, filePath)
-        if (allTestsPassed) {
-            console.info(`[SubmissionService] All testcases passed, proceeding with submission`)
-            SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, SubmissionStatus.PENDING)
+                const { compiler_id, mimeType } = getLangInfoFromExtension(extname(filePath))
+                this._debug(`Using compiler ID: ${compiler_id}`)
 
-            try {
-                console.debug(`[SubmissionService] Reading file content`)
-                const code = await readFile(filePath)
-                const file = new File([code], filePath.split("/").pop() || "", { type: "text/x-c" })
-                const codeString = await file.text()
+                this._info(`Running all testcases before submission`)
+                progress.report({ message: "Running all testcases before submission" })
+
+                const allTestsPassed = await runAllTestcases(problem, filePath)
+                if (!allTestsPassed) {
+                    console.warn(`Some testcases failed, submission aborted`)
+                    vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.")
+                    return
+                }
+
+                this._info(`All testcases passed, proceeding with submission`)
+                progress.report({ message: "Submitting..." })
+                this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
+
                 const nowDate = new Date().toLocaleDateString()
                 const nowTime = new Date().toLocaleTimeString()
 
-                const submission = {
-                    problem_id: problem.problem_id,
-                    compiler_id: compilerId,
-                    code: codeString,
-                    annotation: `Sent through the API on ${nowDate} at ${nowTime}`,
+                try {
+                    this._debug(`Reading file content`)
+                    const code = await readFile(filePath)
+                    const file = new File([code], basename(filePath), { type: mimeType })
+
+                    this._info(`Submitting to Jutge.org`)
+                    const { submission_id } = await JutgeService.submit(file, {
+                        problem_id,
+                        compiler_id,
+                        annotation: `Sent through VSCode on ${nowDate} at ${nowTime}`,
+                    })
+
+                    this._info(`Submission successful (${submission_id})`)
+                    progress.report({ message: `Submission successful (${submission_id})` })
+
+                    const verdict = await this._waitForVerdictLoop(problem, submission_id, progress)
+
+                    this._showNotification(problem, submission_id, verdict)
+
+                    //
+                } catch (err) {
+                    console.error(`Error submitting to Jutge: ${err}`)
+                    vscode.window.showErrorMessage("Error submitting to Jutge: " + err)
                 }
-
-                console.info(`[SubmissionService] Submitting to Jutge.org`)
-                const submission_id = await JutgeService.submit(submission)
-                console.info(`[SubmissionService] Submission successful, ID: ${submission_id}`)
-
-                vscode.window.showInformationMessage("All testcases passed! Submitting to Jutge...")
-                SubmissionService.monitorSubmissionStatus(problem, submission_id)
-            } catch (err) {
-                console.error(`[SubmissionService] Error submitting to Jutge: ${err}`)
-                vscode.window.showErrorMessage("Error submitting to Jutge: " + err)
             }
-        } else {
-            console.warn(`[SubmissionService] Some testcases failed, submission aborted`)
-            vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.")
+        )
+    }
+
+    private static async _waitForVerdictLoop(
+        problem: Problem,
+        submission_id: string,
+        progress: vscode.Progress<{
+            message?: string
+            increment?: number
+        }>
+    ) {
+        const { problem_nm, problem_id } = problem
+        let times = 1
+
+        let verdict: SubmissionStatus = SubmissionStatus.PENDING
+
+        while (verdict === SubmissionStatus.PENDING) {
+            try {
+                const response = await JutgeService.getSubmission({ problem_id, submission_id })
+                verdict = response.veredict as SubmissionStatus
+            } catch (error) {
+                vscode.window.showErrorMessage("Error getting submission status: " + error)
+            }
+            progress.report({ message: `Waiting (${times}) ...` })
+            times++
+            await waitMilliseconds(this.MONITOR_INTERVAL_MS)
+        }
+
+        this._sendStatusUpdate(problem_nm, verdict)
+        return verdict
+    }
+
+    private static async _showNotification(problem: Problem, submission_id: string, verdict: string) {
+        const icon = verdict ? this._verdictIcon.get(verdict) : "❓"
+
+        const selection = await vscode.window.showInformationMessage(
+            `${icon} ${verdict}`,
+            {
+                modal: true,
+                detail: `Problem: ${problem.problem_nm}\nVerdict: ${verdict}\n`,
+            },
+            { title: "View in jutge.org" },
+            { title: "Ok", isCloseAffordance: true }
+        )
+
+        if (selection && selection.title == "View in jutge.org") {
+            const path = `/${problem.problem_id}/submissions/${submission_id}`
+            vscode.env.openExternal(vscode.Uri.parse(`https://jutge.org/problems${path}`))
         }
     }
 
-    private static async monitorSubmissionStatus(problem: Problem, submissionId: string): Promise<void> {
-        try {
-            const response = await JutgeService.getSubmission({
-                problem_id: problem.problem_id,
-                submission_id: submissionId,
-            })
-
-            if (response.veredict === SubmissionStatus.PENDING) {
-                setTimeout(() => {
-                    SubmissionService.monitorSubmissionStatus(problem, submissionId)
-                }, 5000)
-            } else {
-                SubmissionService.sendUpdateSubmissionStatus(problem.problem_nm, response.veredict as SubmissionStatus)
-                SubmissionService.showSubmissionNotification(problem, response)
-            }
-        } catch (error) {
-            vscode.window.showErrorMessage("Error getting submission status: " + error)
-        }
-    }
-
-    private static showSubmissionNotification(problem: Problem, response: any) {
-        const detail = `
-Problem: ${problem.problem_nm}
-Veredict: ${response.veredict} 
-`
-        vscode.window
-            .showInformationMessage(
-                SubmissionService.getVerdict(response.veredict!) + " " + response.veredict,
-                { modal: true, detail },
-                { title: "View in jutge.org" }
-            )
-            .then((selection) => {
-                if (selection?.title === "View in jutge.org") {
-                    vscode.env.openExternal(
-                        vscode.Uri.parse(
-                            `https://jutge.org/problems/${problem.problem_id}/submissions/${response.submission_id}`
-                        )
-                    )
-                }
-            })
-    }
-
-    private static sendUpdateSubmissionStatus(problemNm: string, status: SubmissionStatus) {
-        const message = {
+    private static _sendStatusUpdate(problemNm: string, status: SubmissionStatus) {
+        WebviewPanelRegistry.sendMessage(problemNm, {
             command: VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS,
             data: { status },
-        }
-        WebviewPanelRegistry.sendMessage(problemNm, message)
+        })
     }
 
     private static _verdictIcon: Map<string, string> = new Map([
@@ -117,8 +149,4 @@ Veredict: ${response.veredict}
         ["IE", "🔥"],
         ["Pending", "⏳"],
     ])
-
-    private static getVerdict(verdict: string): string {
-        return SubmissionService._verdictIcon.get(verdict) || "❓"
-    }
 }
