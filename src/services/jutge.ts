@@ -154,7 +154,7 @@ export class JutgeService {
 
     // ---
 
-    static SWR<T>(funcCallId: string, getData: () => Promise<T>): SwrResult<T> {
+    private static SWR<T>(funcCallId: string, getData: () => Promise<T>): SwrResult<T> {
         const dbkey = `JutgeService.${funcCallId}`
 
         const result: SwrResult<T> = {
@@ -163,11 +163,15 @@ export class JutgeService {
         }
 
         const _revalidate = async () => {
+            console.log(`Revalidating '${funcCallId}'...`)
             const newData: T = await getData()
             // Don't call update or save if data is identical
             if (!deepEqual(result.data, newData)) {
+                console.log(`Revalidated '${funcCallId}': updating content.`)
                 this.context_.globalState.update(dbkey, newData)
                 result.onUpdate(newData)
+            } else {
+                console.log(`Revalidated '${funcCallId}': content was the same.`)
             }
         }
 
@@ -176,6 +180,25 @@ export class JutgeService {
         // But return what we have in cache
         result.data = this.context_.globalState.get<T>(dbkey)
         return result
+    }
+
+    private static async promisify<T>(swrFunc: () => SwrResult<T>): Promise<T> {
+        return new Promise((resolve, reject) => {
+            try {
+                const res = swrFunc()
+                if (res.data !== undefined) {
+                    console.log(`promisify: Resolved instantly`)
+                    resolve(res.data)
+                } else {
+                    res.onUpdate = (data) => {
+                        console.log(`promisify: Resolved with an update`)
+                        resolve(data)
+                    }
+                }
+            } catch (e) {
+                reject(e)
+            }
+        })
     }
 
     static getCoursesSWR() {
@@ -246,19 +269,8 @@ export class JutgeService {
         )
     }
 
-    static getAbstractProblem(problemNm: string): Promise<j.AbstractProblem> {
-        return new Promise((resolve, reject) => {
-            try {
-                const res = this.getAbstractProblemSWR(problemNm)
-                if (res.data) {
-                    resolve(res.data)
-                } else {
-                    res.onUpdate = (data) => resolve(data)
-                }
-            } catch (e) {
-                reject(e)
-            }
-        })
+    static async getAbstractProblem(problemNm: string): Promise<j.AbstractProblem> {
+        return this.promisify(() => this.getAbstractProblemSWR(problemNm))
     }
 
     static getHtmlStatementSWR(problemId: string) {
@@ -267,16 +279,28 @@ export class JutgeService {
         )
     }
 
+    static async getHtmlStatement(problemId: string) {
+        return this.promisify(() => this.getHtmlStatementSWR(problemId))
+    }
+
     static getProblemSupplSWR(problemId: string) {
         return this.SWR<j.ProblemSuppl>(`getProblemSuppl(${problemId})`, async () =>
             jutgeClient.problems.getProblemSuppl(problemId)
         )
     }
 
+    static getProblemSuppl(problemId: string) {
+        return this.promisify(() => this.getProblemSupplSWR(problemId))
+    }
+
     static getSampleTestcasesSWR(problemId: string) {
         return this.SWR<j.Testcase[]>(`getSampleTestcases(${problemId})`, async () =>
             jutgeClient.problems.getSampleTestcases(problemId)
         )
+    }
+
+    static async getSampleTestcases(problemId: string) {
+        return this.promisify(() => this.getSampleTestcasesSWR(problemId))
     }
 
     static async submit(data: {

@@ -13,6 +13,7 @@ import { AbstractProblem } from "@/jutge_api_client"
 import { makeSpecialCharsVisible } from "../../webview/utils"
 import { warningIcon } from "../../webview/components/icons"
 import { Testcase } from "../../jutge_api_client"
+import { htmlForAllTestcases, htmlForTestcase, htmlForWebview } from "./webview-html"
 
 const _info = (msg: string) => {
     console.info(`[ProblemWebviewPanel] ${msg}`)
@@ -63,248 +64,100 @@ export class ProblemWebviewPanel {
     }
 
     private async _updateWebviewContents() {
-        _info(`Updating webview contents for ${this.problem.problem_nm}`)
+        vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Loading ${this.problem.problem_nm}`,
+                cancellable: false,
+            },
+            async (progress) => {
+                try {
+                    progress.report({ increment: 0, message: "Loading..." })
 
-        await this._getConcreteProblem()
-        this._getProblemHandler()
-        this._getProblemTestcases()
-        this._getProblemHTMLStatement()
+                    const problemNm = this.problem.problem_nm
+                    _info(`Updating webview contents for ${problemNm}`)
 
-        this.panel.title = `${this.problem.problem_nm} - ${this.problem.title}`
-        // this.panel.iconPath = this._getUri("dist", "webview", "icon.png")
+                    progress.report({ increment: 20, message: "Getting concrete problem..." })
+                    const absProb = await JutgeService.getAbstractProblem(problemNm)
+                    const { problem_id, title: problemTitle } = this.__chooseConcreteProblem(problemNm, absProb)
 
-        this._updateHtmlForWebview()
-    }
+                    this.panel.title = `${this.problem.problem_nm} - ${problemTitle}`
 
-    private async _getConcreteProblem(): Promise<void> {
-        const __getConcreteProblem = (problemNm: string, langId: string, absProb: AbstractProblem) => {
-            const concreteProblems = absProb.problems
-            let problem
-            let id = `${problemNm}_${langId}`
-            if (concreteProblems[id]) {
-                problem = concreteProblems[id]
-            } else {
-                console.warn("[ProblemWebviewPanel] Preferred language not available. Trying with fallback languages.")
-                for (const langId of utils.fallbackLangOrder) {
-                    const id = `${problemNm}_${langId}`
-                    if (concreteProblems[id]) {
-                        problem = concreteProblems[id]
-                        break
+                    let statementHtml: string = ""
+                    let testcases: Testcase[] = []
+                    let handler: string = ""
+
+                    const updateWebview = () => {
+                        _info(`Updating HTML for ${this.problem.problem_nm}`)
+
+                        this.panel.webview.html = htmlForWebview({
+                            problemNm,
+                            problemTitle,
+                            nonce: utils.getNonce(),
+                            statementHtml,
+                            testcasesHtml: htmlForAllTestcases(testcases, handler),
+                            styleUri: this._getUri("dist", "webview", "main.css"),
+                            scriptUri: this._getUri("dist", "webview", "main.js"),
+                            cspSource: this.panel.webview.cspSource,
+                        })
                     }
+
+                    const _loadHandler = async () => {
+                        const suppl = await JutgeService.getProblemSuppl(problem_id)
+                        handler = suppl.handler.handler
+                        _info("  A")
+                        progress.report({ increment: 20, message: "Loaded handler" })
+                    }
+                    const _loadTestcases = async () => {
+                        testcases = await JutgeService.getSampleTestcases(problem_id)
+                        _info("  B")
+                        progress.report({ increment: 20, message: "Loaded testcases" })
+                    }
+                    const _loadStatementHtml = async () => {
+                        statementHtml = await JutgeService.getHtmlStatement(problem_id)
+                        _info("  C")
+                        progress.report({ increment: 20, message: "Loaded HTML statement" })
+                    }
+
+                    progress.report({ message: "Loading..." })
+                    await Promise.all([_loadHandler(), _loadTestcases(), _loadStatementHtml()])
+
+                    updateWebview()
+
+                    //
+                } catch (e) {
+                    console.error(e)
                 }
             }
-            if (!problem) {
-                throw new Error("No problem found in any language.")
-            }
-            return problem
-        }
-
-        _info(`Getting problem info for ${this.problem.problem_nm}`)
-        try {
-            const absProblem = await JutgeService.getAbstractProblem(this.problem.problem_nm)
-            if (absProblem === undefined) {
-                throw new Error(`_getConcreteProblem: Data is undefined`)
-            }
-
-            const langId = ConfigService.getPreferredLangId()
-            const problem = __getConcreteProblem(this.problem.problem_nm, langId, absProblem)
-
-            this.problem.problem_id = problem.problem_id
-            this.problem.title = problem.title
-            this.problem.language_id = problem.language_id
-            //
-        } catch (error) {
-            console.error("[ProblemWebviewPanel] Error getting problem info: ", error)
-        }
+        )
     }
 
-    private _getProblemHTMLStatement() {
-        _info(`Getting problem statement for ${this.problem.problem_nm}`)
-        if (!this.problem.statementHtml) {
-            try {
-                const htmlRes = JutgeService.getHtmlStatementSWR(this.problem.problem_id)
-                htmlRes.onUpdate = (html) => {
-                    this.problem.statementHtml = html
-                    this._updateHtmlForWebview()
+    private __chooseConcreteProblem(problemNm: string, absProb: AbstractProblem) {
+        const langId = ConfigService.getPreferredLangId()
+        const concreteProblems = absProb.problems
+        let problem
+        let id = `${problemNm}_${langId}`
+        if (concreteProblems[id]) {
+            problem = concreteProblems[id]
+        } else {
+            console.warn("[ProblemWebviewPanel] Preferred language not available. Trying with fallback languages.")
+            for (const langId of utils.fallbackLangOrder) {
+                const id = `${problemNm}_${langId}`
+                if (concreteProblems[id]) {
+                    problem = concreteProblems[id]
+                    break
                 }
-                this.problem.statementHtml = htmlRes.data!
-            } catch (error) {
-                console.error("Error getting problem statement: ", error)
-                this.problem.statementHtml = "<p>Error getting problem statement.</p>"
             }
         }
-    }
-
-    private _getProblemHandler() {
-        _info(`Getting problem handler for ${this.problem.problem_nm}`)
-        if (!this.problem.handler) {
-            try {
-                const supplRes = JutgeService.getProblemSupplSWR(this.problem.problem_id)
-                supplRes.onUpdate = (data) => {
-                    this.problem.handler = data.handler.handler
-                    this._updateHtmlForWebview()
-                }
-                this.problem.handler = supplRes.data?.handler.handler
-            } catch (error) {
-                console.error("Error getting problem handler: ", error)
-            }
+        if (!problem) {
+            throw new Error("No problem found in any language.")
         }
-    }
-
-    private _getProblemTestcases() {
-        _info(`Getting problem testcases for ${this.problem.problem_nm}`)
-        if (!this.problem.testcases) {
-            try {
-                const testcasesRes = JutgeService.getSampleTestcasesSWR(this.problem.problem_id)
-                testcasesRes.onUpdate = (testcases) => {
-                    this.problem.testcases = testcases
-                    this._updateHtmlForWebview()
-                }
-                this.problem.testcases = testcasesRes.data!
-            } catch (error) {
-                console.error("Error getting problem testcases: ", error)
-                return []
-            }
-        }
+        return problem
     }
 
     private _getUri(...path: string[]) {
         const uri = vscode.Uri.joinPath(this.context_.extensionUri, ...path)
         return this.panel.webview.asWebviewUri(uri)
-    }
-
-    private _generateTestcase(testcase: Testcase, index: number): string {
-        const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
-        const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
-
-        const inputDisplayed = makeSpecialCharsVisible(inputDecoded)
-        const correctDisplayed = makeSpecialCharsVisible(correctDecoded)
-
-        return /*html*/ `
-        <div class="case" id="testcase-${index + 1}">
-            <div class="testcase-metadata">
-                <div class="toggle-minimize">
-                    <span class="case-number case-title">
-                        <span class="icon">
-                            <i class="codicon codicon-chevron-up"></i>
-                        </span>
-                        Testcase ${index + 1}
-                    </span>
-                    <span class="running-text"></span>
-                </div>
-                <div className="time">
-                    ${Button("", "run-again", `run-testcase-${index + 1}`, "Run Again")}
-                </div>
-            </div>
-
-            <div class="testcase-content">
-                <div class="textarea-container input-div">
-                    Input:
-                    <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div id="input" class="selectable case-textarea">
-                        <pre data-original-text="${inputDecoded}">${inputDisplayed}</pre>
-                    </div>
-                </div>
-                <div class="textarea-container expected-div">
-                    Expected Output:
-                    <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div id="expected" class="selectable case-textarea">
-                        <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
-                    </div>
-                </div>
-                <div class="textarea-container received-div">
-                    Received Output:
-                    <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div class="compare-diff" title="Compare with expected">Compare</div>
-                    <div id="received" class="selectable case-textarea"><pre></pre></div>
-                </div>
-            </div>
-        </div>
-    `
-    }
-
-    private _generateAllTestcases(problemTestcases: Testcase[], handler: string | null): string {
-        if (handler !== "std") {
-            return /*html*/ `
-            <div class="testcase-header">
-                <h2 class="flex-grow-1">Testcases</h2>
-            </div>
-            <div class="warning">
-                ${warningIcon()}
-                <span>Local testcase running is not supported for this problem.</span>
-            </div>
-      `
-        }
-        if (problemTestcases.length === 0) {
-            return /*html*/ `
-            <div class="testcase-header">
-                <h2 class="flex-grow-1">Testcases</h2>
-                No testcases found.
-            </div>
-        `
-        }
-        return /*html*/ `
-        <div class="testcase-header">
-            <h2 class="flex-grow-1">Testcases</h2>
-            ${Button("Run All", "run-all", "run-all-testcases")}
-            ${Button("Submit to Jutge", "submit", "submit-to-jutge")}
-        </div>
-        <div class="testcase-panels">
-            ${problemTestcases.map(this._generateTestcase).join("")}
-        </div>
-    `
-    }
-
-    private _updateHtmlForWebview(): void {
-        _info(`Updating HTML for ${this.problem.problem_nm}`)
-
-        this.panel.title = `${this.problem.problem_nm} - ${this.problem.title}`
-
-        const data = {
-            problemNm: this.problem.problem_nm,
-            title: this.problem.title,
-        }
-
-        const testcases = this._generateAllTestcases(this.problem.testcases!, this.problem.handler)
-        const styleUri = this._getUri("dist", "webview", "main.css")
-        const scriptUri = this._getUri("dist", "webview", "main.js")
-
-        const nonce = utils.getNonce()
-
-        this.panel.webview.html = `
-            <!DOCTYPE html>
-            <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <meta http-equiv="Content-Security-Policy" 
-                        content="
-                            default-src 'none';
-                            style-src ${this.panel.webview.cspSource} 'unsafe-inline' data:;
-                            script-src 'nonce-${nonce}' ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                            img-src ${this.panel.webview.cspSource} https: data:;
-                            font-src ${this.panel.webview.cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
-                        ">
-                    <link rel="stylesheet" href="${styleUri}" />
-                    <style>body { font-size: 0.9rem; }</style>
-                </head>
-                <body>
-                    <div id="data" data-problem-nm="${data.problemNm}" data-title="${data.title}" />
-                    <section id="header" class="component-container">
-                        <h2 id="problem-nm" class="font-normal flex-grow-1">${data.problemNm}</h2>
-                        ${Button("New File", "add", "new-file")}
-                    </section>
-                    <section id="statement" class="component-container">
-                        ${this.problem.statementHtml}
-                    </section>
-                    <vscode-divider></vscode-divider>
-                    <section id="testcases" class="component-container">
-                        ${testcases}
-                    </section>
-                    <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-                </body>
-            </html>
-        `
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
