@@ -1,21 +1,21 @@
 import { Testcase } from "@/jutge_api_client"
 import { Button } from "@/webview/components/button"
 import { warningIcon } from "@/webview/components/icons"
-import { makeSpecialCharsVisible } from "@/webview/utils"
+import { makeSpacesVisible } from "@/webview/utils"
 import { Uri } from "vscode"
 
 export function htmlForTestcase(testcase: Testcase, index: number): string {
     const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
     const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
 
-    const inputDisplayed = makeSpecialCharsVisible(inputDecoded)
-    const correctDisplayed = makeSpecialCharsVisible(correctDecoded)
+    const inputDisplayed = makeSpacesVisible(inputDecoded)
+    const correctDisplayed = makeSpacesVisible(correctDecoded)
 
     return /*html*/ `
         <div class="case" id="testcase-${index + 1}">
-            <div class="testcase-metadata">
+            <div class="metadata">
                 <div class="toggle-minimize">
-                    <span class="case-number case-title">
+                    <span class="title">
                         <span class="icon">
                             <i class="codicon codicon-chevron-up"></i>
                         </span>
@@ -28,26 +28,25 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
                 </div>
             </div>
 
-            <div class="testcase-content">
-                <div class="textarea-container input-div">
-                    Input:
+            <div class="content">
+                <div class="container input-div">
+                    <div class="title">Input:</div>
                     <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div id="input" class="selectable case-textarea">
+                    <div id="input" class="selectable textarea">
                         <pre data-original-text="${inputDecoded}">${inputDisplayed}</pre>
                     </div>
                 </div>
-                <div class="textarea-container expected-div">
-                    Expected Output:
+                <div class="container expected">
+                    <div class="title">Expected Output:</div>
                     <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div id="expected" class="selectable case-textarea">
+                    <div id="expected" class="selectable textarea">
                         <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
                     </div>
                 </div>
-                <div class="textarea-container received-div">
-                    Received Output:
-                    <div class="clipboard" title="Copy to clipboard">Copy</div>
+                <div class="container received">
+                    <div class="title">Received Output:</div>
                     <div class="compare-diff" title="Compare with expected">Compare</div>
-                    <div id="received" class="selectable case-textarea"><pre></pre></div>
+                    <div id="received" class="selectable textarea"><pre></pre></div>
                 </div>
             </div>
         </div>

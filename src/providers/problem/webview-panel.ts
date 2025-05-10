@@ -1,5 +1,6 @@
 import * as vscode from "vscode"
 
+import { AbstractProblem } from "@/jutge_api_client"
 import { runAllTestcases, runSingleTestcase } from "@/runners/problem"
 import { ConfigService } from "@/services/config"
 import { FileService } from "@/services/file"
@@ -7,13 +8,8 @@ import { JutgeService } from "@/services/jutge"
 import { SubmissionService } from "@/services/submission"
 import * as utils from "@/utils/helpers"
 import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
-import { Button } from "@/webview/components/button"
+import { htmlForAllTestcases, htmlForWebview } from "./webview-html"
 import { WebviewPanelRegistry } from "./webview-panel-registry"
-import { AbstractProblem } from "@/jutge_api_client"
-import { makeSpecialCharsVisible } from "../../webview/utils"
-import { warningIcon } from "../../webview/components/icons"
-import { Testcase } from "../../jutge_api_client"
-import { htmlForAllTestcases, htmlForTestcase, htmlForWebview } from "./webview-html"
 
 const _info = (msg: string) => {
     console.info(`[ProblemWebviewPanel] ${msg}`)

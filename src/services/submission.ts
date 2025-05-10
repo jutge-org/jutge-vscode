@@ -4,7 +4,7 @@ import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry
 import { runAllTestcases } from "@/runners/problem"
 import { getLangInfoFromExtension } from "@/utils/helpers"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
-import { waitMilliseconds } from "@/webview/utils"
+import { waitMilliseconds } from "@/utils/helpers"
 import { readFile } from "fs/promises"
 import { basename, extname } from "path"
 import { JutgeService } from "./jutge"

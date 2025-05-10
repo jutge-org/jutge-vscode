@@ -3,7 +3,7 @@
  * @param str Input string
  * @returns String with special characters made visible
  */
-export function makeSpecialCharsVisible(str: string): string {
+export function makeSpacesVisible(str: string): string {
     let result = ""
     for (const ch of str) {
         switch (ch) {
@@ -24,10 +24,4 @@ export function makeSpecialCharsVisible(str: string): string {
         }
     }
     return result
-}
-
-export async function waitMilliseconds(time_ms: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => resolve(), time_ms)
-    })
 }

@@ -1,6 +1,6 @@
-import * as vscode from "vscode"
-import { dirname } from "path"
 import { JutgeService } from "@/services/jutge"
+import { dirname } from "path"
+import * as vscode from "vscode"
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -108,4 +108,10 @@ export const getWorkingDirectory = (filename: string) => {
     }
     console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
+}
+
+export async function waitMilliseconds(time_ms: number): Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(() => resolve(), time_ms)
+    })
 }

@@ -29,7 +29,7 @@ const extensionConfig = {
 /** @type BuildOptions */
 const webviewConfig = {
     ...baseConfig,
-    target: "es2022",
+    target: "esnext",
     format: "esm",
     entryPoints: ["./src/webview/main.ts"],
     outfile: "./dist/webview/main.js",

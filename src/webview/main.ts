@@ -1,11 +1,11 @@
-import { Button, allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
+import { allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
 import {
     SubmissionStatus,
     VSCodeToWebviewCommand,
     VSCodeToWebviewMessage,
     WebviewToVSCodeCommand,
 } from "../utils/types"
-import { makeSpecialCharsVisible } from "./utils"
+import { makeSpacesVisible } from "./utils"
 
 // Warning: this import is important, it will produce a "main.css" file that
 // later we will refer to from the HTML (esbuild does this)
@@ -20,16 +20,18 @@ const vscode = acquireVsCodeApi()
 const previousState = vscode.getState()
 if (previousState) {
     console.log("Restoring previous state:", previousState)
-    // You can restore any UI state here
 }
 
-// Just like a regular webpage we need to wait for the webview
-// DOM to load before we can reference any of the HTML elements
-// or toolkit components
-window.addEventListener("load", main)
+window.addEventListener("load", onLoad)
+window.addEventListener("message", onEvent)
 
-// Handle messages sent from the extension to the webview
-window.addEventListener("message", (event) => {
+function onLoad() {
+    addOnClickEventListeners()
+    const data = document.getElementById("data")!.dataset
+    vscode.setState(data)
+}
+
+function onEvent(event: MessageEvent<any>) {
     const message = event.data as VSCodeToWebviewMessage
     const { command, data } = message
     console.log("Received message from extension", command, data)
@@ -45,62 +47,46 @@ window.addEventListener("message", (event) => {
         default:
             console.log("Unknown command", command)
     }
-})
+}
 
-function main() {
-    addOnClickEventListeners()
+function assertNotNull<T>(value: T | null, message: string): asserts value is T {
+    if (value === null) {
+        throw new Error(message)
+    }
+}
 
-    const data = document.getElementById("data")!.dataset
-    vscode.setState({
-        problemNm: data.problemNm,
-        title: data.title,
-    })
+function postMessage(command: WebviewToVSCodeCommand, data: any = "") {
+    vscode.postMessage({ command, data })
+}
+
+function getButton(id: string): HTMLButtonElement {
+    const button = document.getElementById(id) as HTMLButtonElement
+    assertNotNull(button, `Button with id ${id} not found`)
+    return button
 }
 
 function addOnClickEventListeners() {
-    const newFileButton = document.getElementById("new-file") as HTMLButtonElement
-    newFileButton?.addEventListener("click", () => {
-        vscode.postMessage({
-            command: WebviewToVSCodeCommand.NEW_FILE,
-            data: "",
-        })
+    getButton("new-file").addEventListener("click", () => {
+        postMessage(WebviewToVSCodeCommand.NEW_FILE)
     })
-
-    const submitToJutgeButton = document.getElementById("submit-to-jutge") as HTMLButtonElement
-    submitToJutgeButton?.addEventListener("click", () => {
-        vscode.postMessage({
-            command: WebviewToVSCodeCommand.SUBMIT_TO_JUTGE,
-            data: "",
-        })
+    getButton("submit-to-jutge").addEventListener("click", () => {
+        postMessage(WebviewToVSCodeCommand.SUBMIT_TO_JUTGE)
     })
-
-    const runAllTestcasesButton = document.getElementById("run-all-testcases") as HTMLButtonElement
-    runAllTestcasesButton?.addEventListener("click", () => {
-        vscode.postMessage({
-            command: WebviewToVSCodeCommand.RUN_ALL_TESTCASES,
-            data: "",
-        })
+    getButton("run-all-testcases").addEventListener("click", () => {
+        postMessage(WebviewToVSCodeCommand.RUN_ALL_TESTCASES)
     })
-
-    const runTestcaseButtons = document.querySelectorAll('[id^="run-testcase-"]')
-    runTestcaseButtons.forEach((button) => {
+    document.querySelectorAll('[id^="run-testcase-"]').forEach((button) => {
         button.addEventListener("click", () => {
-            const testcaseId = button.id.split("-")[2]
-            const testcaseIdNumber = parseInt(testcaseId)
-            vscode.postMessage({
-                command: WebviewToVSCodeCommand.RUN_TESTCASE,
-                data: {
-                    testcaseId: testcaseIdNumber,
-                },
+            postMessage(WebviewToVSCodeCommand.RUN_TESTCASE, {
+                testcaseId: parseInt(button.id.split("-")[2]),
             })
         })
     })
-
-    const copyToClipboardButtons = document.querySelectorAll(".clipboard")
-    copyToClipboardButtons.forEach((button) => {
+    document.querySelectorAll(".clipboard").forEach((button) => {
         button.addEventListener("click", () => {
             const textElement = button.nextElementSibling as HTMLDivElement
-            const preElement = textElement.querySelector("pre")! // we know there is a pre... don't we? ;)
+            const preElement = textElement.querySelector("pre")
+            assertNotNull(preElement, `Pre element not found!`)
 
             // Store the original text in a data attribute when generating the HTML
             const originalText = preElement.getAttribute("data-original-text") || preElement.textContent || ""
@@ -114,9 +100,7 @@ function addOnClickEventListeners() {
             }, 1000)
         })
     })
-
-    const toggleMinimizeButtons = document.querySelectorAll(".toggle-minimize")
-    toggleMinimizeButtons.forEach((button) => {
+    document.querySelectorAll(".toggle-minimize").forEach((button) => {
         button.addEventListener("click", () => {
             const icon = button.querySelector(".icon i") as HTMLElement
             const testcaseContent = button.parentElement?.nextElementSibling as HTMLElement
@@ -132,21 +116,18 @@ function addOnClickEventListeners() {
             }
         })
     })
-
-    // Add handler for diff comparison buttons
-    const compareDiffButtons = document.querySelectorAll(".compare-diff")
-    compareDiffButtons.forEach((button) => {
+    document.querySelectorAll(".compare-diff").forEach((button) => {
         button.addEventListener("click", () => {
             const testcaseId = parseInt(button.closest(".case")!.id.split("-")[1])
 
             // Get the expected and received output texts
-            const testcaseElement = document.getElementById(`testcase-${testcaseId}`)!
-            const expectedElement = testcaseElement.querySelector(".expected-div pre")!
-            const receivedElement = testcaseElement.querySelector(".received-div pre")!
+            const testcase = document.getElementById(`testcase-${testcaseId}`)!
+            const expected = testcase.querySelector(".expected pre")!
+            const received = testcase.querySelector(".received pre")!
 
             // Original text (without special chars visualization)
-            const expectedText = expectedElement.getAttribute("data-original-text") || expectedElement.textContent || ""
-            const receivedText = receivedElement.getAttribute("data-original-text") || receivedElement.textContent || ""
+            const expectedText = expected.getAttribute("data-original-text") || expected.textContent || ""
+            const receivedText = received.getAttribute("data-original-text") || received.textContent || ""
 
             vscode.postMessage({
                 command: WebviewToVSCodeCommand.SHOW_DIFF,
@@ -161,47 +142,40 @@ function addOnClickEventListeners() {
 }
 
 function updateTestcase(testcaseId: number, status: string, output: string) {
-    const testcaseElement = document.getElementById(`testcase-${testcaseId}`) as HTMLDivElement
-    const runningText = testcaseElement.querySelector(".running-text") as HTMLSpanElement
-    const receivedDiv = testcaseElement.querySelector(".received-div") as HTMLDivElement
-    const outputElement = testcaseElement.querySelector("#received pre") as HTMLPreElement
+    const testcase = document.getElementById(`testcase-${testcaseId}`) as HTMLDivElement
+    const runningText = testcase.querySelector(".running-text") as HTMLSpanElement
+    const receivedDiv = testcase.querySelector(".received") as HTMLDivElement
+    const outputElement = testcase.querySelector("#received pre") as HTMLPreElement
+
+    const setTestcaseAppearance = (text: string, color: string) => {
+        runningText.textContent = text
+        testcase.style.borderLeftColor = color
+        runningText.style.color = color
+    }
+
+    const setOutputAppearance = (output: string) => {
+        outputElement.setAttribute("data-original-text", output)
+        outputElement.innerHTML = makeSpacesVisible(output)
+        receivedDiv.style.display = "block"
+    }
 
     switch (status) {
         case "running":
-            testcaseElement.style["border-left-color"] = "yellow"
-            runningText.style.color = "yellow"
-            runningText.textContent = "Running..."
+            setTestcaseAppearance("Running...", "yellow")
             break
 
         case "passed":
-            testcaseElement.style["border-left-color"] = "green"
-            runningText.style.color = "green"
-            runningText.textContent = "Passed"
-            outputElement.setAttribute("data-original-text", output)
-            outputElement.innerHTML = makeSpecialCharsVisible(output)
-            receivedDiv.style.display = "block"
+            setTestcaseAppearance("Passed", "green")
+            setOutputAppearance(output)
             break
 
         case "failed":
-            testcaseElement.style["border-left-color"] = "red"
-            runningText.textContent = "Failed"
-            runningText.style.color = "red"
-            outputElement.setAttribute("data-original-text", output)
-            outputElement.innerHTML = makeSpecialCharsVisible(output)
-            receivedDiv.style.display = "block"
+            setTestcaseAppearance("Failed", "red")
+            setOutputAppearance(output)
             break
     }
 }
 
 function updateSubmissionStatus(status: SubmissionStatus) {
-    const submissionStatusElement = document.getElementById("submit-to-jutge") as Button
-    switch (status) {
-        case SubmissionStatus.PENDING:
-            submissionStatusElement.disabled = true
-            break
-
-        default:
-            submissionStatusElement.disabled = false
-            break
-    }
+    getButton("submit-to-jutge").disabled = status === SubmissionStatus.PENDING
 }
