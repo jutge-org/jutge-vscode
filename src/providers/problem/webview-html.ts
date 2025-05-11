@@ -23,8 +23,13 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
                     </span>
                     <span class="running-text"></span>
                 </div>
-                <div className="time">
-                    ${Button("", "run-again", `run-testcase-${index + 1}`, "Run Again")}
+                <div className="run-button">
+                    ${Button({
+                        text: "",
+                        id: `run-testcase-${index + 1}`,
+                        title: "Run this testcase only",
+                        icon: "run",
+                    })}
                 </div>
             </div>
 
@@ -88,8 +93,19 @@ export function htmlForAllTestcases(problemTestcases: Testcase[], handler: strin
             <div class="header">
                 <h2 class="flex-grow-1">Testcases</h2>
                 <div class="buttons">
-                    ${Button("Run All", "run-all", "run-all-testcases")}
-                    ${Button("Submit to Jutge", "submit", "submit-to-jutge")}
+                    ${Button({
+                        id: "run-all-testcases",
+                        text: "Run All",
+                        title: "Run all testscases",
+                        icon: "run-all",
+                    })}
+                    ${Button({
+                        id: "submit-to-jutge",
+                        text: "Submit to Jutge",
+                        title: "Submit file to Jutge.org",
+                        icon: "submit",
+                        disabled: true,
+                    })}
                 </div>
             </div>
             <div class="panels">
@@ -131,7 +147,12 @@ export function htmlForWebview(data: WebviewHTMLData) {
                 <div id="data" data-problem-nm="${data.problemNm}" data-title="${data.problemTitle}" />
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="font-normal flex-grow-1">${data.problemNm}</h2>
-                    ${Button("New File", "add", "new-file")}
+                    ${Button({
+                        text: "New File",
+                        id: "new-file",
+                        title: "Create new code file",
+                        icon: "add",
+                    })}
                 </section>
                 <section id="statement" class="component-container">
                     ${data.statementHtml}

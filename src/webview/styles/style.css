@@ -196,7 +196,7 @@ textarea {
             display: flex;
             flex-direction: row;
             justify-content: flex-end;
-            gap: 0.2em;
+            gap: 0.4em;
         }
     }
 
@@ -252,6 +252,10 @@ textarea {
                     font-size: 1.1rem;
                     font-weight: bolder;
                     color: var(--list-active-selection-foreground);
+                }
+
+                & .run-button .icon-button {
+                    transform: scale(0.8);
                 }
             }
 

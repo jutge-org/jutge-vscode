@@ -25,6 +25,12 @@ if (previousState) {
 window.addEventListener("load", onLoad)
 window.addEventListener("message", onEvent)
 
+// Keep the ids of the passed tests to know when all have passed
+const passedTestcases: Map<string, boolean> = new Map()
+document.querySelectorAll(`.testcase`).forEach((elem) => {
+    passedTestcases.set(elem.id, false)
+})
+
 function onLoad() {
     addOnClickEventListeners()
     const data = document.getElementById("data")!.dataset
@@ -118,7 +124,7 @@ function addOnClickEventListeners() {
     })
     document.querySelectorAll(".compare-diff").forEach((button) => {
         button.addEventListener("click", () => {
-            const testcaseId = parseInt(button.closest(".case")!.id.split("-")[1])
+            const testcaseId = parseInt(button.closest(".testcase")!.id.split("-")[1])
 
             // Get the expected and received output texts
             const testcase = document.getElementById(`testcase-${testcaseId}`)!
@@ -141,8 +147,9 @@ function addOnClickEventListeners() {
     })
 }
 
-function updateTestcase(testcaseId: number, status: string, outputText: string) {
-    const testcase = document.getElementById(`testcase-${testcaseId}`) as HTMLDivElement
+function updateTestcase(testcaseIndex: number, status: string, outputText: string) {
+    const testcaseId = `testcase-${testcaseIndex}`
+    const testcase = document.getElementById(testcaseId) as HTMLDivElement
     const content = testcase.querySelector(`.content`) as HTMLDivElement
     const running = testcase.querySelector(".running-text") as HTMLSpanElement
     const received = testcase.querySelector(".received") as HTMLDivElement
@@ -174,13 +181,20 @@ function updateTestcase(testcaseId: number, status: string, outputText: string) 
         case "passed":
             setTestcaseAppearance("Passed", "green")
             setOutputText(outputText)
+            content.style.display = "none"
+            passedTestcases.set(testcaseId, true)
             break
 
         case "failed":
             setTestcaseAppearance("Failed", "red")
             setOutputText(outputText)
+            content.style.display = "flex"
+            passedTestcases.set(testcaseId, false)
             break
     }
+
+    let allPassed = passedTestcases.values().every((v) => v === true)
+    getButton("submit-to-jutge").disabled = !allPassed
 }
 
 function updateSubmissionStatus(status: SubmissionStatus) {
