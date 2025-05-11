@@ -41,17 +41,6 @@ export class SubmissionService {
                 const { compiler_id, mimeType } = getLangInfoFromExtension(extname(filePath))
                 this._debug(`Using compiler ID: ${compiler_id}`)
 
-                this._info(`Running all testcases before submission`)
-                progress.report({ message: "Running all testcases before submission" })
-
-                const allTestsPassed = await runAllTestcases(problem, filePath)
-                if (!allTestsPassed) {
-                    console.warn(`Some testcases failed, submission aborted`)
-                    vscode.window.showErrorMessage("Some testcases failed. Fix them before submitting to Jutge.")
-                    return
-                }
-
-                this._info(`All testcases passed, proceeding with submission`)
                 progress.report({ message: "Submitting..." })
                 this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
 
