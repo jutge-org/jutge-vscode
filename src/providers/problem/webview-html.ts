@@ -12,7 +12,7 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     const correctDisplayed = makeSpacesVisible(correctDecoded)
 
     return /*html*/ `
-        <div class="case" id="testcase-${index + 1}">
+        <div class="testcase" id="testcase-${index + 1}">
             <div class="metadata">
                 <div class="toggle-minimize">
                     <span class="title">
@@ -29,24 +29,26 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
             </div>
 
             <div class="content">
-                <div class="container input-div">
+                <div class="input container">
                     <div class="title">Input:</div>
                     <div class="clipboard" title="Copy to clipboard">Copy</div>
                     <div id="input" class="selectable textarea">
                         <pre data-original-text="${inputDecoded}">${inputDisplayed}</pre>
                     </div>
                 </div>
-                <div class="container expected">
-                    <div class="title">Expected Output:</div>
-                    <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div id="expected" class="selectable textarea">
-                        <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
+                <div class="output container">
+                    <div class="container expected">
+                        <div class="title">Expected Output:</div>
+                        <div class="clipboard" title="Copy to clipboard">Copy</div>
+                        <div id="expected" class="selectable textarea">
+                            <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
+                        </div>
                     </div>
-                </div>
-                <div class="container received">
-                    <div class="title">Received Output:</div>
-                    <div class="compare-diff" title="Compare with expected">Compare</div>
-                    <div id="received" class="selectable textarea"><pre></pre></div>
+                    <div class="container received">
+                        <div class="title">Received Output:</div>
+                        <div class="compare-diff" title="Compare with expected">Compare</div>
+                        <div id="received" class="selectable textarea"><pre></pre></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -56,31 +58,43 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
 export function htmlForAllTestcases(problemTestcases: Testcase[], handler: string | null): string {
     if (handler !== "std") {
         return /*html*/ `
-            <div class="testcase-header">
-                <h2 class="flex-grow-1">Testcases</h2>
-            </div>
-            <div class="warning">
-                ${warningIcon()}
-                <span>Local testcase running is not supported for this problem.</span>
+            <div class="testcases">
+                <div class="header">
+                    <h2 class="flex-grow-1">Testcases</h2>
+                </div>
+                <div class="panels">
+                    <div class="warning">
+                        ${warningIcon()}
+                        <span>Local testcase running is not supported for this problem.</span>
+                    </div>
+                </div>
             </div>
       `
     }
     if (!problemTestcases || problemTestcases.length === 0) {
         return /*html*/ `
-            <div class="testcase-header">
-                <h2 class="flex-grow-1">Testcases</h2>
-                No testcases found.
+            <div class="testcases">
+                <div class="header">
+                    <h2 class="flex-grow-1">Testcases</h2>
+                </div>
+                <div class="panels">
+                    No testcases found.
+                </div>
             </div>
         `
     }
     return /*html*/ `
-        <div class="testcase-header">
-            <h2 class="flex-grow-1">Testcases</h2>
-            ${Button("Run All", "run-all", "run-all-testcases")}
-            ${Button("Submit to Jutge", "submit", "submit-to-jutge")}
-        </div>
-        <div class="testcase-panels">
-            ${problemTestcases.map(htmlForTestcase).join("")}
+        <div class="testcases">
+            <div class="header">
+                <h2 class="flex-grow-1">Testcases</h2>
+                <div class="buttons">
+                    ${Button("Run All", "run-all", "run-all-testcases")}
+                    ${Button("Submit to Jutge", "submit", "submit-to-jutge")}
+                </div>
+            </div>
+            <div class="panels">
+                ${problemTestcases.map(htmlForTestcase).join("")}
+            </div>
         </div>
     `
 }

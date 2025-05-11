@@ -141,37 +141,44 @@ function addOnClickEventListeners() {
     })
 }
 
-function updateTestcase(testcaseId: number, status: string, output: string) {
+function updateTestcase(testcaseId: number, status: string, outputText: string) {
     const testcase = document.getElementById(`testcase-${testcaseId}`) as HTMLDivElement
-    const runningText = testcase.querySelector(".running-text") as HTMLSpanElement
-    const receivedDiv = testcase.querySelector(".received") as HTMLDivElement
-    const outputElement = testcase.querySelector("#received pre") as HTMLPreElement
+    const content = testcase.querySelector(`.content`) as HTMLDivElement
+    const running = testcase.querySelector(".running-text") as HTMLSpanElement
+    const received = testcase.querySelector(".received") as HTMLDivElement
+    const output = testcase.querySelector("#received pre") as HTMLPreElement
 
     const setTestcaseAppearance = (text: string, color: string) => {
-        runningText.textContent = text
+        running.textContent = text
         testcase.style.borderLeftColor = color
-        runningText.style.color = color
+        running.style.color = color
     }
 
-    const setOutputAppearance = (output: string) => {
-        outputElement.setAttribute("data-original-text", output)
-        outputElement.innerHTML = makeSpacesVisible(output)
-        receivedDiv.style.display = "block"
+    const setOutputText = (text: string) => {
+        output.setAttribute("data-original-text", text)
+        output.innerHTML = makeSpacesVisible(text)
+        received.style.display = "block"
+        content.classList.add("compare")
+    }
+    const hideOutputText = () => {
+        received.style.display = "none"
+        content.classList.remove("compare")
     }
 
     switch (status) {
         case "running":
             setTestcaseAppearance("Running...", "yellow")
+            hideOutputText()
             break
 
         case "passed":
             setTestcaseAppearance("Passed", "green")
-            setOutputAppearance(output)
+            setOutputText(outputText)
             break
 
         case "failed":
             setTestcaseAppearance("Failed", "red")
-            setOutputAppearance(output)
+            setOutputText(outputText)
             break
     }
 }

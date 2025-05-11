@@ -10,6 +10,10 @@
     box-sizing: border-box;
 }
 
+body {
+    min-width: 320px;
+}
+
 pre {
     margin: 0px;
     padding: 5px;
@@ -72,6 +76,7 @@ textarea {
     display: flex;
     flex-direction: row;
     align-items: center;
+    flex-shrink: 0;
 
     & .text {
         margin-left: 0.6em;
@@ -170,140 +175,172 @@ textarea {
     }
 }
 
-.testcase-header {
-    display: flex;
-    align-items: center;
-    column-gap: 0.2em;
-    padding: 0.8em 0 0.8em;
-
-    & h2 {
-        margin: 0;
-    }
-}
-
-.testcase-panels {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1em;
-    padding: 0.5em;
-
-    & .toggle-minimize {
+.testcases {
+    & .header {
         display: flex;
-        align-items: center;
-        flex-grow: 1;
-        margin: 0;
-
-        &:hover {
-            cursor: pointer;
+        flex-direction: row;
+        @media (width <= 480px) {
+            flex-direction: column;
+            gap: 0.3em;
         }
-        &:hover .title {
-            filter: brightness(150%);
-        }
-    }
+        column-gap: 0.2em;
+        padding: 0.8em 0 0.8em;
 
-    & .case {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4em;
-
-        background: var(--checkbox-background);
-        border: 1px solid var(--panel-view-border);
-        border-left: 0.4em solid var(--panel-tab-foreground);
-        border-radius: 0.4em;
-        padding: 0.7em;
-
-        &.running {
-            border-left-color: yellow !important;
-        }
-        &.passed {
-            border-left-color: green !important;
-        }
-        &.failed {
-            border-left-color: red !important;
+        & h2 {
+            margin: 0;
         }
 
-        & .metadata {
-            display: flex;
-
-            & .title {
-                margin: 0;
-                margin-right: 0.4em;
-                font-size: 1.1rem;
-                font-weight: bolder;
-                color: var(--list-active-selection-foreground);
-            }
-        }
-
-        & .content {
+        & .buttons {
+            flex: 1;
+            flex-shrink: 0;
             display: flex;
             flex-direction: row;
-            justify-content: flex-start;
-            align-items: stretch;
-            gap: 1.2em;
+            justify-content: flex-end;
+            gap: 0.2em;
+        }
+    }
 
-            & .title {
-                margin-bottom: 0.5em;
-                font-style: italic;
+    & .panels {
+        display: flex;
+        flex-direction: column;
+        gap: 1.1em;
+        padding: 0.5em;
+
+        & .testcase {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+
+            gap: 0.4em;
+
+            background: var(--checkbox-background);
+            border: 1px solid var(--panel-view-border);
+            border-left: 0.4em solid var(--panel-tab-foreground);
+            border-radius: 0.4em;
+            padding: 0.7em;
+
+            & .toggle-minimize {
+                display: flex;
+                align-items: center;
+                flex-grow: 1;
+                margin: 0;
+
+                &:hover {
+                    cursor: pointer;
+                }
+                &:hover .title {
+                    filter: brightness(150%);
+                }
             }
 
-            & .container {
-                flex: 1;
-                position: relative;
+            &.running {
+                border-left-color: yellow !important;
+            }
+            &.passed {
+                border-left-color: green !important;
+            }
+            &.failed {
+                border-left-color: red !important;
+            }
 
-                & .textarea {
-                    font-family: "Iosevka", "Consolas", "Ubuntu Mono", monospace;
-                    background: var(--background);
-                    border: 1px solid var(--panel-view-border);
-                    border-radius: 0.2em;
-                    width: 100%;
-                    display: block;
-                    outline: none !important;
-                    max-width: 100%;
-                    max-height: 40em !important;
-                    resize: none;
-                    flex-shrink: 0;
-                    flex-grow: 0;
-                    overflow-y: auto;
+            & .metadata {
+                display: flex;
+
+                & .title {
+                    margin: 0;
+                    margin-right: 0.4em;
+                    font-size: 1.1rem;
+                    font-weight: bolder;
+                    color: var(--list-active-selection-foreground);
+                }
+            }
+
+            & .content {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: stretch;
+                gap: 1.2em;
+
+                &.compare {
+                    flex-direction: column;
+                }
+
+                @media (width <= 640px) {
+                    flex-direction: column;
+                    gap: 0.6em;
+                }
+
+                & .title {
+                    margin-bottom: 0.5em;
+                    font-style: italic;
+                }
+
+                & .output {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 0.6em;
+                    @media (width <= 640px) {
+                        flex-direction: column;
+                    }
+                }
+
+                & .container {
+                    flex: 1;
+                    position: relative;
                     overflow-x: auto;
 
-                    & pre {
-                        line-height: 1.2;
+                    & .textarea {
+                        display: block;
+                        background: var(--background);
+                        font-family: "Iosevka", "Consolas", "Ubuntu Mono", monospace;
+                        border: 1px solid var(--panel-view-border);
+                        border-radius: 0.2em;
+                        resize: none;
+                        flex-shrink: 0;
+                        flex-grow: 0;
+                        overflow-y: auto;
+                        overflow-x: auto;
+
+                        & pre {
+                            line-height: 1.2;
+                        }
+                        & pre .text-muted {
+                            color: var(--foreground);
+                            opacity: 27%;
+                        }
                     }
-                    & pre .text-muted {
-                        color: var(--foreground);
-                        opacity: 27%;
-                    }
-                }
 
-                & .clipboard {
-                    filter: grayscale(100%);
-                    position: absolute;
-                    top: 0px;
-                    right: 0px;
-                    padding: 4px;
-                    cursor: pointer;
-                    opacity: 0.5;
-                    font-size: 80%;
-
-                    &:hover {
-                        opacity: 1;
-                    }
-                }
-
-                & .compare-diff {
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    cursor: pointer;
-                    padding: 3px 5px;
-                    border-radius: 3px;
-                    background-color: var(--vscode-button-secondaryBackground);
-                    color: var(--vscode-button-secondaryForeground);
-                    font-size: 0.85em;
-
-                    &:hover {
-                        background-color: var(--vscode-button-secondaryHoverBackground);
+                    & .clipboard {
+                        filter: grayscale(100%);
+                        position: absolute;
+                        top: 0px;
+                        right: 0px;
+                        padding: 4px;
                         cursor: pointer;
+                        opacity: 0.5;
+                        font-size: 80%;
+
+                        &:hover {
+                            opacity: 1;
+                        }
+                    }
+
+                    & .compare-diff {
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        cursor: pointer;
+                        padding: 3px 5px;
+                        border-radius: 3px;
+                        background-color: var(--vscode-button-secondaryBackground);
+                        color: var(--vscode-button-secondaryForeground);
+                        font-size: 0.85em;
+
+                        &:hover {
+                            background-color: var(--vscode-button-secondaryHoverBackground);
+                            cursor: pointer;
+                        }
                     }
                 }
             }
