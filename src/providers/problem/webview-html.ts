@@ -116,6 +116,7 @@ export function htmlForAllTestcases(problemTestcases: Testcase[], handler: strin
 }
 
 type WebviewHTMLData = {
+    problemId: string
     problemNm: string
     problemTitle: string
     statementHtml: string
@@ -146,7 +147,11 @@ export function htmlForWebview(data: WebviewHTMLData) {
             <body>
                 <div id="data" data-problem-nm="${data.problemNm}" data-title="${data.problemTitle}" />
                 <section id="header" class="component-container">
-                    <h2 id="problem-nm" class="font-normal flex-grow-1">${data.problemNm}</h2>
+                    <h2 id="problem-nm" class="font-normal text-md flex-grow-1">
+                        <a href="https://jutge.org/problems/${data.problemId}">
+                            ${data.problemNm}
+                        </a>
+                    </h2>
                     ${Button({
                         text: "New File",
                         id: "new-file",

@@ -356,6 +356,9 @@ textarea {
 .font-normal {
     font-weight: normal;
 }
+.text-md {
+    font-size: 0.95rem;
+}
 .text-sm {
     font-size: 0.85rem;
 }

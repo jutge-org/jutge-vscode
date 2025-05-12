@@ -73,6 +73,7 @@ export class ProblemWebviewPanel {
                     _info(`Updating HTML for ${this.problem.problem_nm}`)
 
                     this.panel.webview.html = htmlForWebview({
+                        problemId: this.problem.problem_id,
                         problemNm: this.problem.problem_nm,
                         problemTitle: this.problem.title,
                         statementHtml: this.problem.statementHtml || "",
