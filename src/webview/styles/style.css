@@ -10,6 +10,13 @@
     box-sizing: border-box;
 }
 
+:root {
+    --monospace-color: hsl(27, 16%, 70%);
+}
+.vscode-light {
+    --monospace-color: hsl(27, 16%, 30%);
+}
+
 body {
     min-width: 320px;
 }
@@ -22,6 +29,8 @@ pre {
 /* fix problem with generated HTML */
 span.verb * {
     font-family: monospace !important;
+    color: var(--monospace-color);
+    font-size: 96%;
 }
 div.lstlisting * {
     color: var(--foreground) !important;
@@ -53,17 +62,6 @@ textarea {
         background: black;
         outline: none !important;
         border: 1px solid #3393cc;
-    }
-}
-
-.vscode-light textarea {
-    background: rgba(255, 255, 255, 0.5);
-    outline: none !important;
-    border: 1px solid lightgrey;
-
-    &:focus {
-        background: white;
-        border: 1px solid rgb(28, 145, 184);
     }
 }
 
@@ -156,6 +154,7 @@ textarea {
     display: flex;
     justify-content: flex-end;
     padding-top: 1em;
+    line-height: 145%;
 
     & h2 {
         margin: 0;
@@ -170,12 +169,17 @@ textarea {
     & h3 {
         font-size: 2rem;
         margin: 0.6em 0 1.2em;
+        line-height: 116%;
     }
     & h4 {
         margin-block-end: 0.6em;
     }
     & p + p {
         margin-top: 0.6em;
+    }
+
+    pre {
+        color: var(--monospace-color);
     }
 }
 
