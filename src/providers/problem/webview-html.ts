@@ -1,6 +1,6 @@
 import { Testcase } from "@/jutge_api_client"
 import { Button } from "@/webview/components/button"
-import { warningIcon } from "@/webview/components/icons"
+import { chevronDown, warningIcon } from "@/webview/components/icons"
 import { makeSpacesVisible } from "@/webview/utils"
 import { Uri } from "vscode"
 
@@ -15,12 +15,10 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
         <div class="testcase" id="testcase-${index + 1}">
             <div class="metadata">
                 <div class="toggle-minimize">
-                    <span class="title">
-                        <span class="icon">
-                            <i class="codicon codicon-chevron-up"></i>
-                        </span>
+                    <div class="title">
+                        <div class="icon">${chevronDown()}</div>
                         Testcase ${index + 1}
-                    </span>
+                    </div>
                     <span class="running-text"></span>
                 </div>
                 <div className="run-button">

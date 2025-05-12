@@ -10,6 +10,7 @@ import { makeSpacesVisible } from "./utils"
 // Warning: this import is important, it will produce a "main.css" file that
 // later we will refer to from the HTML (esbuild does this)
 import "./styles/style.css"
+import { chevronDown, chevronRight } from "./components/icons"
 
 provideVSCodeDesignSystem().register(allComponents)
 
@@ -108,18 +109,11 @@ function addOnClickEventListeners() {
     })
     document.querySelectorAll(".toggle-minimize").forEach((button) => {
         button.addEventListener("click", () => {
-            const icon = button.querySelector(".icon i") as HTMLElement
+            const icon = button.querySelector(".icon") as HTMLSpanElement
             const testcaseContent = button.parentElement?.nextElementSibling as HTMLElement
-            const isMinimized = icon.classList.contains("codicon-chevron-down")
-            if (isMinimized) {
-                icon.classList.remove("codicon-chevron-down")
-                icon.classList.add("codicon-chevron-up")
-                testcaseContent.style.display = "flex"
-            } else {
-                icon.classList.remove("codicon-chevron-up")
-                icon.classList.add("codicon-chevron-down")
-                testcaseContent.style.display = "none"
-            }
+            const isMinimized = testcaseContent.style.display === "none"
+            icon.innerHTML = isMinimized ? chevronDown() : chevronRight()
+            testcaseContent.style.display = isMinimized ? "flex" : "none"
         })
     })
     document.querySelectorAll(".compare-diff").forEach((button) => {

@@ -64,7 +64,7 @@ export class SubmissionService {
 
                     const verdict = await this._waitForVerdictLoop(problem, submission_id, progress)
 
-                    this._showNotification(problem, submission_id, verdict)
+                    this._showVerdictNotification(problem, submission_id, verdict)
 
                     //
                 } catch (err) {
@@ -104,19 +104,12 @@ export class SubmissionService {
         return verdict
     }
 
-    private static async _showNotification(problem: Problem, submission_id: string, verdict: string) {
-        const icon = verdict ? this._verdictIcon.get(verdict) : "❓"
+    private static async _showVerdictNotification(problem: Problem, submission_id: string, verdict: string) {
+        const text = (verdict && this._verdictText.get(verdict)) || "❓"
 
-        const selection = await vscode.window.showInformationMessage(
-            `${icon} ${verdict}`,
-            {
-                modal: true,
-                detail: `Problem: ${problem.problem_nm}\nVerdict: ${verdict}\n`,
-            },
-            { title: "View in jutge.org" },
-            { title: "Ok", isCloseAffordance: true }
-        )
-
+        const selection = await vscode.window.showInformationMessage(text, {
+            title: "View in jutge.org",
+        })
         if (selection && selection.title == "View in jutge.org") {
             const path = `/${problem.problem_id}/submissions/${submission_id}`
             vscode.env.openExternal(vscode.Uri.parse(`https://jutge.org/problems${path}`))
@@ -130,12 +123,12 @@ export class SubmissionService {
         })
     }
 
-    private static _verdictIcon: Map<string, string> = new Map([
-        ["AC", "🟢"],
-        ["WA", "🔴"],
-        ["EE", "💣"],
-        ["CE", "🛠"],
-        ["IE", "🔥"],
-        ["Pending", "⏳"],
+    private static _verdictText: Map<string, string> = new Map([
+        ["AC", "Accepted! 🟢"],
+        ["WA", "Wrong Answer 🔴"],
+        ["EE", "Execution Error 💣"],
+        ["CE", "Compilation Error 🛠"],
+        ["IE", "Internal Error 🔥"],
+        ["Pending", "Pending... ⏳"],
     ])
 }

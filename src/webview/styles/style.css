@@ -67,11 +67,17 @@ textarea {
     }
 }
 
-.icon,
-.codicon {
-    vertical-align: middle;
-    font-size: 80%;
+.icon {
+    --icon-size: 1.4em;
+    width: var(--icon-size);
+    height: var(--icon-size);
+
+    & svg {
+        width: var(--icon-size);
+        height: var(--icon-size);
+    }
 }
+
 .icon-button {
     display: flex;
     flex-direction: row;
@@ -82,14 +88,12 @@ textarea {
         margin-left: 0.6em;
     }
 }
-.icon {
-    width: 1.8em;
-    height: 1.8em;
 
-    & svg {
-        width: 100%;
-        height: 100%;
-    }
+.title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.2em;
 }
 
 .container {
