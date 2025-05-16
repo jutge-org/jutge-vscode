@@ -1,11 +1,11 @@
 import * as os from "os"
 import * as vscode from "vscode"
 
-import { ProblemWebviewPanel } from "@/providers/problem/webview-panel"
 import { CourseDataProvider } from "@/providers/tree-view/provider"
 import { ConfigService } from "@/services/config"
 import { commandRefreshTree, commandShowProblem } from "./commands/show-problem"
-import { ProblemWebviewPanelSerializer } from "./providers/problem/webview-panel-serializer"
+import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
+import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
 import { JutgeService } from "./services/jutge"
 
 /**

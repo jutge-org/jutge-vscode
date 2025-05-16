@@ -1,13 +1,11 @@
 import * as vscode from "vscode"
 
-import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
-import { runAllTestcases } from "@/runners/problem"
-import { getLangInfoFromExtension } from "@/utils/helpers"
-import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/utils/types"
-import { waitMilliseconds } from "@/utils/helpers"
+import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
+import { getLangInfoFromExtension, waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename, extname } from "path"
 import { JutgeService } from "./jutge"
+import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 
 export class SubmissionService {
     private static MONITOR_INTERVAL_MS = 5000

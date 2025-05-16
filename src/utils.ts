@@ -115,3 +115,9 @@ export async function waitMilliseconds(time_ms: number): Promise<void> {
         setTimeout(() => resolve(), time_ms)
     })
 }
+
+export function stringToFilename(title: string): string {
+    title = title.replace(/ /g, "_") // Replace spaces with underscores
+    title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
+    return title
+}

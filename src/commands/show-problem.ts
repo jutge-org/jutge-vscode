@@ -1,4 +1,4 @@
-import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
+import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import { CourseDataProvider } from "@/providers/tree-view/provider"
 import { JutgeService } from "@/services/jutge"
 import * as vscode from "vscode"

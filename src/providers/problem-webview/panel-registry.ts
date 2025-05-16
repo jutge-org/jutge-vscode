@@ -1,9 +1,9 @@
 import * as vscode from "vscode"
 
 import { getWebviewOptions } from "@/extension"
-import * as utils from "@/utils/helpers"
-import { VSCodeToWebviewMessage } from "@/utils/types"
-import { ProblemWebviewPanel } from "./webview-panel"
+import * as utils from "@/utils"
+import { VSCodeToWebviewMessage } from "@/types"
+import { ProblemWebviewPanel } from "./panel"
 
 export class WebviewPanelRegistry {
     private static createdPanels: Map<string, ProblemWebviewPanel> = new Map()

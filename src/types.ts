@@ -22,6 +22,12 @@ export enum SubmissionStatus {
     PENDING = "Pending",
 }
 
+export type ProblemHandler = {
+    handler: string
+    source_modifier: string
+    compilers: string
+}
+
 export type Problem = {
     problem_id: string
     problem_nm: string
@@ -29,7 +35,7 @@ export type Problem = {
     language_id: null | string
     statementHtml: string | null
     testcases: Testcase[] | null
-    handler: string | null
+    handler: ProblemHandler | null
 }
 
 export type VSCodeToWebviewMessage = {

@@ -46,3 +46,17 @@ export function getLangRunnerFromLangId(languageId: Proglang): LanguageRunner {
             throw new Error("Language not supported.")
     }
 }
+
+export async function chooseProgrammingLanguage(problemNm: string): Promise<Proglang | undefined> {
+    const fileType = await vscode.window.showQuickPick(
+        Object.values(Proglang).map((lang) => ({
+            label: `${lang} File`,
+            description: lang,
+        })),
+        {
+            placeHolder: "Select file type",
+            title: `New file for ${problemNm}`,
+        }
+    )
+    return fileType?.description
+}

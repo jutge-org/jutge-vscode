@@ -31,14 +31,18 @@ span.verb * {
     font-family: monospace !important;
     color: var(--monospace-color);
     font-size: 96%;
+    user-select: text;
 }
 div.lstlisting * {
     color: var(--foreground) !important;
     font-size: 110%;
 }
 span.lstinline * {
-    color: var(--foreground) !important;
-    font-size: 110%;
+    /* color: var(--foreground) !important; */
+    font-size: 100%;
+    font-style: normal;
+    font-family: monospace !important;
+    color: var(--monospace-color) !important;
 }
 
 textarea {
@@ -66,7 +70,7 @@ textarea {
 }
 
 .icon {
-    --icon-size: 1.4em;
+    --icon-size: 1.2em;
     width: var(--icon-size);
     height: var(--icon-size);
 
@@ -178,7 +182,7 @@ textarea {
         margin-top: 0.6em;
     }
 
-    pre {
+    & pre {
         color: var(--monospace-color);
     }
 }

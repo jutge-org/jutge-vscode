@@ -6,10 +6,11 @@ import { ConfigService } from "@/services/config"
 import { FileService } from "@/services/file"
 import { JutgeService } from "@/services/jutge"
 import { SubmissionService } from "@/services/submission"
-import * as utils from "@/utils/helpers"
-import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/utils/types"
-import { htmlForAllTestcases, htmlForWebview } from "./webview-html"
-import { WebviewPanelRegistry } from "./webview-panel-registry"
+import * as utils from "@/utils"
+import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
+import { htmlForAllTestcases, htmlForWebview } from "./html"
+import { WebviewPanelRegistry } from "./panel-registry"
+import { createProblemHandlerFor, IProblemHandler } from "@/services/problem-handler"
 
 const _info = (msg: string) => {
     console.info(`[ProblemWebviewPanel] ${msg}`)
@@ -26,6 +27,7 @@ export class ProblemWebviewPanel {
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
+    public problemHandler: IProblemHandler | null = null
 
     public constructor(
         panel: vscode.WebviewPanel,
@@ -51,7 +53,7 @@ export class ProblemWebviewPanel {
         }
 
         // Initialize problem info and update webview
-        this._updateWebviewContents()
+        this._loadProblemAndShow()
     }
 
     public dispose() {
@@ -59,7 +61,59 @@ export class ProblemWebviewPanel {
         this.panel.dispose()
     }
 
-    private async _updateWebviewContents() {
+    get handler(): IProblemHandler {
+        if (this.problemHandler === null) {
+            throw new Error(`Handler is null!`)
+        }
+        return this.problemHandler
+    }
+
+    private async _handleMessage(message: WebviewToVSCodeMessage) {
+        console.debug(`[ProblemWebviewPanel] Received message from webview: ${message.command}`)
+
+        const { command, data } = message
+        switch (command) {
+            case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
+                return this.handler.runTestcaseAll()
+
+            case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
+                return this.handler.submitToJudge()
+
+            case WebviewToVSCodeCommand.RUN_TESTCASE:
+                return this.handler.runTestcaseSingle(data.testcaseId)
+
+            case WebviewToVSCodeCommand.NEW_FILE:
+                await this.handler.createStarterCode()
+                this.panel.reveal(vscode.ViewColumn.Beside, true)
+                return
+
+            case WebviewToVSCodeCommand.SHOW_DIFF:
+                return this._showDiff(data)
+
+            default:
+                console.warn(`[ProblemWebviewPanel] Don't know how to handle message: ${message.command}`)
+        }
+    }
+
+    private async _loadProblemAndShow() {
+        const updateWebview = () => {
+            _info(`Updating HTML for ${this.problem.problem_nm}`)
+
+            this.panel.webview.html = htmlForWebview({
+                problemId: this.problem.problem_id,
+                problemNm: this.problem.problem_nm,
+                problemTitle: this.problem.title,
+                statementHtml: this.problem.statementHtml || "",
+                testcasesHtml: htmlForAllTestcases(this.problem.testcases || [], this.problem.handler),
+                handler: this.problem.handler,
+
+                nonce: utils.getNonce(),
+                styleUri: this._getUri("dist", "webview", "main.css"),
+                scriptUri: this._getUri("dist", "webview", "main.js"),
+                cspSource: this.panel.webview.cspSource,
+            })
+        }
+
         vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
@@ -69,22 +123,6 @@ export class ProblemWebviewPanel {
             async (progress) => {
                 const problemNm = this.problem.problem_nm
 
-                const updateWebview = () => {
-                    _info(`Updating HTML for ${this.problem.problem_nm}`)
-
-                    this.panel.webview.html = htmlForWebview({
-                        problemId: this.problem.problem_id,
-                        problemNm: this.problem.problem_nm,
-                        problemTitle: this.problem.title,
-                        statementHtml: this.problem.statementHtml || "",
-                        testcasesHtml: htmlForAllTestcases(this.problem.testcases || [], this.problem.handler),
-
-                        nonce: utils.getNonce(),
-                        styleUri: this._getUri("dist", "webview", "main.css"),
-                        scriptUri: this._getUri("dist", "webview", "main.js"),
-                        cspSource: this.panel.webview.cspSource,
-                    })
-                }
                 try {
                     progress.report({ increment: 0, message: "Loading..." })
 
@@ -99,7 +137,7 @@ export class ProblemWebviewPanel {
 
                     const _loadHandler = async () => {
                         const suppl = await JutgeService.getProblemSuppl(problem_id)
-                        this.problem.handler = suppl.handler.handler
+                        this.problem.handler = suppl.handler
                         progress.report({ increment: 20, message: "Loaded handler" })
                     }
                     const _loadTestcases = async () => {
@@ -114,19 +152,23 @@ export class ProblemWebviewPanel {
                     progress.report({ message: "Loading..." })
                     await Promise.all([_loadHandler(), _loadTestcases(), _loadStatementHtml()])
 
-                    updateWebview()
+                    // Once everything is loaded, we create a problem handler
+                    // which will take care of all operations
+                    this.problemHandler = createProblemHandlerFor(this.problem)
 
                     //
                 } catch (e) {
                     console.error(e)
-                    updateWebview()
                 }
+
+                updateWebview()
             }
         )
     }
 
     private __chooseConcreteProblem(problemNm: string, absProb: AbstractProblem) {
         const langId = ConfigService.getPreferredLangId()
+        console.info(`Preferred language is: ${langId}`)
         const concreteProblems = absProb.problems
         let problem
         let id = `${problemNm}_${langId}`
@@ -153,64 +195,8 @@ export class ProblemWebviewPanel {
         return this.panel.webview.asWebviewUri(uri)
     }
 
-    private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.debug(`[ProblemWebviewPanel] Received message from webview: ${message.command}`)
-
-        const { command, data } = message
-        switch (command) {
-            case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
-                return this._runAllTestcases()
-
-            case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
-                return this._submitToJutge()
-
-            case WebviewToVSCodeCommand.RUN_TESTCASE:
-                return this._runTestcase(data.testcaseId)
-
-            case WebviewToVSCodeCommand.NEW_FILE:
-                return this._newFile()
-
-            case WebviewToVSCodeCommand.SHOW_DIFF:
-                return this._showDiff(data)
-
-            default:
-                console.warn(`[ProblemWebviewPanel] Don't know how to handle message: ${message.command}`)
-        }
-    }
-
-    private async _runAllTestcases() {
-        let editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
-        if (!editor) {
-            vscode.window.showErrorMessage("No text editor open.")
-            return
-        }
-        runAllTestcases(this.problem, editor.document.uri.fsPath)
-    }
-
-    private async _submitToJutge() {
-        let editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
-        if (!editor) {
-            vscode.window.showErrorMessage("No text editor open.")
-            return
-        }
-        SubmissionService.submitProblem(this.problem, editor.document.uri.fsPath)
-    }
-
-    private async _runTestcase(testcaseId: number) {
-        let test_editor = await utils.chooseFromEditorList(vscode.window.visibleTextEditors)
-        if (!test_editor) {
-            vscode.window.showErrorMessage("No text editor open.")
-            return
-        }
-        runSingleTestcase(testcaseId, this.problem, test_editor.document.uri.fsPath)
-    }
-
-    private async _newFile() {
-        const fileUri = await FileService.createNewFileForProblem(this.problem)
-        if (!fileUri) {
-            return
-        }
-        await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
+    private async _openStarterCode() {
+        await this.handler.createStarterCode()
         this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 

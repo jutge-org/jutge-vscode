@@ -1,39 +1,20 @@
-import * as vscode from "vscode"
 import fs from "fs"
+import * as vscode from "vscode"
 
-import { Problem } from "@/utils/types"
-import { getDefaultExtensionFromLangId, Proglang } from "@/runners/language/languages"
+import { chooseProgrammingLanguage, getDefaultExtensionFromLangId, Proglang } from "@/runners/language/languages"
+import { Problem } from "@/types"
+import { stringToFilename } from "@/utils"
 import { JutgeService } from "./jutge"
 
-function sanitizeProblemTitle(title: string): string {
-    title = title.replace(/ /g, "_") // Replace spaces with underscores
-    title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
-    return title
-}
-
 export class FileService {
-    private static async chooseFileLangFromQuickPick(problemNm: string): Promise<Proglang | undefined> {
-        const fileType = await vscode.window.showQuickPick(
-            Object.values(Proglang).map((lang) => ({
-                label: `${lang} File`,
-                description: lang,
-            })),
-            {
-                placeHolder: "Select file type",
-                title: `New file for ${problemNm}`,
-            }
-        )
-        return fileType?.description
-    }
-
-    public static async createNewFileForProblem(problem: Problem): Promise<vscode.Uri | undefined> {
-        const fileLang = await FileService.chooseFileLangFromQuickPick(problem.problem_nm)
+    public static async createNewFileFor(problem: Problem): Promise<vscode.Uri | undefined> {
+        const fileLang = await chooseProgrammingLanguage(problem.problem_nm)
         if (!fileLang) {
             return
         }
 
         const fileExtension = getDefaultExtensionFromLangId(fileLang)
-        const sanitizedTitle = sanitizeProblemTitle(problem.title)
+        const sanitizedTitle = stringToFilename(problem.title)
         const suggestedFileName = `${problem.problem_id}_${sanitizedTitle}.${fileExtension}`
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
         if (!workspaceFolder) {

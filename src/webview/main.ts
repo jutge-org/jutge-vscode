@@ -1,10 +1,5 @@
 import { allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
-import {
-    SubmissionStatus,
-    VSCodeToWebviewCommand,
-    VSCodeToWebviewMessage,
-    WebviewToVSCodeCommand,
-} from "../utils/types"
+import { SubmissionStatus, VSCodeToWebviewCommand, VSCodeToWebviewMessage, WebviewToVSCodeCommand } from "../types"
 import { makeSpacesVisible } from "./utils"
 
 // Warning: this import is important, it will produce a "main.css" file that

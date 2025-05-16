@@ -2,10 +2,10 @@ import * as fs from "fs"
 import * as vscode from "vscode"
 
 import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
-import { Problem, TestcaseStatus, VSCodeToWebviewCommand } from "@/utils/types"
+import { Problem, TestcaseStatus, VSCodeToWebviewCommand } from "@/types"
 import { Testcase } from "@/jutge_api_client"
-import { WebviewPanelRegistry } from "@/providers/problem/webview-panel-registry"
 import { JutgeService } from "@/services/jutge"
+import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 
 /**
  * Sends a message to the webview to update the status of a testcase.
@@ -26,6 +26,45 @@ function sendUpdateTestcaseMessage(
         data: { testcaseId, status, output },
     }
     WebviewPanelRegistry.sendMessage(problemNm, message)
+}
+
+async function getProblemTestcases(problem: Problem): Promise<Testcase[] | null> {
+    if (problem.testcases) {
+        return problem.testcases
+    }
+    problem.testcases = await JutgeService.getSampleTestcases(problem.problem_id)
+    return problem.testcases
+}
+
+/**
+ * Runs a single testcase on the currently open file.
+ *
+ * @param testcaseId The id of the testcase to run.
+ * @param problem The problem to which the testcase belongs.
+ *
+ * @returns True if the testcase passed, false otherwise.
+ */
+export async function runSingleTestcase(testcaseId: number, problem: Problem, filePath: string): Promise<boolean> {
+    const testcaseNm = testcaseId - 1 // Testcases are 1-indexed to be consistent with the UI.
+    const testcases = await getProblemTestcases(problem)
+    if (!testcases || testcases.length === 0) {
+        vscode.window.showErrorMessage("No testcases found for this problem.")
+        return false
+    }
+
+    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "")
+
+    const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8")
+    const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8")
+
+    const output = runTestcase(input, filePath)
+
+    const passed = output !== null && output === expected
+    const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED
+
+    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, status, output)
+
+    return passed
 }
 
 /**
@@ -62,6 +101,7 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
         console.debug(`[ProblemRunner] Executing code with ${languageRunner.constructor.name}`)
         const output = languageRunner.run(filePath, testcase_input, document)
         console.debug(`[ProblemRunner] Code execution completed`)
+
         return output
     } catch (err) {
         // Show error message in notification
@@ -70,64 +110,6 @@ export function runTestcase(testcase_input: string, filePath: string): string | 
         console.error("Error running testcase: ", err)
         return null
     }
-}
-
-/**
- * Gets the testcases for a problem.
- * If the problem already has testcases, it returns them.
- * Otherwise, it fetches the testcases from Jutge.
- *
- * @param problem The problem for which to get the testcases.
- *
- * @returns The testcases for the problem.
- */
-async function getProblemTestcases(problem: Problem): Promise<Testcase[] | null> {
-    if (problem.testcases) {
-        return problem.testcases
-    }
-    return new Promise((resolve, reject) => {
-        try {
-            const problemTestcasesRes = JutgeService.getSampleTestcasesSWR(problem.problem_id)
-            if (problemTestcasesRes.data) {
-                resolve(problemTestcasesRes.data)
-            }
-            problemTestcasesRes.onUpdate = (data) => resolve(data)
-        } catch (error) {
-            console.error("Error getting problem testcases: ", error)
-            reject(error)
-        }
-    })
-}
-
-/**
- * Runs a single testcase on the currently open file.
- *
- * @param testcaseId The id of the testcase to run.
- * @param problem The problem to which the testcase belongs.
- *
- * @returns True if the testcase passed, false otherwise.
- */
-export async function runSingleTestcase(testcaseId: number, problem: Problem, filePath: string): Promise<boolean> {
-    const testcaseNm = testcaseId - 1 // Testcases are 1-indexed to be consistent with the UI.
-    const testcases = await getProblemTestcases(problem)
-    if (!testcases || testcases.length === 0) {
-        vscode.window.showErrorMessage("No testcases found for this problem.")
-        return false
-    }
-
-    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, TestcaseStatus.RUNNING, "")
-
-    const input = Buffer.from(testcases[testcaseNm].input_b64, "base64").toString("utf-8")
-    const expected = Buffer.from(testcases[testcaseNm].correct_b64, "base64").toString("utf-8")
-
-    const output = runTestcase(input, filePath)
-
-    const passed = output !== null && output === expected
-    const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED
-
-    sendUpdateTestcaseMessage(problem.problem_nm, testcaseId, status, output)
-
-    return passed
 }
 
 /**
@@ -151,16 +133,14 @@ export async function runAllTestcases(problem: Problem, filePath: string): Promi
         }
 
         let allCorrect = true
-
         for (let i = 0; i < testcases.length; i++) {
             console.debug(`[ProblemRunner] Running testcase ${i + 1}`)
             const result = await runSingleTestcase(i + 1, problem, filePath)
-            if (!result) {
-                allCorrect = false
-            }
+            allCorrect = allCorrect && result
         }
 
         return allCorrect
+        //
     } catch (error) {
         console.error(`[ProblemRunner] Error running all testcases: ${error}`)
         vscode.window.showErrorMessage(`Error running all testcases: ${error}`)

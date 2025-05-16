@@ -1,4 +1,5 @@
 import { Testcase } from "@/jutge_api_client"
+import { ProblemHandler } from "@/types"
 import { Button } from "@/webview/components/button"
 import { chevronDown, warningIcon } from "@/webview/components/icons"
 import { makeSpacesVisible } from "@/webview/utils"
@@ -58,7 +59,8 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     `
 }
 
-export function htmlForAllTestcases(problemTestcases: Testcase[], handler: string | null): string {
+export function htmlForAllTestcases(problemTestcases: Testcase[], problemHandler: ProblemHandler | null): string {
+    let handler: string = problemHandler?.handler || ""
     if (handler !== "std") {
         return /*html*/ `
             <div class="testcases">
@@ -119,6 +121,7 @@ type WebviewHTMLData = {
     problemTitle: string
     statementHtml: string
     testcasesHtml: string
+    handler: ProblemHandler | null
     nonce: string
     styleUri: Uri
     scriptUri: Uri
@@ -149,6 +152,9 @@ export function htmlForWebview(data: WebviewHTMLData) {
                         <a href="https://jutge.org/problems/${data.problemId}">
                             ${data.problemNm}
                         </a>
+                        &ndash; ${data.handler?.handler} 
+                        &ndash; ${data.handler?.source_modifier} 
+                        &ndash; ${data.handler?.compilers}
                     </h2>
                     ${Button({
                         text: "New File",

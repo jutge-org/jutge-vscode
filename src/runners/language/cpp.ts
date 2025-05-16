@@ -1,6 +1,6 @@
 import { ConfigService } from "@/services/config"
 import { TerminalService } from "@/services/terminal"
-import { getWorkingDirectory } from "@/utils/helpers"
+import { getWorkingDirectory } from "@/utils"
 import * as childProcess from "child_process"
 import * as path from "path"
 import * as vscode from "vscode"

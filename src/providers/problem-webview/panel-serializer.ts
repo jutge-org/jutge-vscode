@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
-import { WebviewPanelRegistry } from "./webview-panel-registry"
-import { ProblemWebviewPanel } from "./webview-panel"
+import { WebviewPanelRegistry } from "./panel-registry"
+import { ProblemWebviewPanel } from "./panel"
 
 export class ProblemWebviewPanelSerializer implements vscode.WebviewPanelSerializer {
     private readonly context_: vscode.ExtensionContext
