@@ -1,5 +1,5 @@
 /**
- * This file has been automatically generated at 2025-05-06T08:35:43.681Z
+ * This file has been automatically generated at 2025-05-16T19:37:37.359Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -727,6 +727,11 @@ export type SubmissionQueueItem = {
 
 export type SubmissionQueueItems = SubmissionQueueItem[]
 
+export type QueueQuery = {
+    verdicts: string[]
+    limit: number
+}
+
 export type UserRankingEntry = {
     user_id: string
     nickname: string | null
@@ -1344,7 +1349,7 @@ class Module_problems {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Includes owner and problems
+     * Includes problems
      */
     async getAbstractProblem(problem_nm: string): Promise<AbstractProblem> {
         const [output, ofiles] = await this.root.execute("problems.getAbstractProblem", problem_nm)
@@ -1368,7 +1373,7 @@ class Module_problems {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Includes abstract problem, which includes owner
+     * Includes abstract problem.
      */
     async getProblem(problem_id: string): Promise<Problem> {
         const [output, ofiles] = await this.root.execute("problems.getProblem", problem_id)
@@ -1380,7 +1385,7 @@ class Module_problems {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Includes abstract problem, which includes owner, statements, testcases, etc.
+     * Includes abstract problem, which includes statements, testcases, etc.
      */
     async getProblemRich(problem_id: string): Promise<ProblemRich> {
         const [output, ofiles] = await this.root.execute("problems.getProblemRich", problem_id)
@@ -1474,9 +1479,7 @@ class Module_problems {
     }
 
     /**
-     * Get ZIP archive of a problem.
-
-    This includes the PDF statement and sample testcases.
+     * Get ZIP archive of a problem. This includes the PDF statement and sample testcases.
      *
      * 🔐 Authentication: any
      * No warnings
@@ -1484,6 +1487,30 @@ class Module_problems {
      */
     async getZipStatement(problem_id: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute("problems.getZipStatement", problem_id)
+        return ofiles[0]
+    }
+
+    /**
+     * Get list of template files of a problem (`main.*`, `code.*`, `public.tar`, etc.).
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     *
+     */
+    async getTemplates(problem_id: string): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("problems.getTemplates", problem_id)
+        return output
+    }
+
+    /**
+     * Get a template file of a problem.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     *
+     */
+    async getTemplate(data: { problem_id: string; template: string }): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("problems.getTemplate", data)
         return ofiles[0]
     }
 }
@@ -3368,50 +3395,14 @@ class Module_admin_queue {
     }
 
     /**
-     * Get the last 100 submissions from the queue in descending chronological order.
+     * Get the lattest submissions from the queue in descending chronological order for a certain verdict.
      *
      * 🔐 Authentication: admin
      * No warnings
-     *
+     * The `limit` parameter tells the number of submissions to retrieve. The `verdicts` parameter is an array of verdicts to filter the submissions. If no verdicts are provided, all submissions will be retrieved.
      */
-    async getQueue(): Promise<SubmissionQueueItems> {
-        const [output, ofiles] = await this.root.execute("admin.queue.getQueue", null)
-        return output
-    }
-
-    /**
-     * Get the last 100 zombi submissions from the queue.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async getQueueZombies(): Promise<SubmissionQueueItems> {
-        const [output, ofiles] = await this.root.execute("admin.queue.getQueueZombies", null)
-        return output
-    }
-
-    /**
-     * Get the last 100 fatal submissions from the queue.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async getQueueFatals(): Promise<SubmissionQueueItems> {
-        const [output, ofiles] = await this.root.execute("admin.queue.getQueueFatals", null)
-        return output
-    }
-
-    /**
-     * Get the last 100 setter error submissions from the queue.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async getQueueSetterErrors(): Promise<SubmissionQueueItems> {
-        const [output, ofiles] = await this.root.execute("admin.queue.getQueueSetterErrors", null)
+    async getQueue(data: QueueQuery): Promise<SubmissionQueueItems> {
+        const [output, ofiles] = await this.root.execute("admin.queue.getQueue", data)
         return output
     }
 }
