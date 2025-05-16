@@ -1,14 +1,14 @@
 import { ConfigService } from "@/services/config"
 import { TerminalService } from "@/services/terminal"
-import { getWorkingDirectory } from "@/utils"
+import { getWorkingDirectory, Logger } from "@/utils"
 import * as childProcess from "child_process"
 import * as vscode from "vscode"
-import { LanguageRunner } from "./runner"
-import { handleRuntimeErrors } from "./errors"
+import { LanguageRunner } from "../runner"
+import { handleRuntimeErrors } from "../errors"
 
-export class PythonRunner implements LanguageRunner {
-    run(codePath: string, input: string, document: vscode.TextDocument): string | null {
-        console.debug(`[PythonRunner] Running code: ${codePath}`)
+export class PythonRunner extends Logger implements LanguageRunner {
+    run(codePath: string, input: string, document: vscode.TextDocument): string {
+        this.log.debug(`Running code: ${codePath}`)
         const command = ConfigService.getPythonCommand()
         const flags = ConfigService.getPythonFlags()
         const workingDir = getWorkingDirectory(codePath)
@@ -26,7 +26,7 @@ export class PythonRunner implements LanguageRunner {
 
         // Only execute in terminal if there are errors
         if (hasErrors) {
-            console.debug(`[PythonRunner] Errors detected, showing in terminal`)
+            this.log.debug(`Errors detected, showing in terminal`)
             // Pass the input to executeCommand
             TerminalService.executeCommand(command, [...flags, codePath], true, input)
         }
@@ -34,12 +34,12 @@ export class PythonRunner implements LanguageRunner {
         // Handle errors for diagnostics
         handleRuntimeErrors(result, document)
 
-        if (result.stdout) {
-            console.debug(`[PythonRunner] Execution completed successfully`)
-            return result.stdout.toString()
+        if (!result.stdout) {
+            this.log.debug(`No output from execution`)
+            throw new Error(`No output from execution`)
         }
 
-        console.debug(`[PythonRunner] No output from execution`)
-        return null // no output
+        this.log.debug(`Execution completed successfully`)
+        return result.stdout.toString()
     }
 }

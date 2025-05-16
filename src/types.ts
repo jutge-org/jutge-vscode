@@ -38,6 +38,16 @@ export type Problem = {
     handler: ProblemHandler | null
 }
 
+export type InputExpected = {
+    input: string
+    expected: string
+}
+
+export type TestcaseRun = {
+    status: TestcaseStatus
+    output: string
+}
+
 export type VSCodeToWebviewMessage = {
     command: VSCodeToWebviewCommand
     data: any

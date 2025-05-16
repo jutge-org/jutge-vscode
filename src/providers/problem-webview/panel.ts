@@ -1,16 +1,12 @@
-import * as vscode from "vscode"
-
 import { AbstractProblem } from "@/jutge_api_client"
-import { runAllTestcases, runSingleTestcase } from "@/runners/problem"
 import { ConfigService } from "@/services/config"
-import { FileService } from "@/services/file"
 import { JutgeService } from "@/services/jutge"
-import { SubmissionService } from "@/services/submission"
-import * as utils from "@/utils"
+import { createProblemHandlerFor, IProblemHandler } from "@/services/problem-handler"
 import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
+import * as utils from "@/utils"
+import * as vscode from "vscode"
 import { htmlForAllTestcases, htmlForWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
-import { createProblemHandlerFor, IProblemHandler } from "@/services/problem-handler"
 
 const _info = (msg: string) => {
     console.info(`[ProblemWebviewPanel] ${msg}`)
@@ -80,7 +76,7 @@ export class ProblemWebviewPanel {
                 return this.handler.submitToJudge()
 
             case WebviewToVSCodeCommand.RUN_TESTCASE:
-                return this.handler.runTestcaseSingle(data.testcaseId)
+                return this.handler.runTestcaseByIndex(data.testcaseId)
 
             case WebviewToVSCodeCommand.NEW_FILE:
                 await this.handler.createStarterCode()

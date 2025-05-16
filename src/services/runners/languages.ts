@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
-import { CppRunner } from "./cpp"
-import { PythonRunner } from "./python"
+import { CppRunner } from "./languages/cpp"
+import { PythonRunner } from "./languages/python"
 import { LanguageRunner } from "./runner"
 
 export enum Proglang {
