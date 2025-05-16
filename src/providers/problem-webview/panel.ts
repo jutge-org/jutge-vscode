@@ -1,7 +1,7 @@
 import { AbstractProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
-import { createProblemHandlerFor, IProblemHandler } from "@/services/problem-handler"
+import { IProblemHandler, ProblemHandler } from "@/services/problem-handler"
 import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
 import * as utils from "@/utils"
 import * as vscode from "vscode"
@@ -35,8 +35,10 @@ export class ProblemWebviewPanel {
         this.context_ = context
 
         this.panel = panel
-        this.panel.onDidDispose(() => this.dispose(), null, context.subscriptions)
-        this.panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
+        context.subscriptions.push(
+            this.panel.onDidDispose(() => this.dispose(), null, context.subscriptions),
+            this.panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
+        )
 
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),
@@ -146,11 +148,11 @@ export class ProblemWebviewPanel {
                     }
 
                     progress.report({ message: "Loading..." })
-                    await Promise.all([_loadHandler(), _loadTestcases(), _loadStatementHtml()])
+                    await Promise.allSettled([_loadHandler(), _loadTestcases(), _loadStatementHtml()])
 
                     // Once everything is loaded, we create a problem handler
                     // which will take care of all operations
-                    this.problemHandler = createProblemHandlerFor(this.problem)
+                    this.problemHandler = new ProblemHandler(this.problem)
 
                     //
                 } catch (e) {
@@ -189,11 +191,6 @@ export class ProblemWebviewPanel {
     private _getUri(...path: string[]) {
         const uri = vscode.Uri.joinPath(this.context_.extensionUri, ...path)
         return this.panel.webview.asWebviewUri(uri)
-    }
-
-    private async _openStarterCode() {
-        await this.handler.createStarterCode()
-        this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
     private async _showDiff(data: { testcaseId: number; expected: string; received: string }) {

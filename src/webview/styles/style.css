@@ -44,6 +44,9 @@ span.lstinline * {
     font-family: monospace !important;
     color: var(--monospace-color) !important;
 }
+span.pcrr7t- {
+    font-size: 110% !important;
+}
 
 textarea {
     background: var(--input-background);

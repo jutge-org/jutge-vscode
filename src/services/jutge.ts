@@ -11,6 +11,7 @@ import * as vscode from "vscode"
 import deepEqual from "deep-equal"
 
 const jutgeClient = new j.JutgeApiClient()
+jutgeClient.useCache = false
 
 type SwrResult<T> = {
     data: T | undefined
@@ -267,6 +268,19 @@ export class JutgeService {
         )
     }
 
+    static getTemplateListSWR(problem_id: string) {
+        return this.SWR<string[]>(`getTemplates(${problem_id})`, async () =>
+            jutgeClient.problems.getTemplates(problem_id)
+        )
+    }
+    static getTemplateList(problem_id: string) {
+        return this.promisify(() => this.getTemplateListSWR(problem_id))
+    }
+
+    static getTemplate(problem_id: string, template: string) {
+        return jutgeClient.problems.getTemplate({ problem_id, template })
+    }
+
     static getProfileSWR() {
         return this.SWR<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
     }
@@ -276,7 +290,6 @@ export class JutgeService {
             jutgeClient.problems.getAbstractProblem(problemNm)
         )
     }
-
     static async getAbstractProblem(problemNm: string): Promise<j.AbstractProblem> {
         return this.promisify(() => this.getAbstractProblemSWR(problemNm))
     }

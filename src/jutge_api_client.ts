@@ -776,7 +776,7 @@ export interface Meta {
 }
 
 export interface Download {
-    readonly data: Uint8Array
+    readonly data: Uint8Array<ArrayBuffer>
     readonly name: string
     readonly type: string
 }
@@ -836,7 +836,7 @@ export class JutgeApiClient {
     clientTTLs: Map<string, number> = new Map()
 
     /** Whether to use cache or not */
-    useCache: boolean = true
+    useCache: boolean = false
 
     /** Whether to log cache or not */
     logCache: boolean = false
@@ -861,24 +861,34 @@ export class JutgeApiClient {
             const key = JSON.stringify({ func, input })
             const entry = this.cache.get(key)
             if (entry !== undefined) {
-                if (this.logCache) {console.log("found")}
+                if (this.logCache) {
+                    console.log("found")
+                }
                 const ttl = this.clientTTLs.get(func)!
                 if (entry.epoch + ttl * 1000 > new Date().valueOf()) {
-                    if (this.logCache) {console.log("used")}
+                    if (this.logCache) {
+                        console.log("used")
+                    }
                     return [entry.output, entry.ofiles]
                 } else {
-                    if (this.logCache) {console.log("expired")}
+                    if (this.logCache) {
+                        console.log("expired")
+                    }
                     this.cache.delete(key)
                 }
             }
         }
-        if (this.logCache) {console.log("fetch")}
+        if (this.logCache) {
+            console.log("fetch")
+        }
 
         // prepare form
         const iform = new FormData()
         const idata = { func, input, meta: this.meta }
         iform.append("data", JSON.stringify(idata))
-        for (const index in ifiles) {iform.append(`file_${index}`, ifiles[index])}
+        for (const index in ifiles) {
+            iform.append(`file_${index}`, ifiles[index])
+        }
 
         // send request
         const response = await fetch(this.JUTGE_API_URL, {
@@ -904,17 +914,22 @@ export class JutgeApiClient {
         const ofiles = []
         for (const [key, value] of oform.entries()) {
             if (value instanceof File) {
+                const arrayBuffer = await value.arrayBuffer()
+                console.info(`----> Got arrayBuffer: ${arrayBuffer.byteLength}`)
                 ofiles.push({
-                    data: new Uint8Array(await value.arrayBuffer()),
+                    data: new Uint8Array(arrayBuffer),
                     name: value.name,
                     type: value.type,
                 })
             }
         }
+        console.log(`Ofiles: ${ofiles.length}`)
 
         // update cache
         if (caching) {
-            if (this.logCache) {console.log("saved")}
+            if (this.logCache) {
+                console.log("saved")
+            }
             const key = JSON.stringify({ func, input })
             this.cache.set(key, { output, ofiles, epoch: new Date().valueOf() })
         }
@@ -942,7 +957,9 @@ export class JutgeApiClient {
 
     async login({ email, password }: { email: string; password: string }): Promise<CredentialsOut> {
         const [credentials, _] = await this.execute("auth.login", { email, password })
-        if (credentials.error) {throw new UnauthorizedError(credentials.error)}
+        if (credentials.error) {
+            throw new UnauthorizedError(credentials.error)
+        }
         this.meta = { token: credentials.token, exam: null }
         return credentials
     }
@@ -955,7 +972,9 @@ export class JutgeApiClient {
 
     /** Clear the contents of the cache */
     clearCache() {
-        if (this.logCache) {console.log("clear")}
+        if (this.logCache) {
+            console.log("clear")
+        }
         this.cache = new Map()
     }
 

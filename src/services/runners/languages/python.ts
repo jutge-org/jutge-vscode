@@ -3,7 +3,7 @@ import { TerminalService } from "@/services/terminal"
 import { getWorkingDirectory, Logger } from "@/utils"
 import * as childProcess from "child_process"
 import * as vscode from "vscode"
-import { LanguageRunner } from "../runner"
+import { LanguageRunner } from "../languages"
 import { handleRuntimeErrors } from "../errors"
 
 export class PythonRunner extends Logger implements LanguageRunner {

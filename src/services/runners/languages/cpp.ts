@@ -5,7 +5,7 @@ import * as childProcess from "child_process"
 import * as path from "path"
 import * as vscode from "vscode"
 import { handleCompilationErrors, handleRuntimeErrors } from "../errors"
-import { LanguageRunner } from "../runner"
+import { LanguageRunner } from "../languages"
 
 export class CppRunner extends Logger implements LanguageRunner {
     compile(codePath: string, binaryPath: string, document: vscode.TextDocument): void {

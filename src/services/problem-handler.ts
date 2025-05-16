@@ -1,22 +1,26 @@
 import { Testcase } from "@/jutge_api_client"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
-import { getLangIdFromFilePath, getLangRunnerFromLangId } from "@/runners/language/languages"
+import {
+    chooseProgrammingLanguage,
+    infoForProglang,
+    LanguageInfo,
+    Proglang,
+    proglangFromCompiler,
+    proglangFromFilepath,
+} from "@/services/runners/languages"
 import { InputExpected, Problem, TestcaseRun, TestcaseStatus, VSCodeToWebviewCommand } from "@/types"
-import { chooseFromEditorList, decodeTestcase, Logger } from "@/utils"
+import { chooseFromEditorList, decodeTestcase, Logger, stringToFilename } from "@/utils"
+import fs from "fs"
 import * as vscode from "vscode"
-import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
+import { extname } from "path"
 
 export interface IProblemHandler {
     createStarterCode(): Promise<void>
     runTestcaseByIndex(index: number): Promise<boolean>
     runTestcaseAll(): Promise<boolean>
     submitToJudge(): Promise<void>
-}
-
-export function createProblemHandlerFor(problem: Problem) {
-    return new ProblemHandler(problem)
 }
 
 export class ProblemHandler extends Logger implements IProblemHandler {
@@ -36,11 +40,147 @@ export class ProblemHandler extends Logger implements IProblemHandler {
     }
 
     async createStarterCode(): Promise<void> {
-        const fileUri = await FileService.createNewFileFor(this.problem)
-        if (!fileUri) {
+        // Check that there is a workspace open
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+        if (!workspaceFolder) {
+            vscode.window.showErrorMessage("No workspace folder open.")
             return
         }
-        await FileService.showFileInColumn(fileUri, vscode.ViewColumn.One)
+
+        // Collect handler info
+        const handler = this.problem.handler?.handler || ""
+        const source_modifier = this.problem.handler?.source_modifier || ""
+        const compilers = this.problem.handler?.compilers
+        let compiler_id = ""
+        if (Array.isArray(compilers)) {
+            compiler_id = compilers[0]
+        } else if (typeof compilers === "string") {
+            compiler_id = compilers
+        }
+
+        // Determine programming language
+        let proglang: Proglang = Proglang.CPP
+        try {
+            if (compiler_id) {
+                proglang = proglangFromCompiler(compiler_id)
+                if (!proglang) {
+                }
+            } else {
+                let proglang = await chooseProgrammingLanguage(this.problem.problem_nm)
+                if (!proglang) {
+                    return // user cancelled
+                }
+            }
+        } catch (e) {
+            vscode.window.showErrorMessage(`Could not determine programming language`)
+            return
+        }
+
+        // Generate filename from problem and language info
+        const langInfo = infoForProglang(proglang)
+        const sanitizedTitle = stringToFilename(this.problem.title)
+        const defaultExtension = langInfo.extensions[0]
+
+        const suggestedFileName = `${this.problem.problem_id}_${sanitizedTitle}${defaultExtension}`
+
+        // Ask the user where to save the file
+        const fileUri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFileName),
+            filters: { "All files": ["*"] },
+            saveLabel: "Create",
+            title: `Create new file for ${this.problem.title}`,
+        })
+        if (!fileUri) {
+            return // user cancelled
+        }
+
+        // TODO: If extension is changed by user in the save dialog, update fileLang?
+
+        // Write file with starter content
+        try {
+            const comment = langInfo.commentPrefix
+
+            const profileRes = JutgeService.getProfileSWR()
+            const profile = profileRes.data
+            const fileHeader = [
+                `${comment} ${this.problem.title}\n`,
+                `${comment} https://jutge.org/problems/${this.problem.problem_id}\n`,
+                `${comment} ${this.problem.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
+                `${comment} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
+                `\n`,
+            ].join("")
+
+            const body = await this.__fileBody(langInfo, handler, source_modifier)
+            if (typeof body === "string") {
+                this.log.info(`Wrote string to ${fileUri.fsPath}`)
+                fs.writeFileSync(fileUri.fsPath, fileHeader + body)
+            } else {
+                this.log.info(`Wrote Uint8Array to ${fileUri.fsPath}`)
+                fs.writeFileSync(fileUri.fsPath, body)
+            }
+            //
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create file in ${fileUri.fsPath}: ${error}`)
+            throw error
+        }
+
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+    }
+
+    private async __fileBody(
+        langInfo: LanguageInfo,
+        handler: string,
+        source_modifier: string
+    ): Promise<string | Uint8Array<ArrayBuffer>> {
+        switch (handler) {
+            case "std": {
+                switch (source_modifier) {
+                    case "no_main": {
+                        return this.__stdNoMainBody(langInfo)
+                    }
+                    default: {
+                        switch (langInfo.proglang) {
+                            case Proglang.CPP: {
+                                return `#include <iostream>\nusing namespace std;\n\nint main() {\n\n}\n`
+                            }
+                            default: {
+                                return ``
+                            }
+                        }
+                    }
+                }
+            }
+            default: {
+                throw new Error(`Handler '${handler}' unimplemented yet`)
+            }
+        }
+    }
+
+    private async __stdNoMainBody(langInfo: LanguageInfo): Promise<Uint8Array<ArrayBuffer>> {
+        const { problem_id } = this.problem
+
+        const findTemplate = async () => {
+            const templateList = await JutgeService.getTemplateList(problem_id)
+            for (const template of templateList) {
+                const ext = extname(template)
+                if (langInfo.extensions.includes(ext)) {
+                    return template
+                }
+            }
+            return null
+        }
+
+        const template = await findTemplate()
+        if (template === null) {
+            throw new Error(`No template for language ${langInfo.proglang}`)
+        }
+        this.log.info(`Found template '${template}'`)
+
+        const { data, name, type } = await JutgeService.getTemplate(problem_id, template)
+
+        this.log.info(`Got template '${template}': ${name} - ${type} (${data.constructor.name})`)
+        return data
     }
 
     async runTestcaseByIndex(index: number): Promise<boolean> {
@@ -51,9 +191,10 @@ export class ProblemHandler extends Logger implements IProblemHandler {
             const testcase = await this.__getTestcase(index)
             this.log.debug(`Running testcase ${index}`)
 
-            this.__sendMessage(this.problem.problem_nm, index, TestcaseStatus.RUNNING, "")
+            const { problem_nm } = this.problem
+            this.__sendMessage(problem_nm, index, TestcaseStatus.RUNNING)
             const { status, output } = await this.__run(testcase, filePath)
-            this.__sendMessage(this.problem.problem_nm, index, status, output)
+            this.__sendMessage(problem_nm, index, status, output)
 
             return status === TestcaseStatus.PASSED
             //
@@ -95,12 +236,12 @@ export class ProblemHandler extends Logger implements IProblemHandler {
 
     async __run(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {
         try {
-            const languageRunner = getLangRunnerFromLangId(getLangIdFromFilePath(filePath))
+            const proglang = proglangFromFilepath(filePath)
+            const runner = infoForProglang(proglang).runner
             const document = await this.__getDocument(filePath)
 
-            // Run the test - terminal will only show if there are errors
-            this.log.debug(`Executing code with ${languageRunner.constructor.name}`)
-            const output = languageRunner.run(filePath, testcase.input, document)
+            this.log.debug(`Executing code with ${runner.constructor.name}`)
+            const output = runner.run(filePath, testcase.input, document)
             this.log.debug(`Code execution completed`)
 
             const passed = output !== null && output === testcase.expected
@@ -115,7 +256,7 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
     }
 
-    async __sendMessage(problemNm: string, testcaseId: number, status: TestcaseStatus, output: string | null) {
+    async __sendMessage(problemNm: string, testcaseId: number, status: TestcaseStatus, output: string | null = "") {
         const message = {
             command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
             data: { testcaseId, status, output },

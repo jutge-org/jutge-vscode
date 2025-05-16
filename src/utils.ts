@@ -21,35 +21,6 @@ export function getNonce() {
     return text
 }
 
-type LangInfo = {
-    compiler_id: string
-    mimeType: string
-}
-
-const cpp: LangInfo = { compiler_id: "G++", mimeType: "text/x-c" }
-const python: LangInfo = { compiler_id: "Python3", mimeType: "text/x-script.phyton" }
-
-const _ext2langinfo: Record<string, LangInfo> = {
-    ".cc": cpp,
-    ".cpp": cpp,
-    ".cxx": cpp,
-    ".c++": cpp,
-    ".py": python,
-}
-
-/**
- * A helper function that returns the compiler id for a given file extension.
- *
- * @remarks This function is used to determine the compiler id to be used when
- * submitting a file to Jutge.
- *
- * @param extension The file extension
- * @returns The compiler id
- */
-export function getLangInfoFromExtension(extension: string) {
-    return _ext2langinfo[extension]
-}
-
 /**
  * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
  *
@@ -137,6 +108,19 @@ const allKinds: LoggerKind[] = ["debug", "info", "warn", "error"]
 export class Logger {
     get log() {
         const _class = this.constructor.name
+
+        const logger =
+            (kind: LoggerKind) =>
+            (...msgs: any[]) =>
+                console[kind](`[${_class}]:`, ...msgs)
+
+        return Object.fromEntries(allKinds.map((kind) => [kind, logger(kind)]))
+    }
+}
+
+export class StaticLogger {
+    static get log() {
+        const _class = this.name
 
         const logger =
             (kind: LoggerKind) =>

@@ -1,8 +1,9 @@
 import { LanguageCode } from "@/types"
+import { StaticLogger } from "@/utils"
 import { PythonExtension } from "@vscode/python-extension"
 import * as vscode from "vscode"
 
-export class ConfigService {
+export class ConfigService extends StaticLogger {
     private static pythonApi: PythonExtension | null = null
 
     public static initialize(): void {
@@ -40,7 +41,7 @@ export class ConfigService {
 
     public static getPythonCommand(): string {
         const env = ConfigService.python.environments.getActiveEnvironmentPath()
-        console.debug(`[ConfigService] Python environment is: "${env.path}"`)
+        this.log.debug(`[ConfigService] Python environment is: "${env.path}"`)
         return env.path
     }
 
