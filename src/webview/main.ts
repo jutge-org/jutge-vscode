@@ -183,7 +183,7 @@ function updateTestcase(testcaseIndex: number, status: string, outputText: strin
     }
 
     let allPassed = passedTestcases.values().every((v) => v === true)
-    getButton("submit-to-jutge").disabled = !allPassed
+    getButton("submit-to-jutge").disabled = false
 }
 
 function updateSubmissionStatus(status: SubmissionStatus) {

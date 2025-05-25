@@ -104,10 +104,17 @@ export function htmlForAllTestcases(problemTestcases: Testcase[], problemHandler
                 <div class="buttons">
                     ${Button({
                         id: "run-all-testcases",
-                        text: "Run All",
+                        text: "Run All Testcases",
                         title: "Run all testscases",
                         icon: "run-all",
                     })}
+                </div>
+            </div>
+            <div class="panels">
+                ${problemTestcases.map(htmlForTestcase).join("")}
+            </div>
+            <div class="flex flex-row justify-end mt-4">
+                <div class="buttons">
                     ${Button({
                         id: "submit-to-jutge",
                         text: "Submit to Jutge",
@@ -116,9 +123,6 @@ export function htmlForAllTestcases(problemTestcases: Testcase[], problemHandler
                         disabled: false,
                     })}
                 </div>
-            </div>
-            <div class="panels">
-                ${problemTestcases.map(htmlForTestcase).join("")}
             </div>
         </div>
     `

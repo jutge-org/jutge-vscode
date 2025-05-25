@@ -204,22 +204,21 @@ textarea {
         & h2 {
             margin: 0;
         }
+    }
 
-        & .buttons {
-            flex: 1;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-end;
-            gap: 0.4em;
-        }
+    & .buttons {
+        flex: 1;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        gap: 0.4em;
     }
 
     & .panels {
         display: flex;
         flex-direction: column;
         gap: 1.1em;
-        padding: 0.5em;
 
         & .testcase {
             display: flex;
@@ -379,4 +378,19 @@ textarea {
 }
 .flex-grow-1 {
     flex-grow: 1;
+}
+.flex {
+    display: flex;
+}
+.flex-row {
+    flex-direction: row;
+}
+.flex-col {
+    flex-direction: column;
+}
+.justify-end {
+    justify-items: flex-end;
+}
+.mt-4 {
+    margin-top: 1em;
 }
