@@ -3,7 +3,7 @@
     "displayName": "jutge-vscode",
     "publisher": "jutge-org",
     "description": "Visual Studio Code extension for Jutge.org",
-    "version": "0.0.10",
+    "version": "0.0.9",
     "repository": "https://github.com/jutge-org/jutge-vscode",
     "license": "See license in LICENSE",
     "icon": "resources/jutge.png",
