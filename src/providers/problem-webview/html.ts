@@ -81,6 +81,15 @@ export function htmlForAllTestcases(problemTestcases: Testcase[], problemHandler
             <div class="testcases">
                 <div class="header">
                     <h2 class="flex-grow-1">Testcases</h2>
+                    <div class="buttons">
+                    ${Button({
+                        id: "submit-to-jutge",
+                        text: "Submit to Jutge",
+                        title: "Submit file to Jutge.org",
+                        icon: "submit",
+                        disabled: false,
+                    })}
+                </div>
                 </div>
                 <div class="panels">
                     No testcases found.
@@ -104,7 +113,7 @@ export function htmlForAllTestcases(problemTestcases: Testcase[], problemHandler
                         text: "Submit to Jutge",
                         title: "Submit file to Jutge.org",
                         icon: "submit",
-                        disabled: true,
+                        disabled: false,
                     })}
                 </div>
             </div>
