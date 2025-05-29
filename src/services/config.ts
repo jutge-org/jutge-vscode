@@ -57,6 +57,14 @@ export class ConfigService extends StaticLogger {
         return ConfigService.getString("runner.cpp.flags")
     }
 
+    public static getGHCCommand(): string {
+        return ConfigService.getString("runner.ghc.command")
+    }
+
+    public static getGHCFlags(): Array<string> {
+        return ConfigService.getStringArray("runner.ghc.flags")
+    }
+
     public static getPreferredLang(): string {
         return ConfigService.getString("problem.preferredLang")
     }

@@ -2,10 +2,12 @@ import * as vscode from "vscode"
 import { CppRunner } from "./languages/cpp"
 import { PythonRunner } from "./languages/python"
 import { basename, extname } from "path"
+import { GHCRunner } from "./languages/ghc"
 
 export enum Proglang {
     CPP = "C++",
     PYTHON = "Python",
+    GHC = "GHC", // Haskell
 }
 export interface LanguageRunner {
     run(codePath: string, input: string, document: vscode.TextDocument): string
@@ -36,6 +38,14 @@ const __languages: Record<Proglang, LanguageInfo> = {
         commentPrefix: "//",
         mimeType: "text/x-c",
         compilers: ["G++"],
+    },
+    [Proglang.GHC]: {
+        proglang: Proglang.GHC,
+        runner: new GHCRunner(),
+        extensions: [".hs"],
+        commentPrefix: "--",
+        mimeType: "text/x-haskell",
+        compilers: ["GHC"],
     },
 }
 
