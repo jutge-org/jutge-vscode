@@ -59,14 +59,14 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
 
         // Determine programming language
-        let proglang: Proglang = Proglang.CPP
+        let proglang: Proglang | null = Proglang.CPP
         try {
             if (compiler_id) {
                 proglang = proglangFromCompiler(compiler_id)
                 if (!proglang) {
                 }
             } else {
-                let proglang = await chooseProgrammingLanguage(this.problem.problem_nm)
+                proglang = await chooseProgrammingLanguage(this.problem.problem_nm)
                 if (!proglang) {
                     return // user cancelled
                 }
