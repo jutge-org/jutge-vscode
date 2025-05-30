@@ -83,7 +83,8 @@
                     "default": [
                         "-u"
                     ],
-                    "description": "The flags to run Python scripts (by default, the flags jutge.org uses)"
+                    "description": "The flags to run Python scripts (by default, the flags Jutge.org uses)",
+                    "TODO": "These should be obtained from the Jutge.org API, not hardcoded."
                 },
                 "jutge-vscode.runner.cpp.command": {
                     "type": "string",
@@ -100,7 +101,19 @@
                         "-Wshadow",
                         "-pedantic"
                     ],
-                    "description": "The flags to compile C++ programs (by default, the flags jutge.org uses)"
+                    "description": "The flags to compile C++ programs (by default, the flags Jutge.org uses)"
+                },
+                "jutge-vscode.runner.ghc.command": {
+                    "type": "string",
+                    "default": "ghc",
+                    "description": "The command to compile Haskell programs"
+                },
+                "jutge-vscode.runner.ghc.flags": {
+                    "type": "array",
+                    "default": [
+                        "-O2"
+                    ],
+                    "description": "The flags to compile Haskell programs (by default, the flags Jutge.org uses)"
                 },
                 "jutge-vscode.problem.preferredLang": {
                     "type": "string",
@@ -108,9 +121,12 @@
                     "enum": [
                         "Català",
                         "Castellano",
-                        "English"
+                        "English",
+                        "Français",
+                        "Deutsch"
                     ],
-                    "description": "The preferred language for problem descriptions."
+                    "description": "The preferred language for problem descriptions.",
+                    "TODO": "These should be obtained from the Jutge.org API, not hardcoded."
                 }
             }
         }
