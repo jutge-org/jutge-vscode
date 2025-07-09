@@ -6,30 +6,30 @@ _Ready to level up your programming practice? [Install the Jutge VSCode Extensio
 
 The main features of the extension include:
 
--   Log in to Jutge.org.
--   View lists of problems from Jutge.org organized by courses.
--   View problem statements and test cases.
--   Check solutions against public test cases in the local environment.
--   Submit solutions to the Jutge.org server.
--   View submission results and feedback.
--   Support for the C++, Python, and Haskell programming languages.
+- Log in to Jutge.org.
+- View lists of problems from Jutge.org organized by courses.
+- View problem statements and test cases.
+- Check solutions against public test cases in the local environment.
+- Submit solutions to the Jutge.org server.
+- View submission results and feedback.
+- Support for the C++, Python, and Haskell programming languages.
 
 The extension is still in its early stages, and we are actively working on improving its functionality and user experience. In the near future, we plan to add more features such as:
 
--   Support for more programming languages.
--   Automatic installation of compilers and interpreters to ease new users' setup.
--   Enhanced problem browsing and filtering.
--   Copying with more types of problems in Jutge.org (problems with functions, quiz problems, graphical problems, ...).
--   Support for custom test cases.
--   Support for exams and contests.
+- Support for more programming languages.
+- Automatic installation of compilers and interpreters to ease new users' setup.
+- Enhanced problem browsing and filtering.
+- Copying with more types of problems in Jutge.org (problems with functions, quiz problems, graphical problems, ...).
+- Support for custom test cases.
+- Support for exams and contests.
 
 The extension is built using TypeScript and leverages the VSCode API to provide a rich user experience. It uses webviews to display problem statements and test cases, and it integrates with [Jutge.org's API](https://api.jutge.org/) to manage authentication, problem retrieval, and submission handling.
 
 This is an open-source project that thrives on community involvement. We welcome your contributions and feedback:
 
--   **Source Code**: Visit our [GitHub repository](https://github.com/jutge-org/jutge-vscode)
--   **Issue Tracking**: Check the [issues page](https://github.com/jutge-org/jutge-vscode/issues) for known issues and feature requests
--   **Get Involved**: Submit bug reports, feature requests, or contribute code to help improve the extension
+- **Source Code**: Visit our [GitHub repository](https://github.com/jutge-org/jutge-vscode)
+- **Issue Tracking**: Check the [issues page](https://github.com/jutge-org/jutge-vscode/issues) for known issues and feature requests
+- **Get Involved**: Submit bug reports, feature requests, or contribute code to help improve the extension
 
 See the [Contributing](#contributing) section for more details on how to get involved.
 
@@ -70,10 +70,10 @@ make vsix
 
 ### Prerequisites
 
--   Node.js v21.7.1 or higher
--   bun v1.0.0 or higher
--   Visual Studio Code v1.87.0 or higher
--   [esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) VSCode extension
+- Node.js v21.7.1 or higher
+- bun v1.0.0 or higher
+- Visual Studio Code v1.87.0 or higher
+- [esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) VSCode extension
 
 ### Building from source
 
@@ -119,10 +119,10 @@ jutge-vscode/
 
 3. **Services**:
 
--   AuthService: Manages authentication with Jutge.org
--   FileService: Handles file operations
--   SubmissionService: Manages problem submissions
--   ConfigService: Manages configuration
+- AuthService: Manages authentication with Jutge.org
+- FileService: Handles file operations
+- SubmissionService: Manages problem submissions
+- ConfigService: Manages configuration
 
 4. **Runners**: Executes code against test cases for different programming languages
 
@@ -132,15 +132,15 @@ We welcome contributions from the community! Here's how you can help:
 
 ### Development Setup
 
--   Follow the installation instructions above to set up your development environment
--   Familiarize yourself with the project structure and key components
--   Check the GitHub issues for tasks that need assistance (look for the "help wanted" or "good first issue" labels)
+- Follow the installation instructions above to set up your development environment
+- Familiarize yourself with the project structure and key components
+- Check the GitHub issues for tasks that need assistance (look for the "help wanted" or "good first issue" labels)
 
 ### Coding Standards
 
--   The project uses ESLint and Prettier for code formatting and linting
--   Run `bun lint` to check your code for issues
--   Run `bun format` to auto-format code
+- The project uses ESLint and Prettier for code formatting and linting
+- Run `bun lint` to check your code for issues
+- Run `bun format` to auto-format code
 
 ### Pull Request Process
 
