@@ -112,7 +112,7 @@ export class SubmissionService extends StaticLogger {
         const selection = await vscode.window.showInformationMessage(text, {
             title: "View in jutge.org",
         })
-        if (selection && selection.title == "View in jutge.org") {
+        if (selection && selection.title === "View in jutge.org") {
             const path = `/${problem.problem_id}/submissions/${submission_id}`
             vscode.env.openExternal(vscode.Uri.parse(`https://jutge.org/problems${path}`))
         }

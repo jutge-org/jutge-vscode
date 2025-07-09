@@ -78,7 +78,7 @@ export function proglangFromFilepath(filePath: string): Proglang {
 
 export function infoForProglang(proglang: Proglang): LanguageInfo {
     for (const [lang, info] of Object.entries(__languages)) {
-        if (lang == proglang) {
+        if (lang === proglang) {
             return info
         }
     }
