@@ -1,5 +1,5 @@
 /**
- * This file has been automatically generated at 2025-05-16T19:37:37.359Z
+ * This file has been automatically generated at 2025-07-10T13:06:09.518Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -15,6 +15,13 @@
 export type CredentialsIn = {
     email: string
     password: string
+}
+
+export type ExamCredentialsIn = {
+    email: string
+    password: string
+    exam: string
+    exam_password: string
 }
 
 export type CredentialsOut = {
@@ -48,6 +55,12 @@ export type ApiVersion = {
     gitHash: string
     gitBranch: string
     gitDate: string
+}
+
+export type RequestInformation = {
+    url: string
+    ip: string
+    domain: string
 }
 
 export type Language = {
@@ -110,7 +123,8 @@ export type BriefAbstractProblem = {
     driver_id: string | null
     type: string | null
     deprecation: string | null
-    created_at: string | string | string | number | null
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
 }
 
 export type BriefProblem = {
@@ -136,7 +150,8 @@ export type AbstractProblem = {
     driver_id: string | null
     type: string | null
     deprecation: string | null
-    created_at: string | string | string | number | null
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
     problems: BriefProblemDict
 }
 
@@ -200,7 +215,7 @@ export type Profile = {
     webpage: string | null
     description: string | null
     affiliation: string | null
-    birth_year: number
+    birth_year: number | null
     max_subsxhour: number
     max_subsxday: number
     administrator: number
@@ -340,6 +355,42 @@ export type List = {
     owner: PublicProfile
 }
 
+export type ReadyExam = {
+    exam_key: string
+    title: string
+    place: string
+    description: string
+    exp_time_start: string | string | string | number
+    running_time: number
+    contest: boolean
+}
+
+export type RunningExamProblem = {
+    problem_nm: string
+    icon: string | null
+    caption: string | null
+    weight: number | null
+}
+
+export type RunningExamDocument = {
+    document_nm: string
+    title: string
+    description: string
+}
+
+export type RunningExam = {
+    title: string
+    description: string
+    instructions: string
+    time_start: string | string | string | number | null
+    exp_time_start: string | string | string | number
+    running_time: number
+    contest: number
+    problems: RunningExamProblem[]
+    compilers: string[]
+    documents: RunningExamDocument[]
+}
+
 export type AbstractStatus = {
     problem_nm: string
     nb_submissions: number
@@ -386,7 +437,17 @@ export type Document = {
     document_nm: string
     title: string
     description: string
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
 }
+
+export type DocumentCreation = {
+    document_nm: string
+    title: string
+    description: string
+}
+
+export type DocumentUpdate = DocumentCreation
 
 export type InstructorBriefList = {
     list_nm: string
@@ -395,6 +456,8 @@ export type InstructorBriefList = {
     annotation: string
     official: number
     public: number
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
 }
 
 export type InstructorListItem = {
@@ -411,8 +474,22 @@ export type InstructorList = {
     annotation: string
     official: number
     public: number
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
     items: InstructorListItems
 }
+
+export type InstructorListCreation = {
+    list_nm: string
+    title: string
+    description: string
+    annotation: string
+    official: number
+    public: number
+    items: InstructorListItems
+}
+
+export type InstructorListUpdate = InstructorListCreation
 
 export type InstructorBriefCourse = {
     course_nm: string
@@ -421,6 +498,8 @@ export type InstructorBriefCourse = {
     annotation: string
     official: number
     public: number
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
 }
 
 export type CourseMembers = {
@@ -436,6 +515,8 @@ export type InstructorCourse = {
     annotation: string
     official: number
     public: number
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
     lists: string[]
     students: CourseMembers
     tutors: CourseMembers
@@ -446,11 +527,26 @@ export type StudentProfile = {
     email: string
 }
 
-export type InstructorExamDocument = {
-    document_nm: string
+export type InstructorCourseCreation = {
+    course_nm: string
     title: string
     description: string
+    annotation: string
+    official: number
+    public: number
+    lists: string[]
+    students: CourseMembers
+    tutors: CourseMembers
 }
+
+export type InstructorCourseUpdate = InstructorCourseCreation
+
+export type InstructorExamCourse = {
+    course_nm: string
+    title: string
+}
+
+export type InstructorExamDocument = RunningExamDocument
 
 export type InstructorExamCompiler = {
     compiler_id: string
@@ -483,16 +579,17 @@ export type InstructorExamStudent = {
 
 export type InstructorExamCreation = {
     exam_nm: string
+    course_nm: string
     title: string
-    description: string
-    place: string
     exp_time_start: string | string | string | number
 }
 
 export type InstructorExamUpdate = {
     exam_nm: string
+    course_nm: string
     title: string
     place: string
+    code: string
     description: string
     time_start: string | string | string | number | null
     exp_time_start: string | string | string | number
@@ -522,6 +619,7 @@ export type InstructorExamSubmissionsOptions = {
     only_last: boolean
     font_size: number
     layout: string
+    obscure_private_testcases_names: boolean
 }
 
 export type Pack = {
@@ -534,6 +632,7 @@ export type InstructorBriefExam = {
     title: string
     place: string | null
     description: string | null
+    code: string | null
     time_start: string | string | string | number | null
     exp_time_start: string | string | string | number
     running_time: number
@@ -543,6 +642,9 @@ export type InstructorBriefExam = {
     instructions: string | null
     avatars: string | null
     anonymous: number
+    course: InstructorExamCourse
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
 }
 
 export type InstructorExam = {
@@ -550,6 +652,7 @@ export type InstructorExam = {
     title: string
     place: string | null
     description: string | null
+    code: string | null
     time_start: string | string | string | number | null
     exp_time_start: string | string | string | number
     running_time: number
@@ -559,7 +662,10 @@ export type InstructorExam = {
     instructions: string | null
     avatars: string | null
     anonymous: number
-    documents: InstructorExamDocument[]
+    course: InstructorExamCourse
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
+    documents: RunningExamDocument[]
     compilers: InstructorExamCompiler[]
     problems: InstructorExamProblem[]
     students: InstructorExamStudent[]
@@ -581,7 +687,6 @@ export type ExamStatistics = {
 
 export type RankingResult = {
     problem_nm: string
-    historic: string
     submissions: number
     verdict: string | null
     score: number
@@ -644,6 +749,33 @@ export type UserEmailAndName = {
 }
 
 export type UsersEmailsAndNames = UserEmailAndName[]
+
+export type ProfileForAdmin = {
+    user_id: string
+    user_uid: string
+    email: string
+    name: string
+    username: string | null
+    nickname: string | null
+    webpage: string | null
+    description: string | null
+    affiliation: string | null
+    birth_year: number | null
+    max_subsxhour: number
+    max_subsxday: number
+    administrator: number
+    instructor: number
+    parent_email: string | null
+    country_id: string | null
+    timezone_id: string
+    compiler_id: string | null
+    language_id: string | null
+    locked: number
+    banned: number
+    nb_bans: number
+    reason: string | null
+    creation_date: string | string | string | number
+}
 
 export type FreeDiskSpaceItem = {
     disk: string
@@ -772,11 +904,10 @@ export type SomeType = {
 
 export interface Meta {
     readonly token: string
-    readonly exam: string | null
 }
 
 export interface Download {
-    readonly data: Uint8Array<ArrayBuffer>
+    readonly data: Uint8Array
     readonly name: string
     readonly type: string
 }
@@ -836,7 +967,7 @@ export class JutgeApiClient {
     clientTTLs: Map<string, number> = new Map()
 
     /** Whether to use cache or not */
-    useCache: boolean = false
+    useCache: boolean = true
 
     /** Whether to log cache or not */
     logCache: boolean = false
@@ -846,6 +977,9 @@ export class JutgeApiClient {
 
     /** URL to talk with the API */
     JUTGE_API_URL = process.env.JUTGE_API_URL || "https://api.jutge.org/api"
+
+    /** Headers to include in the API requests */
+    headers: Record<string, string> = {}
 
     /** Meta information */
     meta: Meta | null = null
@@ -861,39 +995,30 @@ export class JutgeApiClient {
             const key = JSON.stringify({ func, input })
             const entry = this.cache.get(key)
             if (entry !== undefined) {
-                if (this.logCache) {
-                    console.log("found")
-                }
+                if (this.logCache) {console.log("found")}
                 const ttl = this.clientTTLs.get(func)!
                 if (entry.epoch + ttl * 1000 > new Date().valueOf()) {
-                    if (this.logCache) {
-                        console.log("used")
-                    }
+                    if (this.logCache) {console.log("used")}
                     return [entry.output, entry.ofiles]
                 } else {
-                    if (this.logCache) {
-                        console.log("expired")
-                    }
+                    if (this.logCache) {console.log("expired")}
                     this.cache.delete(key)
                 }
             }
         }
-        if (this.logCache) {
-            console.log("fetch")
-        }
+        if (this.logCache) {console.log("fetch")}
 
         // prepare form
         const iform = new FormData()
         const idata = { func, input, meta: this.meta }
         iform.append("data", JSON.stringify(idata))
-        for (const index in ifiles) {
-            iform.append(`file_${index}`, ifiles[index])
-        }
+        for (const index in ifiles) {iform.append(`file_${index}`, ifiles[index])}
 
         // send request
         const response = await fetch(this.JUTGE_API_URL, {
             method: "POST",
             body: iform,
+            headers: this.headers,
         })
 
         // process response
@@ -914,22 +1039,17 @@ export class JutgeApiClient {
         const ofiles = []
         for (const [key, value] of oform.entries()) {
             if (value instanceof File) {
-                const arrayBuffer = await value.arrayBuffer()
-                console.info(`----> Got arrayBuffer: ${arrayBuffer.byteLength}`)
                 ofiles.push({
-                    data: new Uint8Array(arrayBuffer),
+                    data: new Uint8Array(await value.arrayBuffer()),
                     name: value.name,
                     type: value.type,
                 })
             }
         }
-        console.log(`Ofiles: ${ofiles.length}`)
 
         // update cache
         if (caching) {
-            if (this.logCache) {
-                console.log("saved")
-            }
+            if (this.logCache) {console.log("saved")}
             const key = JSON.stringify({ func, input })
             this.cache.set(key, { output, ofiles, epoch: new Date().valueOf() })
         }
@@ -953,14 +1073,30 @@ export class JutgeApiClient {
         }
     }
 
-    /** Simple login */
+    /** Simple login setting meta */
 
     async login({ email, password }: { email: string; password: string }): Promise<CredentialsOut> {
         const [credentials, _] = await this.execute("auth.login", { email, password })
-        if (credentials.error) {
-            throw new UnauthorizedError(credentials.error)
-        }
-        this.meta = { token: credentials.token, exam: null }
+        if (credentials.error) {throw new UnauthorizedError(credentials.error)}
+        this.meta = { token: credentials.token }
+        return credentials
+    }
+
+    /** Simple login to exam setting meta */
+    async loginExam({
+        email,
+        password,
+        exam,
+        exam_password,
+    }: {
+        email: string
+        password: string
+        exam: string
+        exam_password: string
+    }): Promise<CredentialsOut> {
+        const [credentials, _] = await this.execute("auth.loginExam", { email, password, exam, exam_password })
+        if (credentials.error) {throw new UnauthorizedError(credentials.error)}
+        this.meta = { token: credentials.token }
         return credentials
     }
 
@@ -972,9 +1108,7 @@ export class JutgeApiClient {
 
     /** Clear the contents of the cache */
     clearCache() {
-        if (this.logCache) {
-            console.log("clear")
-        }
+        if (this.logCache) {console.log("clear")}
         this.cache = new Map()
     }
 
@@ -1032,6 +1166,7 @@ export class JutgeApiClient {
         this.clientTTLs.set("tables.getDrivers", 300)
         this.clientTTLs.set("tables.getVerdicts", 300)
         this.clientTTLs.set("tables.getProglangs", 300)
+        this.clientTTLs.set("problems.getAllAbstractProblems", 3600)
     }
 }
 
@@ -1050,7 +1185,7 @@ class Module_auth {
     /**
      * Login: Get an access token.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * On success, token is a valid token and error is empty. On failure, token is empty and error is a message.
      */
@@ -1070,6 +1205,18 @@ class Module_auth {
         const [output, ofiles] = await this.root.execute("auth.logout", null)
         return output
     }
+
+    /**
+     * Login to an exam: Get an access token for an exam.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * On success, token is a valid token and error is empty. On failure, token is empty and error is a message.
+     */
+    async loginExam(data: ExamCredentialsIn): Promise<CredentialsOut> {
+        const [output, ofiles] = await this.root.execute("auth.loginExam", data)
+        return output
+    }
 }
 
 /**
@@ -1087,7 +1234,7 @@ class Module_misc {
     /**
      * Get version information of the API.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -1097,9 +1244,21 @@ class Module_misc {
     }
 
     /**
+     * Get requestion information.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     *
+     */
+    async getRequestInformation(): Promise<RequestInformation> {
+        const [output, ofiles] = await this.root.execute("misc.getRequestInformation", null)
+        return output
+    }
+
+    /**
      * Get a fortune message.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -1111,7 +1270,7 @@ class Module_misc {
     /**
      * Get server time.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -1123,7 +1282,7 @@ class Module_misc {
     /**
      * Get homepage stats.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -1135,7 +1294,7 @@ class Module_misc {
     /**
      * Get Jutge.org logo as a PNG file.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -1147,7 +1306,7 @@ class Module_misc {
     /**
      * Returns all packs of avatars.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Avatars are used in exams and contests to identify students or participants.
      */
@@ -1159,7 +1318,7 @@ class Module_misc {
     /**
      * Returns all exam icons.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Exam icon are used in exams and contests to identify problems.
      */
@@ -1171,7 +1330,7 @@ class Module_misc {
     /**
      * Returns color mappings using colornames notation.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Color mappings may be used to colorize keys in the frontends. Color names are as defined in https://github.com/timoxley/colornames
      */
@@ -1183,7 +1342,7 @@ class Module_misc {
     /**
      * Returns color mappings using hexadecimal color notation.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Color mappings may be used to colorize keys in the frontends.
      */
@@ -1195,7 +1354,7 @@ class Module_misc {
     /**
      * Returns code demos for a given compiler as a dictionary of base64 codes indexed by problem_nm.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -1220,7 +1379,7 @@ class Module_tables {
     /**
      * Returns all tables.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all compilers, countries, drivers, languages, proglangs, and verdicts in a single request. This data does not change often, so you should only request it once per session.
      */
@@ -1232,7 +1391,7 @@ class Module_tables {
     /**
      * Returns all languages.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all languages as a dictionary of objects, indexed by id.
      */
@@ -1244,7 +1403,7 @@ class Module_tables {
     /**
      * Returns all countries.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all countries as a dictionary of objects, indexed by id.
      */
@@ -1256,7 +1415,7 @@ class Module_tables {
     /**
      * Returns all compilers.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all compilers as a dictionary of objects, indexed by id.
      */
@@ -1268,7 +1427,7 @@ class Module_tables {
     /**
      * Returns all drivers.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all drivers as a dictionary of objects, indexed by id.
      */
@@ -1280,7 +1439,7 @@ class Module_tables {
     /**
      * Returns all verdicts.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all verdicts as a dictionary of objects, indexed by id.
      */
@@ -1292,7 +1451,7 @@ class Module_tables {
     /**
      * Returns all proglangs.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      * Returns all proglangs (porgramming languages) as a dictionary of objects, indexed by id.
      */
@@ -1548,6 +1707,7 @@ class Module_student {
     readonly submissions: Module_student_submissions
     readonly courses: Module_student_courses
     readonly lists: Module_student_lists
+    readonly exam: Module_student_exam
     readonly statuses: Module_student_statuses
     readonly awards: Module_student_awards
 
@@ -1559,6 +1719,7 @@ class Module_student {
         this.submissions = new Module_student_submissions(root)
         this.courses = new Module_student_courses(root)
         this.lists = new Module_student_lists(root)
+        this.exam = new Module_student_exam(root)
         this.statuses = new Module_student_statuses(root)
         this.awards = new Module_student_awards(root)
     }
@@ -1654,7 +1815,7 @@ class Module_student_profile {
      *
      * 🔐 Authentication: user
      * No warnings
-     *
+     * In case of exams, some fields are not nullified to avoid cheating.
      */
     async get(): Promise<Profile> {
         const [output, ofiles] = await this.root.execute("student.profile.get", null)
@@ -2128,6 +2289,79 @@ class Module_student_lists {
 
 /**
  *
+ * ‼️ The state of this module is UNDER CONSTRUCTION. It is not ready for production use. The output of some function is capped if the exam has not started yet.
+ *
+ */
+class Module_student_exam {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get list of ready exams.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * An exam is ready if the current time is between its expected start time minus two days and its expected end time plus two days. Exams are sorted by their distance to the current time and by title order in case of ties.
+     */
+    async getReadyExams(): Promise<ReadyExam[]> {
+        const [output, ofiles] = await this.root.execute("student.exam.getReadyExams", null)
+        return output
+    }
+
+    /**
+     * Get current exam.
+     *
+     * 🔐 Authentication: exam
+     * No warnings
+     *
+     */
+    async get(): Promise<RunningExam> {
+        const [output, ofiles] = await this.root.execute("student.exam.get", null)
+        return output
+    }
+
+    /**
+     * Get a document in an exam.
+     *
+     * 🔐 Authentication: exam
+     * No warnings
+     *
+     */
+    async getDocument(document_nm: string): Promise<RunningExamDocument> {
+        const [output, ofiles] = await this.root.execute("student.exam.getDocument", document_nm)
+        return output
+    }
+
+    /**
+     * Get PDF of a document in an exam.
+     *
+     * 🔐 Authentication: exam
+     * No warnings
+     *
+     */
+    async getDocumentPdf(document_nm: string): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("student.exam.getDocumentPdf", document_nm)
+        return ofiles[0]
+    }
+
+    /**
+     * Get ranking of the current contest.
+     *
+     * 🔐 Authentication: exam
+     * No warnings
+     *
+     */
+    async getRanking(): Promise<Ranking> {
+        const [output, ofiles] = await this.root.execute("student.exam.getRanking", null)
+        return output
+    }
+}
+
+/**
+ *
  * No description yet
  *
  */
@@ -2139,7 +2373,7 @@ class Module_student_statuses {
     }
 
     /**
-     * Get statuses for all problems.
+     * Get statuses for all abstract problems.
      *
      * 🔐 Authentication: user
      * No warnings
@@ -2295,7 +2529,7 @@ class Module_instructor_documents {
      * No warnings
      *
      */
-    async create(data: Document, ifile: File): Promise<void> {
+    async create(data: DocumentCreation, ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.documents.create", data, [ifile])
         return output
     }
@@ -2307,7 +2541,7 @@ class Module_instructor_documents {
      * No warnings
      *
      */
-    async update(data: Document, ifile: File): Promise<void> {
+    async update(data: DocumentCreation, ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.documents.update", data, [ifile])
         return output
     }
@@ -2368,7 +2602,7 @@ class Module_instructor_lists {
      * No warnings
      *
      */
-    async create(data: InstructorList): Promise<void> {
+    async create(data: InstructorListCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.create", data)
         return output
     }
@@ -2380,7 +2614,7 @@ class Module_instructor_lists {
      * No warnings
      *
      */
-    async update(data: InstructorList): Promise<void> {
+    async update(data: InstructorListCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.update", data)
         return output
     }
@@ -2487,7 +2721,7 @@ class Module_instructor_courses {
      * No warnings
      * Only invited students and tutors are taken into account. Enrolled and pending students and tutors are ignored, as these are managed by the system.
      */
-    async create(data: InstructorCourse): Promise<void> {
+    async create(data: InstructorCourseCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.create", data)
         return output
     }
@@ -2499,7 +2733,7 @@ class Module_instructor_courses {
      * No warnings
      * Only invited students and tutors are taken into account. Enrolled and pending students and tutors are ignored, as these are managed by the system.
      */
-    async update(data: InstructorCourse): Promise<void> {
+    async update(data: InstructorCourseCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.update", data)
         return output
     }
@@ -2649,7 +2883,7 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async getDocuments(exam_nm: string): Promise<InstructorExamDocument[]> {
+    async getDocuments(exam_nm: string): Promise<RunningExamDocument[]> {
         const [output, ofiles] = await this.root.execute("instructor.exams.getDocuments", exam_nm)
         return output
     }
@@ -2892,6 +3126,18 @@ class Module_instructor_problems {
      */
     async getOwnProblems(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("instructor.problems.getOwnProblems", null)
+        return output
+    }
+
+    /**
+     * Get the list of own problems that have a passcode.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getOwnProblemsWithPasscode(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("instructor.problems.getOwnProblemsWithPasscode", null)
         return output
     }
 
@@ -3256,6 +3502,18 @@ class Module_admin_users {
     }
 
     /**
+     * Get all profiles of users whose email or name contains a specific string
+     *
+     * 🔐 Authentication: admin
+     * No warnings
+     *
+     */
+    async getProfiles(data: string): Promise<ProfileForAdmin[]> {
+        const [output, ofiles] = await this.root.execute("admin.users.getProfiles", data)
+        return output
+    }
+
+    /**
      * Get all users (well, just email and name) whose email contains a specific string
      *
      * 🔐 Authentication: admin
@@ -3397,6 +3655,18 @@ class Module_admin_dashboard {
      */
     async getUpcomingExams(data: { daysBefore: number; daysAfter: number }): Promise<UpcomingExams> {
         const [output, ofiles] = await this.root.execute("admin.dashboard.getUpcomingExams", data)
+        return output
+    }
+
+    /**
+     * Get PM2 status
+     *
+     * 🔐 Authentication: admin
+     * No warnings
+     *
+     */
+    async getPM2Status(): Promise<any> {
+        const [output, ofiles] = await this.root.execute("admin.dashboard.getPM2Status", null)
         return output
     }
 }
@@ -3861,7 +4131,7 @@ class Module_testing_check {
     /**
      * Throw an exception of the given type.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3886,7 +4156,7 @@ class Module_testing_playground {
     /**
      * Upload a file.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3898,7 +4168,7 @@ class Module_testing_playground {
     /**
      * Get negative of an image.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3910,7 +4180,7 @@ class Module_testing_playground {
     /**
      * Download a file.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3922,7 +4192,7 @@ class Module_testing_playground {
     /**
      * Download a file with a string.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3934,7 +4204,7 @@ class Module_testing_playground {
     /**
      * Ping the server to get a pong string.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3946,7 +4216,7 @@ class Module_testing_playground {
     /**
      * Returns the given string in uppercase.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3958,7 +4228,7 @@ class Module_testing_playground {
     /**
      * Returns the sum of two integers.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3970,7 +4240,7 @@ class Module_testing_playground {
     /**
      * Returns the sum of two floats.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3982,7 +4252,7 @@ class Module_testing_playground {
     /**
      * increment two numbers.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -3994,7 +4264,7 @@ class Module_testing_playground {
     /**
      * Returns the sum of three integers.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -4006,7 +4276,7 @@ class Module_testing_playground {
     /**
      * Returns a type with defaults.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
@@ -4018,7 +4288,7 @@ class Module_testing_playground {
     /**
      * Get a webstream with clok data.
      *
-     * No authentication
+     * 🔐 Authentication: any
      * No warnings
      *
      */
