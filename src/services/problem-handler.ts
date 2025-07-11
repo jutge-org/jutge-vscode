@@ -132,7 +132,7 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         langInfo: LanguageInfo,
         handler: string,
         source_modifier: string
-    ): Promise<string | Uint8Array<ArrayBuffer>> {
+    ): Promise<string | Uint8Array<ArrayBufferLike>> {
         switch (handler) {
             case "std": {
                 switch (source_modifier) {
@@ -157,7 +157,7 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
     }
 
-    private async __stdNoMainBody(langInfo: LanguageInfo): Promise<Uint8Array<ArrayBuffer>> {
+    private async __stdNoMainBody(langInfo: LanguageInfo): Promise<Uint8Array<ArrayBufferLike>> {
         const { problem_id } = this.problem
 
         const findTemplate = async () => {
