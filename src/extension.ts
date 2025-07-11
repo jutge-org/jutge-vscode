@@ -85,6 +85,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     registerCommand("jutge-vscode.signIn", JutgeService.signIn)
     registerCommand("jutge-vscode.signOut", JutgeService.signOut)
+    registerCommand("jutge-vscode.signInExam", JutgeService.signInExam)
+
     registerCommand("jutge-vscode.showProblem", commandShowProblem(context))
     registerCommand("jutge-vscode.refreshTree", commandRefreshTree(courseDataProvider))
 

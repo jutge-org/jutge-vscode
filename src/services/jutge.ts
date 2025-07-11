@@ -19,21 +19,28 @@ type SwrResult<T> = {
     // TODO: Put an onError and handle it!
 }
 
+type AskPasswordParams = {
+    title: string
+    placeHolder: string
+    prompt: string
+}
+
 export class JutgeService {
     static context_: vscode.ExtensionContext
+    static examMode_: boolean = false
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
-        console.info("[AuthService] Initializing...")
+        console.info("[JutgeService] Initializing...")
         JutgeService.context_ = context
 
         const token = await JutgeService.getTokenAtActivation()
         if (token) {
-            console.debug("[AuthService] Token found during activation")
+            console.debug("[JutgeService] Token found during activation")
             await JutgeService.setToken(token)
         } else {
-            console.debug("[AuthService] No valid token found during activation")
+            console.debug("[JutgeService] No valid token found during activation")
         }
-        console.info("[AuthService] Initialization complete")
+        console.info("[JutgeService] Initialization complete")
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
@@ -47,7 +54,7 @@ export class JutgeService {
     private static async isTokenValid(token: string): Promise<boolean> {
         const originalMeta = jutgeClient.meta
         try {
-            jutgeClient.meta = { token, exam: null }
+            jutgeClient.meta = { token }
             await jutgeClient.student.profile.get()
             return true
         } catch (error) {
@@ -56,25 +63,48 @@ export class JutgeService {
         }
     }
 
-    private static async getTokenFromCredentials(): Promise<string | undefined> {
-        const default_email = (await JutgeService.context_.secrets.get("email")) || ""
+    static isExamMode() {
+        return this.examMode_
+    }
 
+    private static async askEmail(): Promise<string | undefined> {
+        const initial_email = (await JutgeService.context_.secrets.get("email")) || ""
         const email = await vscode.window.showInputBox({
             title: "Jutge Sign-In",
             placeHolder: "your email",
             prompt: "Please write your email for Jutge.org.",
-            value: default_email,
+            value: initial_email,
         })
+        if (email) {
+            await JutgeService.context_.secrets.store("email", email)
+        }
+        return email
+    }
+
+    private static async askPassword({ title, placeHolder, prompt }: AskPasswordParams): Promise<string | undefined> {
+        return await vscode.window.showInputBox({
+            title,
+            placeHolder,
+            prompt,
+            value: "",
+            password: true,
+        })
+    }
+
+    private static async pickOneOf(options: string[]) {
+        return await vscode.window.showQuickPick(options)
+    }
+
+    private static async getTokenFromCredentials(): Promise<string | undefined> {
+        const email = await this.askEmail()
         if (!email) {
             return
         }
 
-        const password = await vscode.window.showInputBox({
+        const password = await this.askPassword({
             title: "Jutge Sign-In",
             placeHolder: "your password",
             prompt: "Please write your password for Jutge.org.",
-            value: "",
-            password: true,
         })
         if (!password) {
             return
@@ -82,11 +112,85 @@ export class JutgeService {
 
         try {
             const credentials = await jutgeClient.login({ email, password })
-            await JutgeService.context_.secrets.store("email", email)
             return credentials.token
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
-            console.error(`AuthService: Error signing in: ${error}`, "AuthService")
+            console.error(`JutgeService: Error signing in: ${error}`, "JutgeService")
+            return
+        }
+    }
+
+    static async getReadyExams(): Promise<string[] | undefined> {
+        try {
+            const exams = await jutgeClient.student.exam.getReadyExams()
+            return exams.map((e) => e.exam_key)
+        } catch (error) {
+            vscode.window.showErrorMessage("Jutge.org: Could not get exams.")
+            console.error(`JutgeService: Could not get exams: ${error}`, "JutgeService")
+            return
+        }
+    }
+
+    private static async getExamTokenFromCredentials(): Promise<{ exam_key: string; token: string } | undefined> {
+        const email = await this.askEmail()
+        if (!email) {
+            return
+        }
+
+        const password = await this.askPassword({
+            title: "Jutge Sign-In",
+            placeHolder: "your password",
+            prompt: "Please write your password for Jutge.org.",
+        })
+        if (!password) {
+            return
+        }
+
+        // Enter exam mode by setting headers on the client
+        const oldHeaders = jutgeClient.headers
+        jutgeClient.headers = {
+            "jutge-host": "exam.api.jutge.org",
+        }
+        this.examMode_ = true
+
+        // Retrieve a list of exams for the user
+        const exams = await this.getReadyExams()
+        if (!exams) {
+            jutgeClient.headers = oldHeaders
+            return
+        }
+        const chosenExam = await this.pickOneOf(exams)
+        if (!chosenExam) {
+            jutgeClient.headers = oldHeaders
+            return
+        }
+
+        const examPassword = await this.askPassword({
+            title: "Exam Sign-In",
+            placeHolder: "The exam password (provided by the teacher)",
+            prompt: "Please write the exam password provided by the teacher",
+        })
+        if (!examPassword) {
+            jutgeClient.headers = oldHeaders
+            return
+        }
+
+        try {
+            const credentials = await jutgeClient.loginExam({
+                email,
+                password,
+                exam: chosenExam,
+                exam_password: examPassword,
+            })
+
+            return {
+                exam_key: chosenExam,
+                token: credentials.token,
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
+            console.error(`JutgeService: Error signing in: ${error}`, "JutgeService")
+            jutgeClient.headers = oldHeaders
             return
         }
     }
@@ -108,7 +212,7 @@ export class JutgeService {
         for (const source of tokenSources) {
             const token = await source.fn
             if (token && (await JutgeService.isTokenValid(token))) {
-                console.info(`[AuthService] Using token from ${source.id}`)
+                console.info(`[JutgeService] Using token from ${source.id}`)
                 return token
             }
         }
@@ -135,22 +239,44 @@ export class JutgeService {
         _signIn()
     }
 
-    public static async signOut(): Promise<void> {
-        const _signOut = async () => {
-            await JutgeService.context_.secrets.delete("jutgeToken")
-            await JutgeService.context_.secrets.delete("email")
+    public static signInExam(): void {
+        const _signInExam = async () => {
+            if (await JutgeService.isUserAuthenticated()) {
+                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
+                return
+            }
 
-            await jutgeClient.logout()
+            const result = await JutgeService.getExamTokenFromCredentials()
+            if (!result) {
+                return
+            }
+            const { token, exam_key } = result
+            if (token) {
+                await JutgeService.context_.secrets.store("jutgeToken", token)
 
-            vscode.commands.executeCommand("jutge-vscode.refreshTree")
-            vscode.window.showInformationMessage("Jutge.org: You have signed out.")
+                vscode.commands.executeCommand("jutge-vscode.refreshTree")
+                vscode.window.showInformationMessage(`Jutge.org: You have entered exam ${exam_key}`)
+
+                JutgeService.getProfileSWR() // cache this for later
+            }
         }
 
-        _signOut()
+        _signInExam()
+    }
+
+    public static async signOut(): Promise<void> {
+        await JutgeService.context_.secrets.delete("jutgeToken")
+        await JutgeService.context_.secrets.delete("email")
+
+        await jutgeClient.logout()
+        JutgeService.examMode_ = false
+
+        vscode.commands.executeCommand("jutge-vscode.refreshTree")
+        vscode.window.showInformationMessage("Jutge.org: You have signed out.")
     }
 
     static async setToken(token: string): Promise<void> {
-        jutgeClient.meta = { token, exam: null }
+        jutgeClient.meta = { token }
         await JutgeService.context_.secrets.store("jutgeToken", token)
     }
 
@@ -210,6 +336,10 @@ export class JutgeService {
         })
     }
 
+    static getExamSWR() {
+        return this.SWR<j.RunningExam>("getExam", async () => jutgeClient.student.exam.get())
+    }
+
     static getCoursesSWR() {
         return this.SWR<Record<string, j.BriefCourse>>("getCourses", async () =>
             jutgeClient.student.courses.indexEnrolled()
@@ -238,8 +368,22 @@ export class JutgeService {
         return this.SWR<Record<string, j.BriefList>>(`getAllLists()`, async () => jutgeClient.student.lists.getAll())
     }
 
+    static getAbstractProblemsSWR(problem_nms: string[]) {
+        return this.SWR<j.AbstractProblem[]>(`getAbstractProblems(${problem_nms.join(`,`)})`, async () => {
+            const abstractProblems = await jutgeClient.problems.getAbstractProblems(problem_nms.join(","))
+
+            const result: j.AbstractProblem[] = []
+            for (const [problem_nm, abstractProblem] of Object.entries(abstractProblems)) {
+                if (problem_nm !== null) {
+                    result.push(abstractProblem)
+                }
+            }
+            return result
+        })
+    }
+
     static getAbstractProblemsInListSWR(listKey: string) {
-        return this.SWR<j.AbstractProblem[]>(`getAbstractProblemsInListWithStatus(${listKey})`, async () => {
+        return this.SWR<j.AbstractProblem[]>(`getAbstractProblemsInList(${listKey})`, async () => {
             const [resList, resAbsProblems] = await Promise.allSettled([
                 jutgeClient.student.lists.get(listKey),
                 jutgeClient.problems.getAbstractProblemsInList(listKey),

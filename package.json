@@ -22,7 +22,7 @@
         "viewsWelcome": [
             {
                 "view": "jutgeTreeView",
-                "contents": "You have not signed in to jutge.org yet.\n[Sign-in to jutge.org](command:jutge-vscode.signIn)"
+                "contents": "You have not signed in to jutge.org yet.\n[Sign-in to jutge.org](command:jutge-vscode.signIn)\n\nIf you have an exam, use the following button:\n[Sign-in to Exam](command:jutge-vscode.signInExam)"
             }
         ],
         "viewsContainers": {
@@ -57,6 +57,10 @@
             {
                 "command": "jutge-vscode.signIn",
                 "title": "Jutge.org: Sign In"
+            },
+            {
+                "command": "jutge-vscode.signInExam",
+                "title": "Jutge.org: Sign In to an Exam"
             },
             {
                 "command": "jutge-vscode.signOut",
