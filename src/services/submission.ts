@@ -4,10 +4,10 @@ import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { StaticLogger, waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
-import { basename, extname } from "path"
-import { JutgeService } from "./jutge"
-import { infoForProglang, proglangFromExtension, proglangFromFilepath } from "./runners/languages"
+import { basename } from "path"
 import { FileService } from "./file"
+import { JutgeService } from "./jutge"
+import { infoForProglang, proglangFromFilepath } from "./runners/languages"
 
 export class SubmissionService extends StaticLogger {
     private static MONITOR_INTERVAL_MS = 5000
