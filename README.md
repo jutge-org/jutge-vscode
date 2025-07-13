@@ -81,7 +81,8 @@ Additionally, the following must be changed on the extension's settings:
 - **Cpp: Command**: `cl`
 - **Cpp: Flags**:
 
-```"jutge-vscode.runner.cpp.flags": [
+```json
+"jutge-vscode.runner.cpp.flags": [
     "/EHsc",
     "/std:c++20",
     "/W4",
