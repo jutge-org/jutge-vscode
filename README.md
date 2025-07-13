@@ -78,7 +78,7 @@ code .
 
 Additionally, the following must be changed on the extension's settings:
 
-- **Cpp: Command**: `cp`
+- **Cpp: Command**: `cl`
 - **Cpp: Flags**:
 
 ```"jutge-vscode.runner.cpp.flags": [
