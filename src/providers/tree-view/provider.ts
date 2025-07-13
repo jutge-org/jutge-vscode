@@ -162,8 +162,8 @@ export class JutgeCourseTreeProvider
             const courses = swrCourse.data || {}
             swrCourse.onUpdate = () => this.refresh_() // all
 
-            return Object.entries(courses).map(([key, { course_nm }]) =>
-                this.makeTreeElement("course", key, course_nm, IconStatus.NONE)
+            return Object.entries(courses).map(([key, { title, course_nm }]) =>
+                this.makeTreeElement("course", key, title??course_nm, IconStatus.NONE)
             )
         } catch (error) {
             console.error(error)
