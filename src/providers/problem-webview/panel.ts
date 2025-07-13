@@ -130,6 +130,7 @@ export class ProblemWebviewPanel {
                     const absProb = await JutgeService.getAbstractProblem(problemNm)
                     const { problem_id, title } = this.__chooseConcreteProblem(problemNm, absProb)
                     this.problem.title = title
+                    this.problem.problem_id = problem_id
 
                     this.panel.title = `${this.problem.problem_nm} - ${title}`
 
