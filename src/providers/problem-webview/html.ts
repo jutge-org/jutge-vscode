@@ -162,9 +162,7 @@ export function htmlForWebview(data: WebviewHTMLData) {
                 <div id="data" data-problem-nm="${data.problemNm}" data-title="${data.problemTitle}" />
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="font-normal text-md flex-grow-1">
-                        <a href="https://jutge.org/problems/${data.problemId}">
-                            ${data.problemNm}
-                        </a>
+                        <a href="https://jutge.org/problems/${data.problemId}">${data.problemId}</a>
                         &ndash; ${data.handler?.handler} 
                         &ndash; ${data.handler?.source_modifier} 
                         &ndash; ${data.handler?.compilers}
