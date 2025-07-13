@@ -116,7 +116,7 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
 
             return Object.entries(courses).map(([key, course]) => {
                 const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
-                return new JutgeTreeItem(course.course_nm, state || "collapsed", key, "course")
+                return new JutgeTreeItem(course.title ?? course.course_nm, state || "collapsed", key, "course")
             })
         } catch (error) {
             console.error(error)
