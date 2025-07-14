@@ -4,10 +4,20 @@ import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_clien
 import { ConfigService } from "@/services/config"
 import { JutgeTreeItem } from "./item"
 import { JutgeService } from "@/services/jutge"
+import { IconStatus, OnVeredictMaker } from "@/types"
 
-const _error = (msg: string) => console.error(`[TreeViewProvider] ${msg}`)
+const _error = (msg: unknown) => {
+    console.error(`[TreeViewProvider] ${msg}`)
+}
+const _info = (msg: unknown) => {
+    console.info(`[TreeViewProvider] ${msg}`)
+}
 
-export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
+export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
+    // FIXME: Is there any better way to do this? I'm storing all references to
+    // problemNms because I want to know the correspondence from problemNms to items... :\
+    private problemNm2item: Map<string, JutgeTreeItem> = new Map()
+
     private _onDidChangeTreeData: vscode.EventEmitter<JutgeTreeItem | undefined | null | void> =
         new vscode.EventEmitter<JutgeTreeItem | undefined | null | void>()
 
@@ -22,6 +32,28 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
 
     refresh(item?: JutgeTreeItem): void {
         this._onDidChangeTreeData.fire(item)
+    }
+
+    private _onVeredictMaker(problemNm: string): (status: IconStatus) => void {
+        return (status: IconStatus) => {
+            const item = this.problemNm2item.get(problemNm)
+            if (!item) {
+                _error(`onVeredictChange: problem ${problemNm} not found in map.`)
+                return
+            }
+            let label = item.label
+            if (label && typeof label === "string") {
+                label = label.slice(3) // Skip icon (2 bytes) and space
+            }
+            const newIcon = this._getIconForStatus(status)
+            item.label = `${newIcon} ${label}`
+            _info(`Refreshing problem ${problemNm}`)
+            this.refresh(item)
+        }
+    }
+
+    get onVeredictMaker(): OnVeredictMaker {
+        return this._onVeredictMaker.bind(this)
     }
 
     // Get TreeItem representation of the element (part of the TreeDataProvider interface).
@@ -84,7 +116,7 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
             return items
             //
         } catch (error) {
-            console.log(error)
+            _error(error)
             vscode.window.showErrorMessage("Failed ot get exam problems")
             return []
         }
@@ -100,9 +132,9 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
                 return []
             }
             const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:exam`)
-            return [new JutgeTreeItem(exam.title, state || "collapsed", "exam", "exam")]
+            return [this.makeTreeItem(exam.title, state || "collapsed", "exam", "exam")]
         } catch (error) {
-            console.log(error)
+            _error(error)
             vscode.window.showErrorMessage("Failed ot get exam")
             return []
         }
@@ -116,7 +148,7 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
 
             return Object.entries(courses).map(([key, course]) => {
                 const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
-                return new JutgeTreeItem(course.course_nm, state || "collapsed", key, "course")
+                return this.makeTreeItem(course.course_nm, state || "collapsed", key, "course")
             })
         } catch (error) {
             console.error(error)
@@ -138,7 +170,7 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
             return course.lists.map((list) => {
                 const key = list.list_nm
                 const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
-                return new JutgeTreeItem(list.title || list.list_nm, state || "collapsed", key, "list")
+                return this.makeTreeItem(list.title || list.list_nm, state || "collapsed", key, "list")
             })
             //
         } catch (error) {
@@ -148,12 +180,24 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
         }
     }
 
+    private makeTreeItem(
+        label: string,
+        state: "collapsed" | "expanded" | "none",
+        problemNm: string,
+        contextValue: string
+    ) {
+        const newItem = new JutgeTreeItem(label, state, problemNm, contextValue)
+        // keep the item in a map, by problemNm (itemKey)
+        this.problemNm2item.set(problemNm, newItem)
+        return newItem
+    }
+
     private _abstractProblemToItem(
         abstractProblem: AbstractProblem,
         allStatuses: Record<string, AbstractStatus>
     ): JutgeTreeItem {
         const nm = abstractProblem.problem_nm
-        const problemItem = new JutgeTreeItem(nm, "none", nm, "problem")
+        const problemItem = this.makeTreeItem(nm, "none", nm, "problem")
         const langCode = ConfigService.getPreferredLangId()
         const preferredId = `${nm}_${langCode}`
 
@@ -166,8 +210,14 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
 
         // Get status for this problem
         const status = allStatuses[nm]?.status
+        let iconStatus: IconStatus | undefined
+        if (status === "accepted") {
+            iconStatus = IconStatus.ACCEPTED
+        } else if (status === "rejected") {
+            iconStatus = IconStatus.REJECTED
+        }
 
-        problemItem.label = `${this._getIconForStatus(status)} ${problem.title}`
+        problemItem.label = `${this._getIconForStatus(iconStatus)} ${problem.title}`
         problemItem.command = {
             command: "jutge-vscode.showProblem",
             title: "Open Problem",
@@ -207,13 +257,11 @@ export class CourseDataProvider implements vscode.TreeDataProvider<JutgeTreeItem
         }
     }
 
-    private _getIconForStatus(status: string | undefined): string {
+    private _getIconForStatus(status: IconStatus | undefined): string {
         switch (status) {
-            case "":
-                return ""
-            case "accepted":
+            case IconStatus.ACCEPTED:
                 return "🟢"
-            case "rejected":
+            case IconStatus.REJECTED:
                 return "🔴"
             default:
                 return "⚪"

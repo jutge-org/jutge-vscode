@@ -8,19 +8,19 @@ import {
     proglangFromCompiler,
     proglangFromFilepath,
 } from "@/services/runners/languages"
-import { InputExpected, Problem, TestcaseRun, TestcaseStatus, VSCodeToWebviewCommand } from "@/types"
+import { IconStatus, InputExpected, Problem, TestcaseRun, TestcaseStatus, VSCodeToWebviewCommand } from "@/types"
 import { chooseFromEditorList, decodeTestcase, Logger, stringToFilename } from "@/utils"
 import fs from "fs"
+import { extname } from "path"
 import * as vscode from "vscode"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
-import { extname } from "path"
 
 export interface IProblemHandler {
     createStarterCode(): Promise<void>
     runTestcaseByIndex(index: number): Promise<boolean>
     runTestcaseAll(): Promise<boolean>
-    submitToJudge(): Promise<void>
+    submitToJudge(onVeredict: () => void): Promise<void>
 }
 
 export class ProblemHandler extends Logger implements IProblemHandler {
@@ -225,13 +225,13 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
     }
 
-    async submitToJudge(): Promise<void> {
+    async submitToJudge(onVeredict: (status: IconStatus) => void): Promise<void> {
         let editor = await chooseFromEditorList(vscode.window.visibleTextEditors)
         if (!editor) {
             vscode.window.showErrorMessage("No text editor open.")
             return
         }
-        SubmissionService.submitProblem(this.problem, editor.document.uri.fsPath)
+        await SubmissionService.submitProblem(this.problem, editor.document.uri.fsPath, onVeredict)
     }
 
     async __run(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {

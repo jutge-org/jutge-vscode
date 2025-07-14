@@ -1,7 +1,7 @@
 import * as os from "os"
 import * as vscode from "vscode"
 
-import { CourseDataProvider } from "@/providers/tree-view/provider"
+import { JutgeCourseTreeProvider } from "@/providers/tree-view/provider"
 import { ConfigService } from "@/services/config"
 import { commandRefreshTree, commandShowProblem } from "./commands/show-problem"
 import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
@@ -53,20 +53,15 @@ export async function activate(context: vscode.ExtensionContext) {
         context.subscriptions.push(disposable)
     }
 
-    const registerTreeDataProvider = (viewId: string, provider: vscode.TreeDataProvider<any>) => {
-        const disposable = vscode.window.registerTreeDataProvider(viewId, provider)
-        context.subscriptions.push(disposable)
-    }
-
     const registerWebviewPanelSerializer = (viewType: string, serializer: vscode.WebviewPanelSerializer) => {
         const disposable = vscode.window.registerWebviewPanelSerializer(viewType, serializer)
         context.subscriptions.push(disposable)
     }
 
-    const courseDataProvider = new CourseDataProvider(context)
+    const jutgeCourseTreeProvider = new JutgeCourseTreeProvider(context)
     const treeView = vscode.window.createTreeView("jutgeTreeView", {
         showCollapseAll: true,
-        treeDataProvider: courseDataProvider,
+        treeDataProvider: jutgeCourseTreeProvider,
     })
 
     treeView.onDidExpandElement((e) => {
@@ -78,17 +73,15 @@ export async function activate(context: vscode.ExtensionContext) {
         context.globalState.update(`itemState:${e.element.itemKey}`, "collapsed")
     })
 
-    // registerTreeDataProvider("jutgeTreeView", courseDataProvider)
-
-    const serializer = new ProblemWebviewPanelSerializer(context)
+    const serializer = new ProblemWebviewPanelSerializer(context, jutgeCourseTreeProvider.onVeredictMaker)
     registerWebviewPanelSerializer(ProblemWebviewPanel.viewType, serializer)
 
     registerCommand("jutge-vscode.signIn", JutgeService.signIn)
     registerCommand("jutge-vscode.signOut", JutgeService.signOut)
     registerCommand("jutge-vscode.signInExam", JutgeService.signInExam)
 
-    registerCommand("jutge-vscode.showProblem", commandShowProblem(context))
-    registerCommand("jutge-vscode.refreshTree", commandRefreshTree(courseDataProvider))
+    registerCommand("jutge-vscode.showProblem", commandShowProblem(context, jutgeCourseTreeProvider))
+    registerCommand("jutge-vscode.refreshTree", commandRefreshTree(jutgeCourseTreeProvider))
 
     console.info("[Extension] jutge-vscode is now active")
 }

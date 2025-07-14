@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
-import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
+import { IconStatus, Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { StaticLogger, waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename } from "path"
@@ -23,7 +23,11 @@ export class SubmissionService extends StaticLogger {
      * from where we can get the compiler_id (by looking at the first four commented lines).
      * If that is not available, we can try with the default compiler for a certain extension.
      */
-    public static async submitProblem(problem: Problem, filePath: string): Promise<void> {
+    public static async submitProblem(
+        problem: Problem,
+        filePath: string,
+        onVeredict: (status: IconStatus) => void
+    ): Promise<void> {
         vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
@@ -66,8 +70,7 @@ export class SubmissionService extends StaticLogger {
 
                     this._showVerdictNotification(problem, submission_id, verdict)
 
-                    // TODO(pauek): When the veredict is positive, update the tree!
-
+                    onVeredict(verdict === SubmissionStatus.AC ? IconStatus.ACCEPTED : IconStatus.REJECTED)
                     //
                 } catch (err) {
                     this.log.error(`Error submitting to Jutge: ${err}`)

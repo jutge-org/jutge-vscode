@@ -14,6 +14,13 @@ export enum TestcaseStatus {
     FAILED = "failed",
 }
 
+export enum IconStatus {
+    ACCEPTED = "accepted",
+    REJECTED = "rejected",
+}
+
+export type OnVeredictMaker = (problemNm: string) => (status: IconStatus) => void
+
 export enum SubmissionStatus {
     AC = "AC",
     WA = "WA",

@@ -20,6 +20,7 @@ type ProblemWebviewState = {
 export class ProblemWebviewPanel {
     public static readonly viewType = "problemWebview"
     private context_: vscode.ExtensionContext
+    private onVeredict_: () => void
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
@@ -28,11 +29,13 @@ export class ProblemWebviewPanel {
     public constructor(
         panel: vscode.WebviewPanel,
         context: vscode.ExtensionContext,
+        onVeredict: () => void,
         { problemNm, title }: ProblemWebviewState
     ) {
         _info(`Constructing a webview panel for problem ${problemNm} (${context.extensionUri})`)
 
         this.context_ = context
+        this.onVeredict_ = onVeredict
 
         this.panel = panel
         context.subscriptions.push(
@@ -75,7 +78,7 @@ export class ProblemWebviewPanel {
                 return this.handler.runTestcaseAll()
 
             case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
-                return this.handler.submitToJudge()
+                return this.handler.submitToJudge(this.onVeredict_)
 
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 return this.handler.runTestcaseByIndex(data.testcaseId)

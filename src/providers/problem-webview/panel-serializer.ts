@@ -2,13 +2,17 @@ import * as vscode from "vscode"
 import { WebviewPanelRegistry } from "./panel-registry"
 import { ProblemWebviewPanel } from "./panel"
 import { Logger } from "@/utils"
+import { JutgeCourseTreeProvider } from "../tree-view/provider"
+import { OnVeredictMaker } from "@/types"
 
 export class ProblemWebviewPanelSerializer extends Logger implements vscode.WebviewPanelSerializer {
     private readonly context_: vscode.ExtensionContext
+    private readonly onVeredictMaker_: (problemNm: string) => () => void
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext, onVeredictMaker: OnVeredictMaker) {
         super()
         this.context_ = context
+        this.onVeredictMaker_ = onVeredictMaker
     }
 
     async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
@@ -20,7 +24,7 @@ export class ProblemWebviewPanelSerializer extends Logger implements vscode.Webv
                 return
             }
 
-            const panel = new ProblemWebviewPanel(webviewPanel, this.context_, {
+            const panel = new ProblemWebviewPanel(webviewPanel, this.context_, this.onVeredictMaker_(state.problemNm), {
                 problemNm: state.problemNm,
             })
             WebviewPanelRegistry.register(state.problemNm, panel)
