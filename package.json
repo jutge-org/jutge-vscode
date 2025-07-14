@@ -143,8 +143,9 @@
         "prepare": "husky",
         "format": "prettier --write * --ignore-unknown",
         "package": "NODE_ENV=production node ./esbuild.js",
-        "vscode:prepublish": "bun package",
-        "vscode:package": "vsce package",
+        "vsce:prepublish": "bun package",
+        "vsce:package": "vsce package",
+        "vsce:publish": "vsce publish",
         "precommit": "lint-staged"
     },
     "devDependencies": {
