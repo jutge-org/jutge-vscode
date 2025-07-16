@@ -2,8 +2,10 @@ import { SpawnSyncReturns } from "node:child_process"
 import * as vscode from "vscode"
 
 // Create diagnostic collections at the module level
-const runtimeDiagnosticCollection = vscode.languages.createDiagnosticCollection("jutge-runtime")
-const compileDiagnosticCollection = vscode.languages.createDiagnosticCollection("jutge-compile")
+const runtimeDiagnosticCollection =
+    vscode.languages.createDiagnosticCollection("jutge-runtime")
+const compileDiagnosticCollection =
+    vscode.languages.createDiagnosticCollection("jutge-compile")
 
 /**
  * Creates a diagnostic with the appropriate severity and range
@@ -27,7 +29,10 @@ export function createDiagnostic(
  * @param result The result of the process execution.
  * @throws Error if any error is found.
  */
-export function handleCompilationErrors(result: SpawnSyncReturns<Buffer>, document: vscode.TextDocument) {
+export function handleCompilationErrors(
+    result: SpawnSyncReturns<Buffer>,
+    document: vscode.TextDocument
+) {
     const diagnostics: vscode.Diagnostic[] = []
 
     // Try to parse stderr for line numbers if available
@@ -80,7 +85,10 @@ export function handleCompilationErrors(result: SpawnSyncReturns<Buffer>, docume
  * @param result The result of the process execution.
  * @param document The document where the diagnostics should be shown
  */
-export function handleRuntimeErrors(result: SpawnSyncReturns<Buffer>, document: vscode.TextDocument) {
+export function handleRuntimeErrors(
+    result: SpawnSyncReturns<Buffer>,
+    document: vscode.TextDocument
+) {
     const diagnostics: vscode.Diagnostic[] = []
 
     // Try to parse stderr for line numbers if available

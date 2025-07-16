@@ -49,7 +49,10 @@ const __languages: Record<Proglang, LanguageInfo> = {
     },
 }
 
-export function proglangFindIf(func: (info: LanguageInfo) => boolean, errorMsg: string): Proglang {
+export function proglangFindIf(
+    func: (info: LanguageInfo) => boolean,
+    errorMsg: string
+): Proglang {
     for (const [lang, info] of Object.entries(__languages)) {
         if (func(info)) {
             return lang as Proglang
@@ -85,7 +88,9 @@ export function infoForProglang(proglang: Proglang): LanguageInfo {
     throw new Error(`Language not found`)
 }
 
-export async function chooseProgrammingLanguage(problemNm: string): Promise<Proglang | null> {
+export async function chooseProgrammingLanguage(
+    problemNm: string
+): Promise<Proglang | null> {
     const fileType = await vscode.window.showQuickPick(
         Object.values(Proglang).map((lang) => ({
             label: `${lang} File`,

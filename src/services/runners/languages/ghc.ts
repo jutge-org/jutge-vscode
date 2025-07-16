@@ -15,18 +15,29 @@ export class GHCRunner extends Logger implements LanguageRunner {
         const workingDir = getWorkingDirectory(codePath)
 
         // First compile via spawnSync to check for errors
-        const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags], {
-            cwd: workingDir,
-        })
+        const result = childProcess.spawnSync(
+            command,
+            [codePath, "-o", binaryPath, ...flags],
+            {
+                cwd: workingDir,
+            }
+        )
 
         // Check if there are compilation errors
         const hasErrors =
-            result.error || (result.stderr && result.stderr.length > 0) || result.signal || result.status !== 0
+            result.error ||
+            (result.stderr && result.stderr.length > 0) ||
+            result.signal ||
+            result.status !== 0
 
         // Only execute in terminal if there are errors
         if (hasErrors) {
             this.log.debug(`Compilation errors detected, showing in terminal`)
-            TerminalService.executeCommand(command, [codePath, "-o", binaryPath, ...flags], true)
+            TerminalService.executeCommand(
+                command,
+                [codePath, "-o", binaryPath, ...flags],
+                true
+            )
         }
 
         // Handle compilation errors for diagnostics
@@ -50,7 +61,10 @@ export class GHCRunner extends Logger implements LanguageRunner {
 
         // Check if there are runtime errors
         const hasErrors =
-            result.error || (result.stderr && result.stderr.length > 0) || result.signal || result.status !== 0
+            result.error ||
+            (result.stderr && result.stderr.length > 0) ||
+            result.signal ||
+            result.status !== 0
 
         // Only execute in terminal if there are errors
         if (hasErrors) {

@@ -36,7 +36,9 @@ export class SubmissionService extends StaticLogger {
             },
             async (progress) => {
                 const { problem_nm, problem_id } = problem
-                this.log.info(`Preparing to submit problem ${problem_id} from file ${filePath}`)
+                this.log.info(
+                    `Preparing to submit problem ${problem_id} from file ${filePath}`
+                )
 
                 const proglang = proglangFromFilepath(filePath)
                 const langInfo = infoForProglang(proglang)
@@ -54,7 +56,9 @@ export class SubmissionService extends StaticLogger {
                 try {
                     this.log.debug(`Reading file content`)
                     const code = await readFile(filePath)
-                    const file = new File([code], basename(filePath), { type: langInfo.mimeType })
+                    const file = new File([code], basename(filePath), {
+                        type: langInfo.mimeType,
+                    })
 
                     this.log.info(`Submitting to Jutge.org`)
                     const { submission_id } = await JutgeService.submit(file, {
@@ -64,13 +68,23 @@ export class SubmissionService extends StaticLogger {
                     })
 
                     this.log.info(`Submission successful (${submission_id})`)
-                    progress.report({ message: `Submission successful (${submission_id})` })
+                    progress.report({
+                        message: `Submission successful (${submission_id})`,
+                    })
 
-                    const verdict = await this._waitForVerdictLoop(problem, submission_id, progress)
+                    const verdict = await this._waitForVerdictLoop(
+                        problem,
+                        submission_id,
+                        progress
+                    )
 
                     this._showVerdictNotification(problem, submission_id, verdict)
 
-                    onVeredict(verdict === SubmissionStatus.AC ? IconStatus.ACCEPTED : IconStatus.REJECTED)
+                    onVeredict(
+                        verdict === SubmissionStatus.AC
+                            ? IconStatus.ACCEPTED
+                            : IconStatus.REJECTED
+                    )
                     //
                 } catch (err) {
                     this.log.error(`Error submitting to Jutge: ${err}`)
@@ -95,10 +109,15 @@ export class SubmissionService extends StaticLogger {
 
         while (verdict === SubmissionStatus.PENDING) {
             try {
-                const response = await JutgeService.getSubmission({ problem_id, submission_id })
+                const response = await JutgeService.getSubmission({
+                    problem_id,
+                    submission_id,
+                })
                 verdict = response.veredict as SubmissionStatus
             } catch (error) {
-                vscode.window.showErrorMessage("Error getting submission status: " + error)
+                vscode.window.showErrorMessage(
+                    "Error getting submission status: " + error
+                )
             }
             progress.report({ message: `Waiting (${times}) ...` })
             times++
@@ -109,7 +128,11 @@ export class SubmissionService extends StaticLogger {
         return verdict
     }
 
-    private static async _showVerdictNotification(problem: Problem, submission_id: string, verdict: string) {
+    private static async _showVerdictNotification(
+        problem: Problem,
+        submission_id: string,
+        verdict: string
+    ) {
         const text = (verdict && this._verdictText.get(verdict)) || "❓"
 
         const selection = await vscode.window.showInformationMessage(text, {

@@ -106,7 +106,9 @@ export class FileService extends StaticLogger {
 
         const match3 = third.match(this._r3rd)
         if (match3) {
-            this.log.info(`Third line = ${match3[1]}:${match3[2]}:${match3[3]}:${match3[4]}`)
+            this.log.info(
+                `Third line = ${match3[1]}:${match3[2]}:${match3[3]}:${match3[4]}`
+            )
             result.problem_id = match3[1]
             result.handler = match3[2]
             result.source_modifier = match3[3]

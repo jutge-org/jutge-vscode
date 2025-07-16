@@ -22,7 +22,10 @@ export class PythonRunner extends Logger implements LanguageRunner {
 
         // Check if there are errors
         const hasErrors =
-            result.error || (result.stderr && result.stderr.length > 0) || result.signal || result.status !== 0
+            result.error ||
+            (result.stderr && result.stderr.length > 0) ||
+            result.signal ||
+            result.status !== 0
 
         // Only execute in terminal if there are errors
         if (hasErrors) {

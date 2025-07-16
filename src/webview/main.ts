@@ -1,5 +1,10 @@
 import { allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
-import { SubmissionStatus, VSCodeToWebviewCommand, VSCodeToWebviewMessage, WebviewToVSCodeCommand } from "../types"
+import {
+    SubmissionStatus,
+    VSCodeToWebviewCommand,
+    VSCodeToWebviewMessage,
+    WebviewToVSCodeCommand,
+} from "../types"
 import { makeSpacesVisible } from "./utils"
 
 // Warning: this import is important, it will produce a "main.css" file that
@@ -91,7 +96,10 @@ function addOnClickEventListeners() {
             assertNotNull(preElement, `Pre element not found!`)
 
             // Store the original text in a data attribute when generating the HTML
-            const originalText = preElement.getAttribute("data-original-text") || preElement.textContent || ""
+            const originalText =
+                preElement.getAttribute("data-original-text") ||
+                preElement.textContent ||
+                ""
             navigator.clipboard.writeText(originalText)
 
             // Optional: Show a temporary "Copied!" feedback
@@ -105,7 +113,8 @@ function addOnClickEventListeners() {
     document.querySelectorAll(".toggle-minimize").forEach((button) => {
         button.addEventListener("click", () => {
             const icon = button.querySelector(".icon") as HTMLSpanElement
-            const testcaseContent = button.parentElement?.nextElementSibling as HTMLElement
+            const testcaseContent = button.parentElement
+                ?.nextElementSibling as HTMLElement
             const isMinimized = testcaseContent.style.display === "none"
             icon.innerHTML = isMinimized ? chevronDown() : chevronRight()
             testcaseContent.style.display = isMinimized ? "flex" : "none"
@@ -121,8 +130,10 @@ function addOnClickEventListeners() {
             const received = testcase.querySelector(".received pre")!
 
             // Original text (without special chars visualization)
-            const expectedText = expected.getAttribute("data-original-text") || expected.textContent || ""
-            const receivedText = received.getAttribute("data-original-text") || received.textContent || ""
+            const expectedText =
+                expected.getAttribute("data-original-text") || expected.textContent || ""
+            const receivedText =
+                received.getAttribute("data-original-text") || received.textContent || ""
 
             vscode.postMessage({
                 command: WebviewToVSCodeCommand.SHOW_DIFF,

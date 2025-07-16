@@ -8,7 +8,14 @@ import {
     proglangFromCompiler,
     proglangFromFilepath,
 } from "@/services/runners/languages"
-import { IconStatus, InputExpected, Problem, TestcaseRun, TestcaseStatus, VSCodeToWebviewCommand } from "@/types"
+import {
+    IconStatus,
+    InputExpected,
+    Problem,
+    TestcaseRun,
+    TestcaseStatus,
+    VSCodeToWebviewCommand,
+} from "@/types"
 import { chooseFromEditorList, decodeTestcase, Logger, stringToFilename } from "@/utils"
 import fs from "fs"
 import { extname } from "path"
@@ -120,7 +127,9 @@ export class ProblemHandler extends Logger implements IProblemHandler {
             }
             //
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to create file in ${fileUri.fsPath}: ${error}`)
+            vscode.window.showErrorMessage(
+                `Failed to create file in ${fileUri.fsPath}: ${error}`
+            )
             throw error
         }
 
@@ -157,7 +166,9 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
     }
 
-    private async __stdNoMainBody(langInfo: LanguageInfo): Promise<Uint8Array<ArrayBufferLike>> {
+    private async __stdNoMainBody(
+        langInfo: LanguageInfo
+    ): Promise<Uint8Array<ArrayBufferLike>> {
         const { problem_id } = this.problem
 
         const findTemplate = async () => {
@@ -179,7 +190,9 @@ export class ProblemHandler extends Logger implements IProblemHandler {
 
         const { data, name, type } = await JutgeService.getTemplate(problem_id, template)
 
-        this.log.info(`Got template '${template}': ${name} - ${type} (${data.constructor.name})`)
+        this.log.info(
+            `Got template '${template}': ${name} - ${type} (${data.constructor.name})`
+        )
         return data
     }
 
@@ -231,7 +244,11 @@ export class ProblemHandler extends Logger implements IProblemHandler {
             vscode.window.showErrorMessage("No text editor open.")
             return
         }
-        await SubmissionService.submitProblem(this.problem, editor.document.uri.fsPath, onVeredict)
+        await SubmissionService.submitProblem(
+            this.problem,
+            editor.document.uri.fsPath,
+            onVeredict
+        )
     }
 
     async __run(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {
@@ -256,7 +273,12 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
     }
 
-    async __sendMessage(problemNm: string, testcaseId: number, status: TestcaseStatus, output: string | null = "") {
+    async __sendMessage(
+        problemNm: string,
+        testcaseId: number,
+        status: TestcaseStatus,
+        output: string | null = ""
+    ) {
         const message = {
             command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
             data: { testcaseId, status, output },
@@ -277,7 +299,9 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         if (!testcases || testcases.length === 0) {
             throw new Error(`No testcases found for problem ${this.problem.problem_nm}`)
         }
-        this.log.debug(`Found ${testcases.length} testcases for problem ${this.problem.problem_nm}`)
+        this.log.debug(
+            `Found ${testcases.length} testcases for problem ${this.problem.problem_nm}`
+        )
         return testcases
     }
 
@@ -291,7 +315,9 @@ export class ProblemHandler extends Logger implements IProblemHandler {
     }
 
     async __getDocument(filePath: string): Promise<vscode.TextDocument> {
-        const document = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === filePath)
+        const document = vscode.workspace.textDocuments.find(
+            (doc) => doc.uri.fsPath === filePath
+        )
         if (!document) {
             this.log.error(`File ${filePath} not found in workspace documents`)
             throw new Error("File not found in the workspace.")

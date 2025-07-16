@@ -2,45 +2,92 @@ import * as vscode from "vscode"
 
 import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
-import { JutgeTreeItem } from "./item"
 import { JutgeService } from "@/services/jutge"
-import { IconStatus, OnVeredictMaker, status2Icon, status2IconStatus } from "@/types"
+import {
+    getIconForStatus,
+    IconStatus,
+    OnVeredictMaker,
+    status2Icon,
+    status2IconStatus,
+} from "@/types"
+import { join } from "path"
+import { CourseItemType, CourseTreeElement, TreeItemCollapseState } from "./element"
+import { CourseTreeItem } from "./item"
 
-const _error = (msg: unknown) => {
-    console.error(`[TreeViewProvider] ${msg}`)
-}
-const _info = (msg: unknown) => {
-    console.info(`[TreeViewProvider] ${msg}`)
-}
+const _error = (msg: unknown) => console.error(`[TreeViewProvider] ${msg}`)
+const _info = (msg: unknown) => console.info(`[TreeViewProvider] ${msg}`)
 
-export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTreeItem> {
+export class JutgeCourseTreeProvider
+    implements vscode.TreeDataProvider<CourseTreeElement>
+{
+    private _emitter: vscode.EventEmitter<CourseTreeElement | undefined | null | void> =
+        new vscode.EventEmitter<CourseTreeElement | undefined | null | void>()
+
+    // This member is for VSCode, so that we can signal changes in the tree
+    readonly onDidChangeTreeData: vscode.Event<
+        CourseTreeElement | undefined | null | void
+    > = this._emitter.event
+
     // FIXME: Is there any better way to do this? I'm storing all references to
     // problemNms because I want to know the correspondence from problemNms to items... :\
-    private problemNm2item: Map<string, JutgeTreeItem> = new Map()
+    private problemNm2item: Map<string, CourseTreeItem> = new Map()
 
-    private _onDidChangeTreeData: vscode.EventEmitter<JutgeTreeItem | undefined | null | void> =
-        new vscode.EventEmitter<JutgeTreeItem | undefined | null | void>()
-
-    readonly onDidChangeTreeData: vscode.Event<JutgeTreeItem | undefined | null | void> =
-        this._onDidChangeTreeData.event
-
-    private context_: vscode.ExtensionContext
+    private globalState: vscode.Memento
+    private iconPrefixUri: vscode.Uri
 
     constructor(context: vscode.ExtensionContext) {
-        this.context_ = context
+        this.globalState = context.globalState
+        this.iconPrefixUri = vscode.Uri.joinPath(context.extensionUri, "resources")
     }
 
-    refresh(item?: JutgeTreeItem): void {
-        this._onDidChangeTreeData.fire(item)
+    // Get TreeItem representation of the element (part of the TreeDataProvider interface).
+    getTreeItem(element: CourseTreeElement): CourseTreeItem {
+        const item = element.toTreeItem(this.iconPrefixUri)
+        this.problemNm2item.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
+        return item
     }
 
-    private removeIcon_(label: string): string {
-        for (const icon of Object.values(status2Icon)) {
-            if (label.startsWith(icon)) {
-                return label.slice(icon.length)
-            }
+    /**
+     * Get children of an element.
+     * If an empty list is returned, a welcome view is shown.
+     * viewsWelcome are defined in `package.json`.
+     */
+    async getChildren(parent?: CourseTreeElement): Promise<CourseTreeElement[]> {
+        if (!(await JutgeService.isUserAuthenticated())) {
+            return []
+        } else if (!parent) {
+            return JutgeService.isExamMode()
+                ? this.getExam_()
+                : this.getEnrolledCourseList_()
+        } else if (parent.type === "exam") {
+            return this.getExamProblems_(parent)
+        } else if (parent.type === "course") {
+            return this.getListsFromCourseNm_(parent)
+        } else if (parent.type === "list") {
+            return this.getProblemsFromListNm_(parent)
         }
-        return label
+        return []
+    }
+
+    private makeTreeElement(
+        type: CourseItemType,
+        key: string,
+        label: string,
+        iconStatus: IconStatus,
+        parent?: CourseTreeElement
+    ) {
+        const defaultState = type === "problem" ? "none" : "collapsed"
+        const state: TreeItemCollapseState =
+            this.globalState.get(`itemState:${type}:${key}`) || defaultState
+        const newElem = new CourseTreeElement(type, key, label, state, iconStatus)
+        if (parent) {
+            newElem.parent = parent
+        }
+        return newElem
+    }
+
+    public refresh(item?: CourseTreeElement): void {
+        this._emitter.fire(item)
     }
 
     private onVeredictMaker_(problemNm: string): (status: IconStatus) => void {
@@ -50,14 +97,8 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
                 _error(`onVeredictChange: problem ${problemNm} not found in map.`)
                 return
             }
-            let label = item.label
-            if (label && typeof label === "string") {
-                label = this.removeIcon_(label)
-            }
-            const newIcon = this.getIconForStatus_(status)
-            item.label = `${newIcon}${label}`
             _info(`Refreshing problem ${problemNm}`)
-            this.refresh(item)
+            this.refresh(item.element)
         }
     }
 
@@ -65,38 +106,12 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         return this.onVeredictMaker_.bind(this)
     }
 
-    // Get TreeItem representation of the element (part of the TreeDataProvider interface).
-    getTreeItem(element: JutgeTreeItem): JutgeTreeItem {
-        return element
-    }
-
-    /**
-     * Get children of an element.
-     * If an empty list is returned, a welcome view is shown.
-     * viewsWelcome are defined in `package.json`.
-     */
-    async getChildren(element?: JutgeTreeItem): Promise<JutgeTreeItem[]> {
-        if (!(await JutgeService.isUserAuthenticated())) {
-            return []
-        }
-        if (!element && JutgeService.isExamMode()) {
-            return this._getExam()
-        } else if (!element) {
-            return this.getEnrolledCourseList_()
-        } else if (element.contextValue === "exam") {
-            return this.getExamProblems_(element)
-        } else if (element.contextValue === "course") {
-            return this.getListsFromCourseNm_(element)
-        } else if (element.contextValue === "list") {
-            return this.getProblemsFromListNm_(element)
-        }
-        return []
-    }
-
-    private async getExamProblems_(element: JutgeTreeItem): Promise<JutgeTreeItem[]> {
+    private async getExamProblems_(
+        examElement: CourseTreeElement
+    ): Promise<CourseTreeElement[]> {
         try {
             const swrExam = JutgeService.getExamSWR()
-            swrExam.onUpdate = () => this.refresh(element)
+            swrExam.onUpdate = () => this.refresh(examElement)
 
             const exam = swrExam.data
             if (!exam) {
@@ -106,10 +121,10 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
             const problem_nms = exam.problems.map((p) => p.problem_nm)
 
             const swrProblems = JutgeService.getAbstractProblemsSWR(problem_nms)
-            swrProblems.onUpdate = () => this.refresh(element)
+            swrProblems.onUpdate = () => this.refresh(examElement)
 
             const swrStatus = JutgeService.getAllStatusesSWR()
-            swrStatus.onUpdate = () => this.refresh(element)
+            swrStatus.onUpdate = () => this.refresh(examElement)
 
             if (swrProblems.data === undefined || swrStatus.data === undefined) {
                 return []
@@ -118,10 +133,16 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
             const abstractProblems = swrProblems.data
             const allStatuses = swrStatus.data
 
-            const items: JutgeTreeItem[] = []
+            const items: CourseTreeElement[] = []
             for (const abstractProblem of abstractProblems) {
-                items.push(this.abstractProblemToItem_(abstractProblem, allStatuses))
+                const problemItem = this.abstractProblemToItem_(
+                    abstractProblem,
+                    allStatuses
+                )
+                problemItem.parent = examElement
+                items.push(problemItem)
             }
+            examElement.children = items
             return items
             //
         } catch (error) {
@@ -131,7 +152,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
     }
 
-    private async _getExam(): Promise<JutgeTreeItem[]> {
+    private async getExam_(): Promise<CourseTreeElement[]> {
         try {
             const swrExam = JutgeService.getExamSWR()
             swrExam.onUpdate = () => this.refresh()
@@ -140,8 +161,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
             if (!exam) {
                 return []
             }
-            const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:exam`)
-            return [this.makeTreeItem(exam.title, state || "collapsed", "exam", "exam")]
+            return [this.makeTreeElement("exam", "exam", exam.title, IconStatus.NONE)]
         } catch (error) {
             _error(error)
             vscode.window.showErrorMessage("Failed ot get exam")
@@ -149,16 +169,15 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
     }
 
-    private async getEnrolledCourseList_(): Promise<JutgeTreeItem[]> {
+    private async getEnrolledCourseList_(): Promise<CourseTreeElement[]> {
         try {
-            const result = JutgeService.getCoursesSWR()
-            const courses = result.data || {}
-            result.onUpdate = () => this.refresh() // all
+            const swrCourse = JutgeService.getCoursesSWR()
+            const courses = swrCourse.data || {}
+            swrCourse.onUpdate = () => this.refresh() // all
 
-            return Object.entries(courses).map(([key, course]) => {
-                const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
-                return this.makeTreeItem(course.course_nm, state || "collapsed", key, "course")
-            })
+            return Object.entries(courses).map(([key, { course_nm }]) =>
+                this.makeTreeElement("course", key, course_nm, IconStatus.NONE)
+            )
         } catch (error) {
             console.error(error)
             vscode.window.showErrorMessage("Failed to get enrolled courses")
@@ -166,47 +185,47 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
     }
 
-    private async getListsFromCourseNm_(courseElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
+    private async getListsFromCourseNm_(
+        courseElem: CourseTreeElement
+    ): Promise<CourseTreeElement[]> {
         try {
-            const courseRes = JutgeService.getCourseSWR(courseElem.itemKey)
-            courseRes.onUpdate = () => this.refresh(courseElem)
+            const swrCourse = JutgeService.getCourseSWR(courseElem.key)
+            swrCourse.onUpdate = () => this.refresh(courseElem)
 
-            const course = courseRes.data
+            const course = swrCourse.data
             if (course === undefined) {
                 return []
             }
 
-            return course.lists.map((list) => {
-                const key = list.list_nm
-                const state = this.context_.globalState.get<"collapsed" | "expanded" | "none">(`itemState:${key}`)
-                return this.makeTreeItem(list.title || list.list_nm, state || "collapsed", key, "list")
+            const lists = course.lists.map(({ list_nm, title }) => {
+                let item = this.makeTreeElement(
+                    "list",
+                    list_nm,
+                    title || list_nm,
+                    IconStatus.NONE,
+                    courseElem
+                )
+                item.parent = courseElem
+                return item
             })
+            courseElem.children = lists
+
+            return lists
             //
         } catch (error) {
             console.error(error)
-            vscode.window.showErrorMessage(`Failed to get lists from course: ${courseElem.itemKey}`)
+            vscode.window.showErrorMessage(
+                `Failed to get lists from course: ${courseElem.key}`
+            )
             return []
         }
-    }
-
-    private makeTreeItem(
-        label: string,
-        state: "collapsed" | "expanded" | "none",
-        problemNm: string,
-        contextValue: string
-    ) {
-        const newItem = new JutgeTreeItem(label, state, problemNm, contextValue)
-        // keep the item in a map, by problemNm (itemKey)
-        this.problemNm2item.set(problemNm, newItem)
-        return newItem
     }
 
     private abstractProblemToItem_(
         abstractProblem: AbstractProblem,
         allStatuses: Record<string, AbstractStatus>
-    ): JutgeTreeItem {
+    ): CourseTreeElement {
         const nm = abstractProblem.problem_nm
-        const problemItem = this.makeTreeItem(nm, "none", nm, "problem")
         const langCode = ConfigService.getPreferredLangId()
         const preferredId = `${nm}_${langCode}`
 
@@ -219,8 +238,8 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
 
         // Get status for this problem
         const iconStatus = status2IconStatus[allStatuses[nm]?.status || ""]
+        const problemItem = this.makeTreeElement("problem", nm, problem.title, iconStatus)
 
-        problemItem.label = `${this.getIconForStatus_(iconStatus)} ${problem.title}`
         problemItem.command = {
             command: "jutge-vscode.showProblem",
             title: "Open Problem",
@@ -230,11 +249,15 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         return problemItem
     }
 
-    private async getProblemsFromListNm_(listElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
+    private async getProblemsFromListNm_(
+        listElem: CourseTreeElement
+    ): Promise<CourseTreeElement[]> {
         try {
-            console.debug(`[TreeViewProvider] Getting Problems for list '${listElem.itemKey}'`)
+            console.debug(
+                `[TreeViewProvider] Getting Problems for list '${listElem.key}'`
+            )
 
-            const swrProblems = JutgeService.getAbstractProblemsInListSWR(listElem.itemKey)
+            const swrProblems = JutgeService.getAbstractProblemsInListSWR(listElem.key)
             swrProblems.onUpdate = () => this.refresh(listElem)
 
             const swrStatus = JutgeService.getAllStatusesSWR()
@@ -247,9 +270,11 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
             const problems = swrProblems.data
             const allStatuses = swrStatus.data
 
-            const items: JutgeTreeItem[] = []
+            const items: CourseTreeElement[] = []
             for (const abstractProblem of problems) {
-                items.push(this.abstractProblemToItem_(abstractProblem, allStatuses))
+                const item = this.abstractProblemToItem_(abstractProblem, allStatuses)
+                item.parent = listElem
+                items.push(item)
             }
 
             return items
@@ -258,9 +283,5 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
             console.error("Error getting problems from list:", error)
             return []
         }
-    }
-
-    private getIconForStatus_(status: IconStatus): string {
-        return status2Icon[status]
     }
 }

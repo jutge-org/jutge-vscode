@@ -176,5 +176,17 @@
     "homepage": "https://marketplace.visualstudio.com/manage/publishers/jutge-org",
     "extensionDependencies": [
         "ms-python.python"
-    ]
+    ],
+    "prettier": {
+        "printWidth": 90,
+        "tabWidth": 4,
+        "useTabs": false,
+        "semi": false,
+        "singleQuote": false,
+        "quoteProps": "consistent",
+        "jsxSingleQuote": false,
+        "trailingComma": "es5",
+        "bracketSpacing": true,
+        "arrowParens": "always"
+    }
 }

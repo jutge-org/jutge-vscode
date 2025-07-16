@@ -65,7 +65,9 @@ export const preferredLangToLangId: { [key: string]: string } = {
 export const fallbackLangOrder = ["ca", "es", "en", "fr"]
 
 export function getDefaultProblemId(problemNm: string): string {
-    const preferredLang = vscode.workspace.getConfiguration("jutge-vscode").get("problem.preferredLang") as string
+    const preferredLang = vscode.workspace
+        .getConfiguration("jutge-vscode")
+        .get("problem.preferredLang") as string
     const preferredLangId = preferredLangToLangId[preferredLang]
     return problemNm + "_" + preferredLangId
 }

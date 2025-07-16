@@ -81,7 +81,11 @@ export class JutgeService {
         return email
     }
 
-    private static async askPassword({ title, placeHolder, prompt }: AskPasswordParams): Promise<string | undefined> {
+    private static async askPassword({
+        title,
+        placeHolder,
+        prompt,
+    }: AskPasswordParams): Promise<string | undefined> {
         return await vscode.window.showInputBox({
             title,
             placeHolder,
@@ -131,7 +135,9 @@ export class JutgeService {
         }
     }
 
-    private static async getExamTokenFromCredentials(): Promise<{ exam_key: string; token: string } | undefined> {
+    private static async getExamTokenFromCredentials(): Promise<
+        { exam_key: string; token: string } | undefined
+    > {
         const email = await this.askEmail()
         if (!email) {
             return
@@ -206,7 +212,10 @@ export class JutgeService {
     public static async getTokenAtActivation(): Promise<string | undefined> {
         const tokenSources = [
             { id: "vscode storage", fn: JutgeService.context_.secrets.get("jutgeToken") },
-            { id: "~/.config/jutge/token.txt", fn: JutgeService.getTokenFromConfigFile() },
+            {
+                id: "~/.config/jutge/token.txt",
+                fn: JutgeService.getTokenFromConfigFile(),
+            },
         ]
 
         for (const source of tokenSources) {
@@ -221,7 +230,9 @@ export class JutgeService {
     public static signIn(): void {
         const _signIn = async () => {
             if (await JutgeService.isUserAuthenticated()) {
-                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
+                vscode.window.showInformationMessage(
+                    "Jutge.org: You are already signed in."
+                )
                 return
             }
 
@@ -242,7 +253,9 @@ export class JutgeService {
     public static signInExam(): void {
         const _signInExam = async () => {
             if (await JutgeService.isUserAuthenticated()) {
-                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
+                vscode.window.showInformationMessage(
+                    "Jutge.org: You are already signed in."
+                )
                 return
             }
 
@@ -255,7 +268,9 @@ export class JutgeService {
                 await JutgeService.context_.secrets.store("jutgeToken", token)
 
                 vscode.commands.executeCommand("jutge-vscode.refreshTree")
-                vscode.window.showInformationMessage(`Jutge.org: You have entered exam ${exam_key}`)
+                vscode.window.showInformationMessage(
+                    `Jutge.org: You have entered exam ${exam_key}`
+                )
 
                 JutgeService.getProfileSWR() // cache this for later
             }
@@ -337,7 +352,9 @@ export class JutgeService {
     }
 
     static getExamSWR() {
-        return this.SWR<j.RunningExam>("getExam", async () => jutgeClient.student.exam.get())
+        return this.SWR<j.RunningExam>("getExam", async () =>
+            jutgeClient.student.exam.get()
+        )
     }
 
     static getCoursesSWR() {
@@ -347,63 +364,85 @@ export class JutgeService {
     }
 
     static getCourseSWR(courseKey: string) {
-        return this.SWR<{ course: j.Course; lists: j.BriefList[] }>(`getCourse(${courseKey})`, async () => {
-            const [courseRes, listsRes] = await Promise.allSettled([
-                jutgeClient.student.courses.getEnrolled(courseKey),
-                jutgeClient.student.lists.getAll(),
-            ])
-            if (courseRes.status === "rejected" || listsRes.status === "rejected") {
-                throw new Error(`[JutgeService] getCourse: Could not load course or all lists`)
+        return this.SWR<{ course: j.Course; lists: j.BriefList[] }>(
+            `getCourse(${courseKey})`,
+            async () => {
+                const [courseRes, listsRes] = await Promise.allSettled([
+                    jutgeClient.student.courses.getEnrolled(courseKey),
+                    jutgeClient.student.lists.getAll(),
+                ])
+                if (courseRes.status === "rejected" || listsRes.status === "rejected") {
+                    throw new Error(
+                        `[JutgeService] getCourse: Could not load course or all lists`
+                    )
+                }
+                const course = courseRes.value
+                const allLists = listsRes.value
+                return {
+                    course,
+                    lists: course.lists.map((key) => allLists[key]),
+                }
             }
-            const course = courseRes.value
-            const allLists = listsRes.value
-            return {
-                course,
-                lists: course.lists.map((key) => allLists[key]),
-            }
-        })
+        )
     }
 
     static getAllListsSWR() {
-        return this.SWR<Record<string, j.BriefList>>(`getAllLists()`, async () => jutgeClient.student.lists.getAll())
+        return this.SWR<Record<string, j.BriefList>>(`getAllLists()`, async () =>
+            jutgeClient.student.lists.getAll()
+        )
     }
 
     static getAbstractProblemsSWR(problem_nms: string[]) {
-        return this.SWR<j.AbstractProblem[]>(`getAbstractProblems(${problem_nms.join(`,`)})`, async () => {
-            const abstractProblems = await jutgeClient.problems.getAbstractProblems(problem_nms.join(","))
+        return this.SWR<j.AbstractProblem[]>(
+            `getAbstractProblems(${problem_nms.join(`,`)})`,
+            async () => {
+                const abstractProblems = await jutgeClient.problems.getAbstractProblems(
+                    problem_nms.join(",")
+                )
 
-            const result: j.AbstractProblem[] = []
-            for (const [problem_nm, abstractProblem] of Object.entries(abstractProblems)) {
-                if (problem_nm !== null) {
-                    result.push(abstractProblem)
+                const result: j.AbstractProblem[] = []
+                for (const [problem_nm, abstractProblem] of Object.entries(
+                    abstractProblems
+                )) {
+                    if (problem_nm !== null) {
+                        result.push(abstractProblem)
+                    }
                 }
+                return result
             }
-            return result
-        })
+        )
     }
 
     static getAbstractProblemsInListSWR(listKey: string) {
-        return this.SWR<j.AbstractProblem[]>(`getAbstractProblemsInList(${listKey})`, async () => {
-            const [resList, resAbsProblems] = await Promise.allSettled([
-                jutgeClient.student.lists.get(listKey),
-                jutgeClient.problems.getAbstractProblemsInList(listKey),
-            ])
-            if (resAbsProblems.status === "rejected" || resList.status === "rejected") {
-                throw new Error(`[JutgeService] getAbstractProblemsInListSWR: Failed to load abs. problems or list`)
-            }
-            const problems = resAbsProblems.value
-            const listItems = resList.value.items
-
-            // Put abstract problems in the order in which they appear in the list
-            const result: j.AbstractProblem[] = []
-            for (const { problem_nm } of listItems) {
-                if (problem_nm !== null && problem_nm in problems) {
-                    result.push(problems[problem_nm])
+        return this.SWR<j.AbstractProblem[]>(
+            `getAbstractProblemsInList(${listKey})`,
+            async () => {
+                const [resList, resAbsProblems] = await Promise.allSettled([
+                    jutgeClient.student.lists.get(listKey),
+                    jutgeClient.problems.getAbstractProblemsInList(listKey),
+                ])
+                if (
+                    resAbsProblems.status === "rejected" ||
+                    resList.status === "rejected"
+                ) {
+                    throw new Error(
+                        `[JutgeService] getAbstractProblemsInListSWR: Failed to load abs. problems or list`
+                    )
                 }
-            }
+                const problems = resAbsProblems.value
+                const listItems = resList.value.items
 
-            return result
-        })
+                // Put abstract problems in the order in which they appear in the list
+                const result: j.AbstractProblem[] = []
+                for (const { problem_nm } of listItems) {
+                    if (problem_nm !== null && problem_nm in problems) {
+                        result.push(problems[problem_nm])
+                    }
+                }
+
+                return result
+            }
+        )
     }
 
     static getAllStatusesSWR() {
@@ -426,7 +465,9 @@ export class JutgeService {
     }
 
     static getProfileSWR() {
-        return this.SWR<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
+        return this.SWR<j.Profile>(`getProfile`, async () =>
+            jutgeClient.student.profile.get()
+        )
     }
 
     static getAbstractProblemSWR(problemNm: string) {
@@ -479,7 +520,10 @@ export class JutgeService {
         return jutgeClient.student.submissions.submitFull(data, file)
     }
 
-    static async getSubmission(data: { problem_id: string; submission_id: string }): Promise<j.Submission> {
+    static async getSubmission(data: {
+        problem_id: string
+        submission_id: string
+    }): Promise<j.Submission> {
         return jutgeClient.student.submissions.get(data)
     }
 }

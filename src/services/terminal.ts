@@ -42,7 +42,10 @@ export class TerminalService {
      * @param prefix Optional file name prefix
      * @returns The path to the created temporary file
      */
-    private static createTempFile(content: string, prefix: string = "jutge-input-"): string {
+    private static createTempFile(
+        content: string,
+        prefix: string = "jutge-input-"
+    ): string {
         const tmpDir = os.tmpdir()
         const tmpFileName = `${prefix}${Date.now()}.txt`
         const tmpFilePath = path.join(tmpDir, tmpFileName)
@@ -80,7 +83,12 @@ export class TerminalService {
      * @param showTerminal Whether to show the terminal (default: false)
      * @param input Optional input to provide to the command
      */
-    public static executeCommand(command: string, args: string[], showTerminal: boolean = false, input?: string): void {
+    public static executeCommand(
+        command: string,
+        args: string[],
+        showTerminal: boolean = false,
+        input?: string
+    ): void {
         const terminal = this.getTerminal()
 
         // Only show terminal if specifically requested

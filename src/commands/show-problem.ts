@@ -12,7 +12,9 @@ export const commandShowProblem =
     async (problemNm: string | undefined) => {
         console.debug(`[commandShowProblem] Problem ${problemNm}`)
         if (!(await JutgeService.isUserAuthenticated())) {
-            vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
+            vscode.window.showErrorMessage(
+                "You need to sign in to Jutge.org to use this feature."
+            )
             return
         }
 
@@ -27,6 +29,10 @@ export const commandShowProblem =
         }
 
         if (problemNm) {
-            WebviewPanelRegistry.createOrShow(context, problemNm, treeProvider.onVeredictMaker)
+            WebviewPanelRegistry.createOrShow(
+                context,
+                problemNm,
+                treeProvider.onVeredictMaker
+            )
         }
     }

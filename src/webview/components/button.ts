@@ -18,7 +18,13 @@ type ButtonProps = {
     icon: IconType
     disabled?: boolean
 }
-export const Button = ({ text, id, title, icon = "none", disabled = false }: ButtonProps) => `
+export const Button = ({
+    text,
+    id,
+    title,
+    icon = "none",
+    disabled = false,
+}: ButtonProps) => `
     <vscode-button id="${id}" class="icon-button" title="${title}" 
                    ${text === "" ? `style="transform: scale(0.8)"` : ``} 
                    ${disabled ? `disabled` : ``}>

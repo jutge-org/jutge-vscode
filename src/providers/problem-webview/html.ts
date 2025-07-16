@@ -59,7 +59,10 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     `
 }
 
-export function htmlForAllTestcases(problemTestcases: Testcase[], problemHandler: ProblemHandler | null): string {
+export function htmlForAllTestcases(
+    problemTestcases: Testcase[],
+    problemHandler: ProblemHandler | null
+): string {
     let handler: string = problemHandler?.handler || ""
     if (handler !== "std") {
         return /*html*/ `
