@@ -2,7 +2,7 @@ import { AbstractProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
 import { IProblemHandler, ProblemHandler } from "@/services/problem-handler"
-import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
+import { IconStatus, Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
 import * as utils from "@/utils"
 import * as vscode from "vscode"
 import { htmlForAllTestcases, htmlForWebview } from "./html"
@@ -20,7 +20,7 @@ type ProblemWebviewState = {
 export class ProblemWebviewPanel {
     public static readonly viewType = "problemWebview"
     private context_: vscode.ExtensionContext
-    private onVeredict_: () => void
+    private onVeredict_: (status: IconStatus) => void
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
@@ -29,7 +29,7 @@ export class ProblemWebviewPanel {
     public constructor(
         panel: vscode.WebviewPanel,
         context: vscode.ExtensionContext,
-        onVeredict: () => void,
+        onVeredict: (status: IconStatus) => void,
         { problemNm, title }: ProblemWebviewState
     ) {
         _info(`Constructing a webview panel for problem ${problemNm} (${context.extensionUri})`)

@@ -20,7 +20,7 @@ export interface IProblemHandler {
     createStarterCode(): Promise<void>
     runTestcaseByIndex(index: number): Promise<boolean>
     runTestcaseAll(): Promise<boolean>
-    submitToJudge(onVeredict: () => void): Promise<void>
+    submitToJudge(onVeredict: (status: IconStatus) => void): Promise<void>
 }
 
 export class ProblemHandler extends Logger implements IProblemHandler {
