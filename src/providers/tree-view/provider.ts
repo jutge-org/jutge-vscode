@@ -4,7 +4,7 @@ import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_clien
 import { ConfigService } from "@/services/config"
 import { JutgeTreeItem } from "./item"
 import { JutgeService } from "@/services/jutge"
-import { IconStatus, OnVeredictMaker } from "@/types"
+import { IconStatus, OnVeredictMaker, status2Icon, status2IconStatus } from "@/types"
 
 const _error = (msg: unknown) => {
     console.error(`[TreeViewProvider] ${msg}`)
@@ -34,7 +34,16 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         this._onDidChangeTreeData.fire(item)
     }
 
-    private _onVeredictMaker(problemNm: string): (status: IconStatus) => void {
+    private removeIcon_(label: string): string {
+        for (const icon of Object.values(status2Icon)) {
+            if (label.startsWith(icon)) {
+                return label.slice(icon.length)
+            }
+        }
+        return label
+    }
+
+    private onVeredictMaker_(problemNm: string): (status: IconStatus) => void {
         return (status: IconStatus) => {
             const item = this.problemNm2item.get(problemNm)
             if (!item) {
@@ -43,17 +52,17 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
             }
             let label = item.label
             if (label && typeof label === "string") {
-                label = label.slice(3) // Skip icon (2 bytes) and space
+                label = this.removeIcon_(label)
             }
-            const newIcon = this._getIconForStatus(status)
-            item.label = `${newIcon} ${label}`
+            const newIcon = this.getIconForStatus_(status)
+            item.label = `${newIcon}${label}`
             _info(`Refreshing problem ${problemNm}`)
             this.refresh(item)
         }
     }
 
     get onVeredictMaker(): OnVeredictMaker {
-        return this._onVeredictMaker.bind(this)
+        return this.onVeredictMaker_.bind(this)
     }
 
     // Get TreeItem representation of the element (part of the TreeDataProvider interface).
@@ -73,18 +82,18 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         if (!element && JutgeService.isExamMode()) {
             return this._getExam()
         } else if (!element) {
-            return this._getEnrolledCourseList()
+            return this.getEnrolledCourseList_()
         } else if (element.contextValue === "exam") {
-            return this._getExamProblems(element)
+            return this.getExamProblems_(element)
         } else if (element.contextValue === "course") {
-            return this._getListsFromCourseNm(element)
+            return this.getListsFromCourseNm_(element)
         } else if (element.contextValue === "list") {
-            return this._getProblemsFromListNm(element)
+            return this.getProblemsFromListNm_(element)
         }
         return []
     }
 
-    private async _getExamProblems(element: JutgeTreeItem): Promise<JutgeTreeItem[]> {
+    private async getExamProblems_(element: JutgeTreeItem): Promise<JutgeTreeItem[]> {
         try {
             const swrExam = JutgeService.getExamSWR()
             swrExam.onUpdate = () => this.refresh(element)
@@ -111,7 +120,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
 
             const items: JutgeTreeItem[] = []
             for (const abstractProblem of abstractProblems) {
-                items.push(this._abstractProblemToItem(abstractProblem, allStatuses))
+                items.push(this.abstractProblemToItem_(abstractProblem, allStatuses))
             }
             return items
             //
@@ -140,7 +149,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
     }
 
-    private async _getEnrolledCourseList(): Promise<JutgeTreeItem[]> {
+    private async getEnrolledCourseList_(): Promise<JutgeTreeItem[]> {
         try {
             const result = JutgeService.getCoursesSWR()
             const courses = result.data || {}
@@ -157,7 +166,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
     }
 
-    private async _getListsFromCourseNm(courseElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
+    private async getListsFromCourseNm_(courseElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
         try {
             const courseRes = JutgeService.getCourseSWR(courseElem.itemKey)
             courseRes.onUpdate = () => this.refresh(courseElem)
@@ -192,7 +201,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         return newItem
     }
 
-    private _abstractProblemToItem(
+    private abstractProblemToItem_(
         abstractProblem: AbstractProblem,
         allStatuses: Record<string, AbstractStatus>
     ): JutgeTreeItem {
@@ -209,15 +218,9 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
 
         // Get status for this problem
-        const status = allStatuses[nm]?.status
-        let iconStatus: IconStatus | undefined
-        if (status === "accepted") {
-            iconStatus = IconStatus.ACCEPTED
-        } else if (status === "rejected") {
-            iconStatus = IconStatus.REJECTED
-        }
+        const iconStatus = status2IconStatus[allStatuses[nm]?.status || ""]
 
-        problemItem.label = `${this._getIconForStatus(iconStatus)} ${problem.title}`
+        problemItem.label = `${this.getIconForStatus_(iconStatus)} ${problem.title}`
         problemItem.command = {
             command: "jutge-vscode.showProblem",
             title: "Open Problem",
@@ -227,7 +230,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         return problemItem
     }
 
-    private async _getProblemsFromListNm(listElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
+    private async getProblemsFromListNm_(listElem: JutgeTreeItem): Promise<JutgeTreeItem[]> {
         try {
             console.debug(`[TreeViewProvider] Getting Problems for list '${listElem.itemKey}'`)
 
@@ -246,7 +249,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
 
             const items: JutgeTreeItem[] = []
             for (const abstractProblem of problems) {
-                items.push(this._abstractProblemToItem(abstractProblem, allStatuses))
+                items.push(this.abstractProblemToItem_(abstractProblem, allStatuses))
             }
 
             return items
@@ -257,14 +260,7 @@ export class JutgeCourseTreeProvider implements vscode.TreeDataProvider<JutgeTre
         }
     }
 
-    private _getIconForStatus(status: IconStatus | undefined): string {
-        switch (status) {
-            case IconStatus.ACCEPTED:
-                return "🟢"
-            case IconStatus.REJECTED:
-                return "🔴"
-            default:
-                return "⚪"
-        }
+    private getIconForStatus_(status: IconStatus): string {
+        return status2Icon[status]
     }
 }

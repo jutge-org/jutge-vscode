@@ -17,6 +17,19 @@ export enum TestcaseStatus {
 export enum IconStatus {
     ACCEPTED = "accepted",
     REJECTED = "rejected",
+    NONE = "",
+}
+
+export const status2IconStatus: Record<string, IconStatus> = {
+    "accepted": IconStatus.ACCEPTED,
+    "rejected": IconStatus.REJECTED,
+    "": IconStatus.NONE,
+}
+
+export const status2Icon: Record<IconStatus, string> = {
+    [IconStatus.ACCEPTED]: "🟢",
+    [IconStatus.REJECTED]: "🔴",
+    [IconStatus.NONE]: "⚪",
 }
 
 export type OnVeredictMaker = (problemNm: string) => (status: IconStatus) => void
