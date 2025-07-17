@@ -4,4 +4,6 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.0.14]
+
+- Introduced new icons for the state of problems, and refactored code in the extension for a speed improvement.
