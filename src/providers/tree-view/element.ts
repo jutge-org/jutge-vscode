@@ -5,6 +5,8 @@ import { IconStatus } from "@/types"
 export type TreeItemCollapseState = "collapsed" | "expanded" | "none"
 export type CourseItemType = "course" | "exam" | "list" | "problem"
 
+export const ELEMENT_ID_SEPARATOR = "/"
+
 export class CourseTreeElement {
     public type: CourseItemType
     public key: string
@@ -18,14 +20,17 @@ export class CourseTreeElement {
         let prefix = ``
         let { parent: elem } = this
         while (elem) {
-            prefix = prefix ? `${elem.key}:${prefix}` : elem.key
+            prefix = prefix ? `${elem.key}${ELEMENT_ID_SEPARATOR}${prefix}` : elem.key
             elem = elem.parent
         }
         return prefix
     }
 
     getId(): string {
-        return `${this.parentPrefix()}:${this.key}`
+        const prefix = this.parentPrefix()
+        return prefix
+            ? `${this.parentPrefix()}${ELEMENT_ID_SEPARATOR}${this.key}`
+            : this.key
     }
 
     constructor(

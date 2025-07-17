@@ -43,7 +43,6 @@ export class JutgeCourseTreeProvider
         }
 
         this.problemNm2item.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
-        console.log(item.id)
         return item
     }
 
