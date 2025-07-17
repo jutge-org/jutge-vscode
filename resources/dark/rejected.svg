@@ -1,8 +1,8 @@
 <svg width="32" height="32" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
  <defs>
   <linearGradient id="a" x1="11.981" x2="11.981" y1="2.9989" y2="20.983" gradientTransform="matrix(.79098 0 0 .79098 2.5043 2.5063)" gradientUnits="userSpaceOnUse">
-   <stop stop-color="#ff6e00" offset="0"/>
-   <stop stop-color="#b24f00" offset="1"/>
+   <stop stop-color="#ff0000ff" offset="0"/>
+   <stop stop-color="#b20000ff" offset="1"/>
   </linearGradient>
  </defs>
  <ellipse cx="11.981" cy="11.991" rx="7.0809" ry="7.1125" fill="url(#a)" stroke-width=".83149"/>
