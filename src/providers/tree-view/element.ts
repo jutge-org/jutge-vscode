@@ -36,11 +36,18 @@ export class CourseTreeElement {
             treeItem.command = this.command
         }
         if (this.type === "problem") {
-            treeItem.iconPath = vscode.Uri.joinPath(
-                iconPrefixUri,
-                `${this.iconStatus || "none"}.svg`
-            )
-            console.log("-->", treeItem.iconPath.path)
+            treeItem.iconPath = {
+                light: vscode.Uri.joinPath(
+                    iconPrefixUri,
+                    "light",
+                    `${this.iconStatus || "none"}.svg`
+                ),
+                dark: vscode.Uri.joinPath(
+                    iconPrefixUri,
+                    "dark",
+                    `${this.iconStatus || "none"}.svg`
+                ),
+            }
         }
         return treeItem
     }
