@@ -75,7 +75,7 @@ const watchConfig = {
             // Build extension and webview code
             await build(extensionConfig)
             await build(webviewConfig)
-            console.log("build complete")
+            console.log("[watch] build complete")
         }
     } catch (err) {
         process.stderr.write(err.stderr)
