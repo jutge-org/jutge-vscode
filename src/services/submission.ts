@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
-import { IconStatus, Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
+import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { StaticLogger, waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename } from "path"
@@ -9,8 +9,19 @@ import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { infoForProglang, proglangFromFilepath } from "./runners/languages"
 
+export type Veredict = {
+    problem_nm: string
+    status: SubmissionStatus
+}
+
 export class SubmissionService extends StaticLogger {
     private static MONITOR_INTERVAL_MS = 5000
+
+    private static emitter_: vscode.EventEmitter<Veredict> =
+        new vscode.EventEmitter<Veredict>()
+
+    // This member is for VSCode, so that we can signal changes in the tree
+    static readonly onDidReceiveVeredict: vscode.Event<Veredict> = this.emitter_.event
 
     /**
      * Submits the currently open file to Jutge.
@@ -23,11 +34,7 @@ export class SubmissionService extends StaticLogger {
      * from where we can get the compiler_id (by looking at the first four commented lines).
      * If that is not available, we can try with the default compiler for a certain extension.
      */
-    public static async submitProblem(
-        problem: Problem,
-        filePath: string,
-        onVeredict: (status: IconStatus) => void
-    ): Promise<void> {
+    public static async submitProblem(problem: Problem, filePath: string): Promise<void> {
         vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
@@ -80,11 +87,10 @@ export class SubmissionService extends StaticLogger {
 
                     this._showVerdictNotification(problem, submission_id, verdict)
 
-                    onVeredict(
-                        verdict === SubmissionStatus.AC
-                            ? IconStatus.ACCEPTED
-                            : IconStatus.REJECTED
-                    )
+                    this.emitter_.fire({
+                        problem_nm: problem.problem_nm,
+                        status: verdict,
+                    })
                     //
                 } catch (err) {
                     this.log.error(`Error submitting to Jutge: ${err}`)

@@ -138,6 +138,7 @@ type WebviewHTMLData = {
     statementHtml: string
     testcasesHtml: string
     handler: ProblemHandler | null
+    fileExists: boolean
     nonce: string
     styleUri: Uri
     scriptUri: Uri
@@ -170,6 +171,15 @@ export function htmlForWebview(data: WebviewHTMLData) {
                         &ndash; ${data.handler?.source_modifier} 
                         &ndash; ${data.handler?.compilers}
                     </h2>
+                    ${
+                        data.fileExists
+                            ? Button({
+                                  text: "Open Existing File",
+                                  id: "open-file",
+                                  title: "Open an existing file",
+                              })
+                            : ""
+                    }
                     ${Button({
                         text: "New File",
                         id: "new-file",

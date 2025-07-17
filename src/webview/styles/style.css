@@ -82,13 +82,13 @@ textarea {
         height: var(--icon-size);
     }
 }
-
-.icon-button {
+.button {
     display: flex;
     flex-direction: row;
     align-items: center;
     flex-shrink: 0;
-
+}
+.icon-button {
     & .text {
         margin-left: 0.6em;
     }
@@ -162,6 +162,7 @@ textarea {
     justify-content: flex-end;
     padding-top: 1em;
     line-height: 145%;
+    gap: 0.6em;
 
     & h2 {
         margin: 0;

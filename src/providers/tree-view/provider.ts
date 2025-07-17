@@ -3,8 +3,8 @@ import * as vscode from "vscode"
 import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
-import { IconStatus, OnVeredictMaker, status2IconStatus } from "@/types"
-import { CourseItemType, CourseTreeElement, TreeItemCollapseState } from "./element"
+import { IconStatus, status2IconStatus } from "@/types"
+import { CourseItemType, CourseTreeElement } from "./element"
 import { CourseTreeItem } from "./item"
 
 const _error = (msg: unknown) => console.error(`[TreeViewProvider] ${msg}`)
@@ -13,23 +13,17 @@ const _info = (msg: unknown) => console.info(`[TreeViewProvider] ${msg}`)
 export class JutgeCourseTreeProvider
     implements vscode.TreeDataProvider<CourseTreeElement>
 {
-    private _emitter: vscode.EventEmitter<CourseTreeElement | undefined | null | void> =
+    private emitter_: vscode.EventEmitter<CourseTreeElement | undefined | null | void> =
         new vscode.EventEmitter<CourseTreeElement | undefined | null | void>()
 
     // This member is for VSCode, so that we can signal changes in the tree
     readonly onDidChangeTreeData: vscode.Event<
         CourseTreeElement | undefined | null | void
-    > = this._emitter.event
+    > = this.emitter_.event
 
     // FIXME: Is there any better way to do this? I'm storing all references to
     // problemNms because I want to know the correspondence from problemNms to items... :\
-    private problemNm2item: Map<string, CourseTreeItem> = new Map()
-
-    private globalState: vscode.Memento
-
-    constructor(context: vscode.ExtensionContext) {
-        this.globalState = context.globalState
-    }
+    private problemName2TreeItem: Map<string, CourseTreeItem> = new Map()
 
     getTreeItem(element: CourseTreeElement): CourseTreeItem {
         const item = new CourseTreeItem(element)
@@ -42,7 +36,7 @@ export class JutgeCourseTreeProvider
             }
         }
 
-        this.problemNm2item.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
+        this.problemName2TreeItem.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
         return item
     }
 
@@ -81,24 +75,21 @@ export class JutgeCourseTreeProvider
         return newElem
     }
 
-    public refresh(item?: CourseTreeElement): void {
-        this._emitter.fire(item)
-    }
-
-    private onVeredictMaker_(problemNm: string): (status: IconStatus) => void {
-        return (status: IconStatus) => {
-            const item = this.problemNm2item.get(problemNm)
-            if (!item) {
-                _error(`onVeredictChange: problem ${problemNm} not found in map.`)
-                return
-            }
-            _info(`Refreshing problem ${problemNm}`)
-            this.refresh(item.element)
+    public refreshProblem(problem_nm: string) {
+        const item = this.problemName2TreeItem.get(problem_nm)
+        if (!item) {
+            console.error(`Received 'refresh' call for unknown problem '${problem_nm}'`)
+        } else {
+            this.refresh_(item.element)
         }
     }
 
-    get onVeredictMaker(): OnVeredictMaker {
-        return this.onVeredictMaker_.bind(this)
+    public refresh_(item?: CourseTreeElement): void {
+        this.emitter_.fire(item)
+    }
+
+    get refresh() {
+        return this.refresh_.bind(this)
     }
 
     private async getExamProblems_(
@@ -106,7 +97,7 @@ export class JutgeCourseTreeProvider
     ): Promise<CourseTreeElement[]> {
         try {
             const swrExam = JutgeService.getExamSWR()
-            swrExam.onUpdate = () => this.refresh(examElement)
+            swrExam.onUpdate = () => this.refresh_(examElement)
 
             const exam = swrExam.data
             if (!exam) {
@@ -116,10 +107,10 @@ export class JutgeCourseTreeProvider
             const problem_nms = exam.problems.map((p) => p.problem_nm)
 
             const swrProblems = JutgeService.getAbstractProblemsSWR(problem_nms)
-            swrProblems.onUpdate = () => this.refresh(examElement)
+            swrProblems.onUpdate = () => this.refresh_(examElement)
 
             const swrStatus = JutgeService.getAllStatusesSWR()
-            swrStatus.onUpdate = () => this.refresh(examElement)
+            swrStatus.onUpdate = () => this.refresh_(examElement)
 
             if (swrProblems.data === undefined || swrStatus.data === undefined) {
                 return []
@@ -150,7 +141,7 @@ export class JutgeCourseTreeProvider
     private async getExam_(): Promise<CourseTreeElement[]> {
         try {
             const swrExam = JutgeService.getExamSWR()
-            swrExam.onUpdate = () => this.refresh()
+            swrExam.onUpdate = () => this.refresh_()
 
             const exam = swrExam.data
             if (!exam) {
@@ -168,7 +159,7 @@ export class JutgeCourseTreeProvider
         try {
             const swrCourse = JutgeService.getCoursesSWR()
             const courses = swrCourse.data || {}
-            swrCourse.onUpdate = () => this.refresh() // all
+            swrCourse.onUpdate = () => this.refresh_() // all
 
             return Object.entries(courses).map(([key, { course_nm }]) =>
                 this.makeTreeElement("course", key, course_nm, IconStatus.NONE)
@@ -185,7 +176,7 @@ export class JutgeCourseTreeProvider
     ): Promise<CourseTreeElement[]> {
         try {
             const swrCourse = JutgeService.getCourseSWR(courseElem.key)
-            swrCourse.onUpdate = () => this.refresh(courseElem)
+            swrCourse.onUpdate = () => this.refresh_(courseElem)
 
             const course = swrCourse.data
             if (course === undefined) {
@@ -252,10 +243,10 @@ export class JutgeCourseTreeProvider
             )
 
             const swrProblems = JutgeService.getAbstractProblemsInListSWR(listElem.key)
-            swrProblems.onUpdate = () => this.refresh(listElem)
+            swrProblems.onUpdate = () => this.refresh_(listElem)
 
             const swrStatus = JutgeService.getAllStatusesSWR()
-            swrStatus.onUpdate = () => this.refresh(listElem)
+            swrStatus.onUpdate = () => this.refresh_(listElem)
 
             if (swrProblems.data === undefined || swrStatus.data === undefined) {
                 return []

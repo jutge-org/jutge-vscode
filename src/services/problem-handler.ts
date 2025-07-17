@@ -1,7 +1,7 @@
-import { Testcase } from "@/jutge_api_client"
+import { getWorkspaceFolder } from "@/extension"
+import { Language, Testcase } from "@/jutge_api_client"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import {
-    chooseProgrammingLanguage,
     infoForProglang,
     LanguageInfo,
     Proglang,
@@ -9,115 +9,103 @@ import {
     proglangFromFilepath,
 } from "@/services/runners/languages"
 import {
-    IconStatus,
     InputExpected,
     Problem,
     TestcaseRun,
     TestcaseStatus,
     VSCodeToWebviewCommand,
 } from "@/types"
-import { chooseFromEditorList, decodeTestcase, Logger, stringToFilename } from "@/utils"
-import fs from "fs"
+import { chooseFromEditorList, decodeTestcase, Logger, sanitizeTitle } from "@/utils"
+import fs, { existsSync } from "fs"
 import { extname } from "path"
 import * as vscode from "vscode"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
 
-export interface IProblemHandler {
-    createStarterCode(): Promise<void>
-    runTestcaseByIndex(index: number): Promise<boolean>
-    runTestcaseAll(): Promise<boolean>
-    submitToJudge(onVeredict: (status: IconStatus) => void): Promise<void>
-}
-
-export class ProblemHandler extends Logger implements IProblemHandler {
-    problem: Problem
+export class ProblemHandler extends Logger {
+    problem_: Problem
+    proglang_: Proglang | undefined
+    langInfo_: LanguageInfo | undefined
 
     constructor(problem: Problem) {
         super()
 
-        this.problem = problem
+        this.problem_ = problem
 
         // Launch loading of testcases already
-        if (!this.problem.testcases) {
-            JutgeService.getSampleTestcases(this.problem.problem_id).then(
-                (testcases) => (this.problem.testcases = testcases)
+        if (!this.problem_.testcases) {
+            JutgeService.getSampleTestcases(this.problem_.problem_id).then(
+                (testcases) => (this.problem_.testcases = testcases)
             )
         }
     }
 
-    async createStarterCode(): Promise<void> {
-        // Check that there is a workspace open
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-        if (!workspaceFolder) {
-            vscode.window.showErrorMessage("No workspace folder open.")
-            return
-        }
+    async initProglang() {
+        this.proglang_ = (await this.getProglangFromProblem()) || Proglang.CPP
+        this.langInfo_ = infoForProglang(this.proglang_)
+    }
 
-        // Collect handler info
-        const handler = this.problem.handler?.handler || ""
-        const source_modifier = this.problem.handler?.source_modifier || ""
-        const compilers = this.problem.handler?.compilers
+    get langInfo() {
+        if (!this.langInfo_) {
+            throw new Error(`Lang info not initialized yet!!`)
+        }
+        return this.langInfo_
+    }
+
+    async defaultFilenameForProblem() {
+        const { problem_id, title } = this.problem_
+        const defaultExtension = this.langInfo.extensions[0]
+        return `${problem_id}_${sanitizeTitle(title)}${defaultExtension}`
+    }
+
+    findFileInWorkspace(filename: string): vscode.Uri | undefined {
+        const workspaceFolder = getWorkspaceFolder()
+        if (!workspaceFolder) {
+            return undefined
+        }
+        return vscode.Uri.joinPath(workspaceFolder.uri, filename)
+    }
+
+    async suggestedFileExists(): Promise<boolean> {
+        const suggestedFilename = await this.defaultFilenameForProblem()
+        const fileUri = this.findFileInWorkspace(suggestedFilename)
+        if (!fileUri) {
+            return false
+        }
+        const path = fileUri.fsPath
+        return existsSync(path)
+    }
+
+    getCompilerId(): string {
+        const compilers = this.problem_.handler?.compilers
         let compiler_id = ""
         if (Array.isArray(compilers)) {
             compiler_id = compilers[0]
         } else if (typeof compilers === "string") {
             compiler_id = compilers
         }
+        return compiler_id
+    }
 
-        // Determine programming language
-        let proglang: Proglang | null = Proglang.CPP
-        try {
-            if (compiler_id) {
-                proglang = proglangFromCompiler(compiler_id)
-                if (!proglang) {
-                }
-            } else {
-                proglang = await chooseProgrammingLanguage(this.problem.problem_nm)
-                if (!proglang) {
-                    return // user cancelled
-                }
-            }
-        } catch (e) {
-            vscode.window.showErrorMessage(`Could not determine programming language`)
-            return
-        }
-
-        // Generate filename from problem and language info
-        const langInfo = infoForProglang(proglang)
-        const sanitizedTitle = stringToFilename(this.problem.title)
-        const defaultExtension = langInfo.extensions[0]
-
-        const suggestedFileName = `${this.problem.problem_id}_${sanitizedTitle}${defaultExtension}`
-
-        // Ask the user where to save the file
-        const fileUri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFileName),
-            filters: { "All files": ["*"] },
-            saveLabel: "Create",
-            title: `Create new file for ${this.problem.title}`,
-        })
-        if (!fileUri) {
-            return // user cancelled
-        }
-
-        // TODO: If extension is changed by user in the save dialog, update fileLang?
-
+    async writeFileWithStarterContent(fileUri: vscode.Uri) {
         // Write file with starter content
         try {
-            const comment = langInfo.commentPrefix
+            const handler = this.problem_.handler?.handler || ""
+            const source_modifier = this.problem_.handler?.source_modifier || ""
+            const compiler_id = this.getCompilerId()
+            const comment = this.langInfo.commentPrefix
 
             const profileRes = JutgeService.getProfileSWR()
             const profile = profileRes.data
             const fileHeader = [
-                `${comment} ${this.problem.title}\n`,
-                `${comment} https://jutge.org/problems/${this.problem.problem_id}\n`,
-                `${comment} ${this.problem.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
+                `${comment} ${this.problem_.title}\n`,
+                `${comment} https://jutge.org/problems/${this.problem_.problem_id}\n`,
+                `${comment} ${this.problem_.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
                 `${comment} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
                 `\n`,
             ].join("")
 
-            const body = await this.__fileBody(langInfo, handler, source_modifier)
+            const body = await this.__fileBody(this.langInfo, handler, source_modifier)
             if (typeof body === "string") {
                 this.log.info(`Wrote string to ${fileUri.fsPath}`)
                 fs.writeFileSync(fileUri.fsPath, fileHeader + body)
@@ -132,9 +120,60 @@ export class ProblemHandler extends Logger implements IProblemHandler {
             )
             throw error
         }
+    }
+
+    async getProglangFromProblem(): Promise<Proglang | null> {
+        const compiler_id = this.getCompilerId()
+        if (!compiler_id) {
+            return null
+        }
+        try {
+            return proglangFromCompiler(compiler_id)
+            //
+        } catch (e) {
+            vscode.window.showErrorMessage(`Could not determine programming language`)
+            return null
+        }
+    }
+
+    async openExistingFile(): Promise<void> {
+        if (!getWorkspaceFolder()) {
+            return
+        }
+        const suggestedFileName = await this.defaultFilenameForProblem()
+        const fileUri = this.findFileInWorkspace(suggestedFileName)
+        if (!fileUri) {
+            throw new Error(`File ${suggestedFileName} does not exist in workspace!`)
+        }
+        const document = await vscode.workspace.openTextDocument(fileUri)
+
+        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+    }
+
+    async createStarterCode(): Promise<void> {
+        console.log("createStarterCode", this.problem_.problem_id)
+
+        const workspaceFolder = getWorkspaceFolder()
+        if (!workspaceFolder) {
+            return
+        }
+        const suggestedFileName = await this.defaultFilenameForProblem()
+
+        // Ask the user where to save the file
+        const fileUri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFileName),
+            filters: { "All files": ["*"] },
+            saveLabel: "Create",
+            title: `Create new file for ${this.problem_.title}`,
+        })
+        if (!fileUri) {
+            return // user cancelled
+        }
+
+        await this.writeFileWithStarterContent(fileUri)
 
         const document = await vscode.workspace.openTextDocument(fileUri)
-        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
     }
 
     private async __fileBody(
@@ -169,7 +208,7 @@ export class ProblemHandler extends Logger implements IProblemHandler {
     private async __stdNoMainBody(
         langInfo: LanguageInfo
     ): Promise<Uint8Array<ArrayBufferLike>> {
-        const { problem_id } = this.problem
+        const { problem_id } = this.problem_
 
         const findTemplate = async () => {
             const templateList = await JutgeService.getTemplateList(problem_id)
@@ -204,7 +243,7 @@ export class ProblemHandler extends Logger implements IProblemHandler {
             const testcase = await this.__getTestcase(index)
             this.log.debug(`Running testcase ${index}`)
 
-            const { problem_nm } = this.problem
+            const { problem_nm } = this.problem_
             this.__sendMessage(problem_nm, index, TestcaseStatus.RUNNING)
             const { status, output } = await this.__run(testcase, filePath)
             this.__sendMessage(problem_nm, index, status, output)
@@ -223,7 +262,9 @@ export class ProblemHandler extends Logger implements IProblemHandler {
     async runTestcaseAll(): Promise<boolean> {
         try {
             const testcases = await this.__ensureTestcases()
-            this.log.debug(`Running all testcases for problem ${this.problem.problem_id}`)
+            this.log.debug(
+                `Running all testcases for problem ${this.problem_.problem_id}`
+            )
 
             let allPassed = true
             for (let index = 1; index <= testcases.length; index++) {
@@ -238,17 +279,13 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
     }
 
-    async submitToJudge(onVeredict: (status: IconStatus) => void): Promise<void> {
+    async submitToJudge(): Promise<void> {
         let editor = await chooseFromEditorList(vscode.window.visibleTextEditors)
         if (!editor) {
             vscode.window.showErrorMessage("No text editor open.")
             return
         }
-        await SubmissionService.submitProblem(
-            this.problem,
-            editor.document.uri.fsPath,
-            onVeredict
-        )
+        await SubmissionService.submitProblem(this.problem_, editor.document.uri.fsPath)
     }
 
     async __run(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {
@@ -295,12 +332,12 @@ export class ProblemHandler extends Logger implements IProblemHandler {
     }
 
     async __ensureTestcases(): Promise<Testcase[]> {
-        const { testcases } = this.problem
+        const { testcases } = this.problem_
         if (!testcases || testcases.length === 0) {
-            throw new Error(`No testcases found for problem ${this.problem.problem_nm}`)
+            throw new Error(`No testcases found for problem ${this.problem_.problem_nm}`)
         }
         this.log.debug(
-            `Found ${testcases.length} testcases for problem ${this.problem.problem_nm}`
+            `Found ${testcases.length} testcases for problem ${this.problem_.problem_nm}`
         )
         return testcases
     }
@@ -324,4 +361,17 @@ export class ProblemHandler extends Logger implements IProblemHandler {
         }
         return document
     }
+}
+
+/**
+ * Make a new problem handler AND initialize fields that required an `async` function.
+ * We hide this interface behind this function.
+ *
+ * @param problem
+ * @returns The problem handler
+ */
+export const makeProblemHandler = async (problem: Problem) => {
+    const handler = new ProblemHandler(problem)
+    await handler.initProglang()
+    return handler
 }

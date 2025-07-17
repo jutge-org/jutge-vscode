@@ -2,7 +2,7 @@ import fs from "fs"
 import * as vscode from "vscode"
 
 import { Problem } from "@/types"
-import { StaticLogger, stringToFilename } from "@/utils"
+import { StaticLogger, sanitizeTitle } from "@/utils"
 import { JutgeService } from "./jutge"
 import { chooseProgrammingLanguage, infoForProglang, Proglang } from "./runners/languages"
 import { readFile } from "fs/promises"
@@ -24,7 +24,7 @@ export class FileService extends StaticLogger {
         }
 
         const langInfo = infoForProglang(proglang)
-        const sanitizedTitle = stringToFilename(problem.title)
+        const sanitizedTitle = sanitizeTitle(problem.title)
         const defaultExtension = langInfo.extensions[0]
 
         const suggestedFileName = `${problem.problem_id}_${sanitizedTitle}.${defaultExtension}`

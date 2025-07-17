@@ -26,8 +26,6 @@ export const status2IconStatus: Record<string, IconStatus> = {
     none: IconStatus.NONE,
 }
 
-export type OnVeredictMaker = (problemNm: string) => (status: IconStatus) => void
-
 export enum SubmissionStatus {
     AC = "AC",
     WA = "WA",
@@ -79,6 +77,7 @@ export type WebviewToVSCodeMessage = {
 
 export enum WebviewToVSCodeCommand {
     NEW_FILE = "new-file",
+    OPEN_FILE = "open-file",
     SUBMIT_TO_JUTGE = "submit-to-jutge",
     RUN_ALL_TESTCASES = "run-all-testcases",
     RUN_TESTCASE = "run-testcase",

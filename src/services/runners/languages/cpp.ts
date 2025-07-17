@@ -18,9 +18,7 @@ export class CppRunner extends Logger implements LanguageRunner {
         const result = childProcess.spawnSync(
             command,
             [codePath, "-o", binaryPath, ...flags],
-            {
-                cwd: workingDir,
-            }
+            { cwd: workingDir }
         )
 
         // Check if there are compilation errors

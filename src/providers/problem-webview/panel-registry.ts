@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 
 import { getWebviewOptions } from "@/extension"
 import * as utils from "@/utils"
-import { OnVeredictMaker, VSCodeToWebviewMessage } from "@/types"
+import { VSCodeToWebviewMessage } from "@/types"
 import { ProblemWebviewPanel } from "./panel"
 
 export class WebviewPanelRegistry extends utils.StaticLogger {
@@ -14,11 +14,7 @@ export class WebviewPanelRegistry extends utils.StaticLogger {
      * @param context The context of the extension.
      * @param problemNm The problem number.
      */
-    static async createOrShow(
-        context: vscode.ExtensionContext,
-        problemNm: string,
-        onVeredictMaker: OnVeredictMaker
-    ) {
+    static async createOrShow(context: vscode.ExtensionContext, problemNm: string) {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
 
         if (!(await utils.isProblemValidAndAccessible(problemNm))) {
@@ -46,14 +42,9 @@ export class WebviewPanelRegistry extends utils.StaticLogger {
             { viewColumn, preserveFocus: true },
             getWebviewOptions(context.extensionUri)
         )
-        const panel = new ProblemWebviewPanel(
-            webviewPanel,
-            context,
-            onVeredictMaker(problemNm),
-            {
-                problemNm,
-            }
-        )
+        const panel = new ProblemWebviewPanel(webviewPanel, context, {
+            problemNm,
+        })
         this.createdPanels_.set(problemNm, panel)
         return panel
     }

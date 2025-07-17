@@ -73,15 +73,17 @@ function getButton(id: string): HTMLButtonElement {
 }
 
 function addOnClickEventListeners() {
-    getButton("new-file").addEventListener("click", () => {
-        postMessage(WebviewToVSCodeCommand.NEW_FILE)
-    })
-    getButton("submit-to-jutge").addEventListener("click", () => {
-        postMessage(WebviewToVSCodeCommand.SUBMIT_TO_JUTGE)
-    })
-    getButton("run-all-testcases").addEventListener("click", () => {
-        postMessage(WebviewToVSCodeCommand.RUN_ALL_TESTCASES)
-    })
+    let id2command: [string, WebviewToVSCodeCommand][] = [
+        ["open-file", WebviewToVSCodeCommand.OPEN_FILE],
+        ["new-file", WebviewToVSCodeCommand.NEW_FILE],
+        ["submit-to-jutge", WebviewToVSCodeCommand.SUBMIT_TO_JUTGE],
+        ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
+    ]
+    for (const [id, command] of id2command) {
+        getButton(id).addEventListener("click", () => {
+            postMessage(command)
+        })
+    }
     document.querySelectorAll('[id^="run-testcase-"]').forEach((button) => {
         button.addEventListener("click", () => {
             postMessage(WebviewToVSCodeCommand.RUN_TESTCASE, {
@@ -167,6 +169,7 @@ function updateTestcase(testcaseIndex: number, status: string, outputText: strin
         received.style.display = "block"
         content.classList.add("compare")
     }
+
     const hideOutputText = () => {
         received.style.display = "none"
         content.classList.remove("compare")
@@ -192,9 +195,6 @@ function updateTestcase(testcaseIndex: number, status: string, outputText: strin
             passedTestcases.set(testcaseId, false)
             break
     }
-
-    let allPassed = passedTestcases.values().every((v) => v === true)
-    getButton("submit-to-jutge").disabled = false
 }
 
 function updateSubmissionStatus(status: SubmissionStatus) {

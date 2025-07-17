@@ -1,13 +1,8 @@
 import { AbstractProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
-import { IProblemHandler, ProblemHandler } from "@/services/problem-handler"
-import {
-    IconStatus,
-    Problem,
-    WebviewToVSCodeCommand,
-    WebviewToVSCodeMessage,
-} from "@/types"
+import { makeProblemHandler, ProblemHandler } from "@/services/problem-handler"
+import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
 import * as utils from "@/utils"
 import * as vscode from "vscode"
 import { htmlForAllTestcases, htmlForWebview } from "./html"
@@ -25,16 +20,14 @@ type ProblemWebviewState = {
 export class ProblemWebviewPanel {
     public static readonly viewType = "problemWebview"
     private context_: vscode.ExtensionContext
-    private onVeredict_: (status: IconStatus) => void
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
-    public problemHandler: IProblemHandler | null = null
+    public problemHandler: ProblemHandler | null = null
 
     public constructor(
         panel: vscode.WebviewPanel,
         context: vscode.ExtensionContext,
-        onVeredict: (status: IconStatus) => void,
         { problemNm, title }: ProblemWebviewState
     ) {
         _info(
@@ -42,7 +35,6 @@ export class ProblemWebviewPanel {
         )
 
         this.context_ = context
-        this.onVeredict_ = onVeredict
 
         this.panel = panel
         context.subscriptions.push(
@@ -73,7 +65,7 @@ export class ProblemWebviewPanel {
         this.panel.dispose()
     }
 
-    get handler(): IProblemHandler {
+    get handler(): ProblemHandler {
         if (this.problemHandler === null) {
             throw new Error(`Handler is null!`)
         }
@@ -87,19 +79,24 @@ export class ProblemWebviewPanel {
 
         const { command, data } = message
         switch (command) {
-            case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
-                return this.handler.runTestcaseAll()
-
-            case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
-                return this.handler.submitToJudge(this.onVeredict_)
-
-            case WebviewToVSCodeCommand.RUN_TESTCASE:
-                return this.handler.runTestcaseByIndex(data.testcaseId)
+            case WebviewToVSCodeCommand.OPEN_FILE:
+                await this.handler.openExistingFile()
+                this.panel.reveal(vscode.ViewColumn.Beside, true)
+                return
 
             case WebviewToVSCodeCommand.NEW_FILE:
                 await this.handler.createStarterCode()
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
                 return
+
+            case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
+                return this.handler.runTestcaseAll()
+
+            case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
+                return this.handler.submitToJudge()
+
+            case WebviewToVSCodeCommand.RUN_TESTCASE:
+                return this.handler.runTestcaseByIndex(data.testcaseId)
 
             case WebviewToVSCodeCommand.SHOW_DIFF:
                 return this._showDiff(data)
@@ -112,7 +109,7 @@ export class ProblemWebviewPanel {
     }
 
     private async _loadProblemAndShow() {
-        const updateWebview = () => {
+        const updateWebview = async () => {
             _info(`Updating HTML for ${this.problem.problem_nm}`)
 
             this.panel.webview.html = htmlForWebview({
@@ -125,6 +122,7 @@ export class ProblemWebviewPanel {
                     this.problem.handler
                 ),
                 handler: this.problem.handler,
+                fileExists: await this.handler.suggestedFileExists(),
 
                 nonce: utils.getNonce(),
                 styleUri: this._getUri("dist", "webview", "main.css"),
@@ -189,14 +187,13 @@ export class ProblemWebviewPanel {
 
                     // Once everything is loaded, we create a problem handler
                     // which will take care of all operations
-                    this.problemHandler = new ProblemHandler(this.problem)
-
+                    this.problemHandler = await makeProblemHandler(this.problem)
                     //
                 } catch (e) {
                     console.error(e)
                 }
 
-                updateWebview()
+                await updateWebview()
             }
         )
     }

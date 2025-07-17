@@ -1,4 +1,3 @@
-import { IconStatus, OnVeredictMaker } from "@/types"
 import { Logger } from "@/utils"
 import * as vscode from "vscode"
 import { ProblemWebviewPanel } from "./panel"
@@ -9,12 +8,10 @@ export class ProblemWebviewPanelSerializer
     implements vscode.WebviewPanelSerializer
 {
     private readonly context_: vscode.ExtensionContext
-    private readonly onVeredictMaker_: (problemNm: string) => (status: IconStatus) => void
 
-    constructor(context: vscode.ExtensionContext, onVeredictMaker: OnVeredictMaker) {
+    constructor(context: vscode.ExtensionContext) {
         super()
         this.context_ = context
-        this.onVeredictMaker_ = onVeredictMaker
     }
 
     async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
@@ -28,14 +25,9 @@ export class ProblemWebviewPanelSerializer
                 return
             }
 
-            const panel = new ProblemWebviewPanel(
-                webviewPanel,
-                this.context_,
-                this.onVeredictMaker_(state.problemNm),
-                {
-                    problemNm: state.problemNm,
-                }
-            )
+            const panel = new ProblemWebviewPanel(webviewPanel, this.context_, {
+                problemNm: state.problemNm,
+            })
             WebviewPanelRegistry.register(state.problemNm, panel)
         } catch (error) {
             this.log.error("[WebviewPanel] Error deserializing webview panel: ", error)
