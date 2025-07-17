@@ -31,18 +31,26 @@ export class JutgeCourseTreeProvider
         this.globalState = context.globalState
     }
 
-    // Get TreeItem representation of the element (part of the TreeDataProvider interface).
     getTreeItem(element: CourseTreeElement): CourseTreeItem {
-        const treeItem = new CourseTreeItem(element)
-        this.problemNm2item.set(element.key, treeItem) // keep the item in a map, by problemNm (itemKey)
-        return treeItem
+        const item = new CourseTreeItem(element)
+
+        if (item.element.type === "problem") {
+            item.command = {
+                command: "jutge-vscode.showProblem",
+                title: "Open Problem",
+                arguments: [item.element.key],
+            }
+        }
+
+        this.problemNm2item.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
+        console.log(item.id)
+        return item
     }
 
-    /**
-     * Get children of an element.
-     * If an empty list is returned, a welcome view is shown.
-     * viewsWelcome are defined in `package.json`.
-     */
+    getParent(element: CourseTreeElement): vscode.ProviderResult<CourseTreeElement> {
+        return element.parent
+    }
+
     async getChildren(parent?: CourseTreeElement): Promise<CourseTreeElement[]> {
         if (!(await JutgeService.isUserAuthenticated())) {
             return []
@@ -67,10 +75,7 @@ export class JutgeCourseTreeProvider
         iconStatus: IconStatus,
         parent?: CourseTreeElement
     ) {
-        const defaultState = type === "problem" ? "none" : "collapsed"
-        const state: TreeItemCollapseState =
-            this.globalState.get(`itemState:${type}:${key}`) || defaultState
-        const newElem = new CourseTreeElement(type, key, label, state, iconStatus)
+        const newElem = new CourseTreeElement(type, key, label, iconStatus)
         if (parent) {
             newElem.parent = parent
         }
@@ -126,7 +131,7 @@ export class JutgeCourseTreeProvider
 
             const items: CourseTreeElement[] = []
             for (const abstractProblem of abstractProblems) {
-                const problemItem = this.abstractProblemToItem_(
+                const problemItem = this.abstractProblemToElement_(
                     abstractProblem,
                     allStatuses
                 )
@@ -212,32 +217,31 @@ export class JutgeCourseTreeProvider
         }
     }
 
-    private abstractProblemToItem_(
+    private abstractProblemToElement_(
         abstractProblem: AbstractProblem,
         allStatuses: Record<string, AbstractStatus>
     ): CourseTreeElement {
-        const nm = abstractProblem.problem_nm
+        const { problem_nm, problems } = abstractProblem
         const langCode = ConfigService.getPreferredLangId()
-        const preferredId = `${nm}_${langCode}`
+        const preferredId = `${problem_nm}_${langCode}`
 
         let problem: BriefProblem | undefined = undefined
-        if (preferredId in abstractProblem.problems) {
-            problem = abstractProblem.problems[preferredId]
+        if (preferredId in problems) {
+            problem = problems[preferredId]
         } else {
-            problem = Object.values(abstractProblem.problems)[0]
+            problem = Object.values(problems)[0]
         }
 
         // Get status for this problem
-        const iconStatus = status2IconStatus[allStatuses[nm]?.status || ""]
-        const problemItem = this.makeTreeElement("problem", nm, problem.title, iconStatus)
+        const iconStatus = status2IconStatus[allStatuses[problem_nm]?.status || ""]
+        const element = this.makeTreeElement(
+            "problem",
+            problem_nm,
+            problem.title,
+            iconStatus
+        )
 
-        problemItem.command = {
-            command: "jutge-vscode.showProblem",
-            title: "Open Problem",
-            arguments: [nm],
-        }
-
-        return problemItem
+        return element
     }
 
     private async getProblemsFromListNm_(
@@ -263,7 +267,7 @@ export class JutgeCourseTreeProvider
 
             const items: CourseTreeElement[] = []
             for (const abstractProblem of problems) {
-                const item = this.abstractProblemToItem_(abstractProblem, allStatuses)
+                const item = this.abstractProblemToElement_(abstractProblem, allStatuses)
                 item.parent = listElem
                 items.push(item)
             }

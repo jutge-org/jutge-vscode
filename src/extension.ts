@@ -36,6 +36,20 @@ export const getIconUri = (theme: "dark" | "light", filename: string) => {
     return vscode.Uri.joinPath(context_.extensionUri, "resources", theme, filename)
 }
 
+export const globalStateGet = (key: string): string | undefined => {
+    if (!context_) {
+        throw new Error(`Context is undefined!!!`)
+    }
+    return context_.globalState.get(key)
+}
+
+export const globalStateUpdate = (key: string, value: string): void => {
+    if (!context_) {
+        throw new Error(`Context is undefined!!!`)
+    }
+    context_.globalState.update(key, value)
+}
+
 /**
  * Works as entrypoint when the extension is activated.
  * It is responsible for registering commands and other extension components.
@@ -81,13 +95,13 @@ export async function activate(context: vscode.ExtensionContext) {
         treeDataProvider: jutgeCourseTreeProvider,
     })
 
-    treeView.onDidExpandElement((e) => {
-        console.log(`Expanded -> ${e.element.key}!`)
-        context.globalState.update(`itemState:${e.element.key}`, "expanded")
+    treeView.onDidExpandElement(({ element }) => {
+        console.log(`Expanded -> ${element.getId()}!`)
+        context.globalState.update(`itemState:${element.getId()}`, "expanded")
     })
-    treeView.onDidCollapseElement((e) => {
-        console.log(`Collapsed -> ${e.element.key}`)
-        context.globalState.update(`itemState:${e.element.key}`, "collapsed")
+    treeView.onDidCollapseElement(({ element }) => {
+        console.log(`Collapsed -> ${element.key}`)
+        context.globalState.update(`itemState:${element.getId()}`, "collapsed")
     })
 
     const serializer = new ProblemWebviewPanelSerializer(

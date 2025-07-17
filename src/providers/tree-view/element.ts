@@ -10,23 +10,33 @@ export class CourseTreeElement {
     public key: string
     public label: string
     public iconStatus: IconStatus
-    public state: TreeItemCollapseState
 
-    public command: vscode.Command | null = null
     public parent: CourseTreeElement | null = null
     public children: CourseTreeElement[] | null = null
+
+    parentPrefix(): string {
+        let prefix = ``
+        let { parent: elem } = this
+        while (elem) {
+            prefix = prefix ? `${elem.key}:${prefix}` : elem.key
+            elem = elem.parent
+        }
+        return prefix
+    }
+
+    getId(): string {
+        return `${this.parentPrefix()}:${this.key}`
+    }
 
     constructor(
         type: CourseItemType,
         key: string,
         label: string,
-        state: TreeItemCollapseState,
         iconStatus: IconStatus
     ) {
         this.type = type
         this.key = key
         this.label = label
-        this.state = state
         this.iconStatus = iconStatus
     }
 }

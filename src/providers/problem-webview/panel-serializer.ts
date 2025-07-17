@@ -1,9 +1,8 @@
-import * as vscode from "vscode"
-import { WebviewPanelRegistry } from "./panel-registry"
-import { ProblemWebviewPanel } from "./panel"
-import { Logger } from "@/utils"
-import { JutgeCourseTreeProvider } from "../tree-view/provider"
 import { IconStatus, OnVeredictMaker } from "@/types"
+import { Logger } from "@/utils"
+import * as vscode from "vscode"
+import { ProblemWebviewPanel } from "./panel"
+import { WebviewPanelRegistry } from "./panel-registry"
 
 export class ProblemWebviewPanelSerializer
     extends Logger

@@ -1,6 +1,6 @@
-import { getIconUri } from "@/extension"
+import { getIconUri, globalStateGet } from "@/extension"
 import * as vscode from "vscode"
-import { CourseTreeElement, TreeItemCollapseState } from "./element"
+import { CourseItemType, CourseTreeElement, TreeItemCollapseState } from "./element"
 
 const stateToTreeState_: Record<TreeItemCollapseState, vscode.TreeItemCollapsibleState> =
     {
@@ -9,30 +9,25 @@ const stateToTreeState_: Record<TreeItemCollapseState, vscode.TreeItemCollapsibl
         none: vscode.TreeItemCollapsibleState.None,
     }
 
+const defaultStateFor_: Record<CourseItemType, vscode.TreeItemCollapsibleState> = {
+    course: vscode.TreeItemCollapsibleState.Collapsed,
+    exam: vscode.TreeItemCollapsibleState.Expanded,
+    list: vscode.TreeItemCollapsibleState.Collapsed,
+    problem: vscode.TreeItemCollapsibleState.None,
+}
+
 export class CourseTreeItem extends vscode.TreeItem {
     element: CourseTreeElement
 
-    parentPrefix(): string {
-        let prefix = ``
-        let { parent: elem } = this.element
-        while (elem) {
-            prefix = `${elem.key}:${prefix}`
-            elem = elem.parent
-        }
-        return prefix
-    }
-
-    getId(): string {
-        const { type, key } = this.element
-        return `${this.parentPrefix()}:${type}:${key}`
-    }
-
     constructor(element: CourseTreeElement) {
-        super(element.label, stateToTreeState_[element.state])
+        super(element.label)
+        this.id = element.getId()
         this.element = element
-        if (element.command) {
-            this.command = element.command
-        }
+
+        const state = globalStateGet(`itemState:${this.id}`) as TreeItemCollapseState
+        const defaultState = defaultStateFor_[this.element.type]
+        this.collapsibleState = state ? stateToTreeState_[state] : defaultState
+
         if (element.type === "problem") {
             const icon = element.iconStatus || "none"
             this.iconPath = {
@@ -40,7 +35,5 @@ export class CourseTreeItem extends vscode.TreeItem {
                 dark: getIconUri("dark", `${icon}.svg`),
             }
         }
-
-        this.id = this.getId()
     }
 }
