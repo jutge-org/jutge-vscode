@@ -66,10 +66,13 @@ function postMessage(command: WebviewToVSCodeCommand, data: any = "") {
     vscode.postMessage({ command, data })
 }
 
-function getButton(id: string): HTMLButtonElement {
-    const button = document.getElementById(id) as HTMLButtonElement
-    assertNotNull(button, `Button with id ${id} not found`)
-    return button
+function getButton(id: string): HTMLButtonElement | null {
+    const button = document.getElementById(id)
+    if (!button) {
+        console.error(`Button with id ${id} not found`)
+        return null
+    }
+    return button as HTMLButtonElement
 }
 
 function addOnClickEventListeners() {
@@ -80,7 +83,7 @@ function addOnClickEventListeners() {
         ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
     ]
     for (const [id, command] of id2command) {
-        getButton(id).addEventListener("click", () => {
+        getButton(id)?.addEventListener("click", () => {
             postMessage(command)
         })
     }

@@ -1,5 +1,5 @@
 import { getWorkspaceFolder } from "@/extension"
-import { Language, Testcase } from "@/jutge_api_client"
+import { Testcase } from "@/jutge_api_client"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import {
     infoForProglang,
@@ -93,15 +93,15 @@ export class ProblemHandler extends Logger {
             const handler = this.problem_.handler?.handler || ""
             const source_modifier = this.problem_.handler?.source_modifier || ""
             const compiler_id = this.getCompilerId()
-            const comment = this.langInfo.commentPrefix
+            const cmt = this.langInfo.commentPrefix
 
             const profileRes = JutgeService.getProfileSWR()
             const profile = profileRes.data
             const fileHeader = [
-                `${comment} ${this.problem_.title}\n`,
-                `${comment} https://jutge.org/problems/${this.problem_.problem_id}\n`,
-                `${comment} ${this.problem_.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
-                `${comment} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
+                `${cmt} ${this.problem_.title}\n`,
+                `${cmt} https://jutge.org/problems/${this.problem_.problem_id}\n`,
+                `${cmt} ${this.problem_.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
+                `${cmt} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
                 `\n`,
             ].join("")
 

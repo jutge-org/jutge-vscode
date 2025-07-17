@@ -14,6 +14,10 @@ export type Veredict = {
     status: SubmissionStatus
 }
 
+const info_ = (msg: string) => {
+    console.log("[SubmissionService]:", msg)
+}
+
 export class SubmissionService extends StaticLogger {
     private static MONITOR_INTERVAL_MS = 5000
 
@@ -87,6 +91,9 @@ export class SubmissionService extends StaticLogger {
 
                     this._showVerdictNotification(problem, submission_id, verdict)
 
+                    info_(
+                        `Emitting onDidReceiveVeredict (${problem.problem_nm}, ${verdict})`
+                    )
                     this.emitter_.fire({
                         problem_nm: problem.problem_nm,
                         status: verdict,
@@ -114,6 +121,7 @@ export class SubmissionService extends StaticLogger {
         let verdict: SubmissionStatus = SubmissionStatus.PENDING
 
         while (verdict === SubmissionStatus.PENDING) {
+            await waitMilliseconds(this.MONITOR_INTERVAL_MS)
             try {
                 const response = await JutgeService.getSubmission({
                     problem_id,
@@ -127,7 +135,6 @@ export class SubmissionService extends StaticLogger {
             }
             progress.report({ message: `Waiting (${times}) ...` })
             times++
-            await waitMilliseconds(this.MONITOR_INTERVAL_MS)
         }
 
         this._sendStatusUpdate(problem_nm, verdict)
@@ -158,11 +165,13 @@ export class SubmissionService extends StaticLogger {
     }
 
     private static _verdictText: Map<string, string> = new Map([
-        ["AC", "Accepted! 🟢"],
-        ["WA", "Wrong Answer 🔴"],
-        ["EE", "Execution Error 💣"],
-        ["CE", "Compilation Error 🛠"],
-        ["IE", "Internal Error 🔥"],
-        ["Pending", "Pending... ⏳"],
+        ["AC", "🟢 Accepted!"],
+        ["WA", "🔴 Wrong Answer"],
+        ["IC", "🚫 Invalid Character"],
+        ["PE", "🟡 Presentation Error"],
+        ["EE", "💣 Execution Error"],
+        ["CE", "🛠 Compilation Error"],
+        ["IE", "🔥 Internal Error"],
+        ["Pending", "⏳ Pending..."],
     ])
 }

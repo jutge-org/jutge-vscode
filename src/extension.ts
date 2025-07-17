@@ -120,7 +120,7 @@ const initializeTreeView = () => {
         globalStateUpdate(`itemState:${element.getId()}`, "collapsed")
     )
     SubmissionService.onDidReceiveVeredict((veredict) => {
-        treeProvider.refreshProblem(veredict.problem_nm)
+        treeProvider.refreshProblem(veredict)
     })
 
     return { treeProvider, treeView }

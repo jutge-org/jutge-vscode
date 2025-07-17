@@ -25,22 +25,26 @@ type AskPasswordParams = {
     prompt: string
 }
 
+const error_ = (msg: unknown) => console.error(`[JutgeService] ${msg}`)
+const info_ = (msg: unknown) => console.info(`[JutgeService] ${msg}`)
+const debug_ = (msg: unknown) => console.debug(`[JutgeService] ${msg}`)
+
 export class JutgeService {
     static context_: vscode.ExtensionContext
     static examMode_: boolean = false
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
-        console.info("[JutgeService] Initializing...")
+        info_("Initializing...")
         JutgeService.context_ = context
 
         const token = await JutgeService.getTokenAtActivation()
         if (token) {
-            console.debug("[JutgeService] Token found during activation")
+            debug_("Token found during activation")
             await JutgeService.setToken(token)
         } else {
-            console.debug("[JutgeService] No valid token found during activation")
+            debug_("No valid token found during activation")
         }
-        console.info("[JutgeService] Initialization complete")
+        info_("Initialization complete")
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
@@ -119,7 +123,7 @@ export class JutgeService {
             return credentials.token
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
-            console.error(`JutgeService: Error signing in: ${error}`, "JutgeService")
+            error_(`Error signing in: ${error}`)
             return
         }
     }
@@ -130,7 +134,7 @@ export class JutgeService {
             return exams.map((e) => e.exam_key)
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Could not get exams.")
-            console.error(`JutgeService: Could not get exams: ${error}`, "JutgeService")
+            error_(`Could not get exams: ${error}`)
             return
         }
     }
@@ -195,7 +199,7 @@ export class JutgeService {
             }
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
-            console.error(`JutgeService: Error signing in: ${error}`, "JutgeService")
+            error_(`JutgeService: Error signing in: ${error}`)
             jutgeClient.headers = oldHeaders
             return
         }
@@ -221,7 +225,7 @@ export class JutgeService {
         for (const source of tokenSources) {
             const token = await source.fn
             if (token && (await JutgeService.isTokenValid(token))) {
-                console.info(`[JutgeService] Using token from ${source.id}`)
+                info_(`Using token from ${source.id}`)
                 return token
             }
         }
@@ -306,19 +310,19 @@ export class JutgeService {
         }
 
         const _revalidate = async () => {
-            console.log(`Revalidating '${funcCallId}'...`)
+            info_(`Revalidating '${funcCallId}'...`)
             try {
                 const newData: T = await getData()
                 // Don't call update or save if data is identical
                 if (!deepEqual(result.data, newData)) {
-                    console.log(`Revalidated '${funcCallId}': update!`)
+                    info_(`Revalidated '${funcCallId}': update!`)
                     this.context_.globalState.update(dbkey, newData)
                     result.onUpdate(newData)
                 } else {
-                    console.log(`Revalidated '${funcCallId}': no changes.`)
+                    info_(`Revalidated '${funcCallId}': no changes.`)
                 }
             } catch (e) {
-                console.log(`Error getting data: ${e}`)
+                info_(`Error getting data: ${e}`)
                 result.onUpdate(null)
             }
         }
@@ -372,6 +376,7 @@ export class JutgeService {
                     jutgeClient.student.lists.getAll(),
                 ])
                 if (courseRes.status === "rejected" || listsRes.status === "rejected") {
+                    error_(`getCourse: Could not load course or all lists`)
                     throw new Error(
                         `[JutgeService] getCourse: Could not load course or all lists`
                     )

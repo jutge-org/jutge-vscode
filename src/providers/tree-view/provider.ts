@@ -6,9 +6,10 @@ import { JutgeService } from "@/services/jutge"
 import { IconStatus, status2IconStatus } from "@/types"
 import { CourseItemType, CourseTreeElement } from "./element"
 import { CourseTreeItem } from "./item"
+import { Veredict } from "@/services/submission"
 
-const _error = (msg: unknown) => console.error(`[TreeViewProvider] ${msg}`)
-const _info = (msg: unknown) => console.info(`[TreeViewProvider] ${msg}`)
+const error_ = (msg: unknown) => console.error(`[TreeViewProvider] ${msg}`)
+const info_ = (msg: unknown) => console.info(`[TreeViewProvider] ${msg}`)
 
 export class JutgeCourseTreeProvider
     implements vscode.TreeDataProvider<CourseTreeElement>
@@ -26,6 +27,12 @@ export class JutgeCourseTreeProvider
     private problemName2TreeItem: Map<string, CourseTreeItem> = new Map()
 
     getTreeItem(element: CourseTreeElement): CourseTreeItem {
+        info_(`getTreeItem for ${element.getId()} (${element.key})`)
+
+        const oldItem = this.problemName2TreeItem.get(element.key)
+        if (oldItem?.element !== element) {
+            info_(`Old element != than new element`)
+        }
         const item = new CourseTreeItem(element)
 
         if (item.element.type === "problem") {
@@ -75,17 +82,20 @@ export class JutgeCourseTreeProvider
         return newElem
     }
 
-    public refreshProblem(problem_nm: string) {
+    public refreshProblem({ problem_nm, status }: Veredict) {
+        info_(`Refresh Problem ${problem_nm}`)
         const item = this.problemName2TreeItem.get(problem_nm)
         if (!item) {
             console.error(`Received 'refresh' call for unknown problem '${problem_nm}'`)
         } else {
+            info_(`Status ${item.element.iconStatus} -> ${status}`)
+            item.element.updateIconStatus(status)
             this.refresh_(item.element)
         }
     }
 
-    public refresh_(item?: CourseTreeElement): void {
-        this.emitter_.fire(item)
+    public refresh_(element?: CourseTreeElement): void {
+        this.emitter_.fire(element)
     }
 
     get refresh() {
@@ -132,7 +142,7 @@ export class JutgeCourseTreeProvider
             return items
             //
         } catch (error) {
-            _error(error)
+            error_(error)
             vscode.window.showErrorMessage("Failed ot get exam problems")
             return []
         }
@@ -149,7 +159,7 @@ export class JutgeCourseTreeProvider
             }
             return [this.makeTreeElement("exam", "exam", exam.title, IconStatus.NONE)]
         } catch (error) {
-            _error(error)
+            error_(error)
             vscode.window.showErrorMessage("Failed ot get exam")
             return []
         }
@@ -223,7 +233,7 @@ export class JutgeCourseTreeProvider
         }
 
         // Get status for this problem
-        const iconStatus = status2IconStatus[allStatuses[problem_nm]?.status || ""]
+        const iconStatus = (allStatuses[problem_nm]?.status || "none") as IconStatus
         const element = this.makeTreeElement(
             "problem",
             problem_nm,

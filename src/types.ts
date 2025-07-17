@@ -16,21 +16,30 @@ export enum TestcaseStatus {
 
 export enum IconStatus {
     ACCEPTED = "accepted",
+    PRESENTATION_ERROR = "presentation_error",
     REJECTED = "rejected",
     NONE = "none",
 }
 
-export const status2IconStatus: Record<string, IconStatus> = {
-    accepted: IconStatus.ACCEPTED,
-    rejected: IconStatus.REJECTED,
-    none: IconStatus.NONE,
+export const status2IconStatus: Record<SubmissionStatus, IconStatus> = {
+    AC: IconStatus.ACCEPTED,
+    PE: IconStatus.PRESENTATION_ERROR,
+    WA: IconStatus.REJECTED,
+    IC: IconStatus.REJECTED,
+    CE: IconStatus.REJECTED,
+    EE: IconStatus.REJECTED,
+    TLE: IconStatus.REJECTED,
+    Pending: IconStatus.NONE,
 }
 
 export enum SubmissionStatus {
     AC = "AC",
     WA = "WA",
-    TLE = "TLE",
+    IC = "IC",
+    PE = "PE",
     CE = "CE",
+    EE = "EE",
+    TLE = "TLE",
     PENDING = "Pending",
 }
 
