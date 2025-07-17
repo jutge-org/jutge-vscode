@@ -29,26 +29,4 @@ export class CourseTreeElement {
         this.state = state
         this.iconStatus = iconStatus
     }
-
-    toTreeItem(iconPrefixUri: vscode.Uri): CourseTreeItem {
-        const treeItem: CourseTreeItem = new CourseTreeItem(this)
-        if (this.command) {
-            treeItem.command = this.command
-        }
-        if (this.type === "problem") {
-            treeItem.iconPath = {
-                light: vscode.Uri.joinPath(
-                    iconPrefixUri,
-                    "light",
-                    `${this.iconStatus || "none"}.svg`
-                ),
-                dark: vscode.Uri.joinPath(
-                    iconPrefixUri,
-                    "dark",
-                    `${this.iconStatus || "none"}.svg`
-                ),
-            }
-        }
-        return treeItem
-    }
 }

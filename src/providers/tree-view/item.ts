@@ -1,7 +1,6 @@
+import { getIconUri } from "@/extension"
 import * as vscode from "vscode"
 import { CourseTreeElement, TreeItemCollapseState } from "./element"
-import { join } from "path"
-import { IconStatus } from "@/types"
 
 const stateToTreeState_: Record<TreeItemCollapseState, vscode.TreeItemCollapsibleState> =
     {
@@ -31,6 +30,17 @@ export class CourseTreeItem extends vscode.TreeItem {
     constructor(element: CourseTreeElement) {
         super(element.label, stateToTreeState_[element.state])
         this.element = element
+        if (element.command) {
+            this.command = element.command
+        }
+        if (element.type === "problem") {
+            const icon = element.iconStatus || "none"
+            this.iconPath = {
+                light: getIconUri("light", `${icon}.svg`),
+                dark: getIconUri("dark", `${icon}.svg`),
+            }
+        }
+
         this.id = this.getId()
     }
 }

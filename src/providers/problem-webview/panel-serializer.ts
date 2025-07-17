@@ -3,14 +3,14 @@ import { WebviewPanelRegistry } from "./panel-registry"
 import { ProblemWebviewPanel } from "./panel"
 import { Logger } from "@/utils"
 import { JutgeCourseTreeProvider } from "../tree-view/provider"
-import { OnVeredictMaker } from "@/types"
+import { IconStatus, OnVeredictMaker } from "@/types"
 
 export class ProblemWebviewPanelSerializer
     extends Logger
     implements vscode.WebviewPanelSerializer
 {
     private readonly context_: vscode.ExtensionContext
-    private readonly onVeredictMaker_: (problemNm: string) => () => void
+    private readonly onVeredictMaker_: (problemNm: string) => (status: IconStatus) => void
 
     constructor(context: vscode.ExtensionContext, onVeredictMaker: OnVeredictMaker) {
         super()

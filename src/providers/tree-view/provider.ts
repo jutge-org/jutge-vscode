@@ -3,14 +3,7 @@ import * as vscode from "vscode"
 import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
-import {
-    getIconForStatus,
-    IconStatus,
-    OnVeredictMaker,
-    status2Icon,
-    status2IconStatus,
-} from "@/types"
-import { join } from "path"
+import { IconStatus, OnVeredictMaker, status2IconStatus } from "@/types"
 import { CourseItemType, CourseTreeElement, TreeItemCollapseState } from "./element"
 import { CourseTreeItem } from "./item"
 
@@ -33,18 +26,16 @@ export class JutgeCourseTreeProvider
     private problemNm2item: Map<string, CourseTreeItem> = new Map()
 
     private globalState: vscode.Memento
-    private iconPrefixUri: vscode.Uri
 
     constructor(context: vscode.ExtensionContext) {
         this.globalState = context.globalState
-        this.iconPrefixUri = vscode.Uri.joinPath(context.extensionUri, "resources")
     }
 
     // Get TreeItem representation of the element (part of the TreeDataProvider interface).
     getTreeItem(element: CourseTreeElement): CourseTreeItem {
-        const item = element.toTreeItem(this.iconPrefixUri)
-        this.problemNm2item.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
-        return item
+        const treeItem = new CourseTreeItem(element)
+        this.problemNm2item.set(element.key, treeItem) // keep the item in a map, by problemNm (itemKey)
+        return treeItem
     }
 
     /**

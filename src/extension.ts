@@ -27,6 +27,15 @@ export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptio
     }
 }
 
+let context_: vscode.ExtensionContext | undefined = undefined
+
+export const getIconUri = (theme: "dark" | "light", filename: string) => {
+    if (!context_) {
+        throw new Error(`Context is undefined!!!`)
+    }
+    return vscode.Uri.joinPath(context_.extensionUri, "resources", theme, filename)
+}
+
 /**
  * Works as entrypoint when the extension is activated.
  * It is responsible for registering commands and other extension components.
@@ -34,6 +43,8 @@ export function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptio
  * @param context Provides access to utilities to manage the extension's lifecycle.
  */
 export async function activate(context: vscode.ExtensionContext) {
+    context_ = context
+
     const extension = vscode.extensions.getExtension("jutge.jutge-vscode")
     const extensionVersion = extension?.packageJSON.version || "unknown"
 
