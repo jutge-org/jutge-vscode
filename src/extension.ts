@@ -95,14 +95,12 @@ export async function activate(context: vscode.ExtensionContext) {
         treeDataProvider: jutgeCourseTreeProvider,
     })
 
-    treeView.onDidExpandElement(({ element }) => {
-        console.log(`Expanded -> ${element.getId()}!`)
-        context.globalState.update(`itemState:${element.getId()}`, "expanded")
-    })
-    treeView.onDidCollapseElement(({ element }) => {
-        console.log(`Collapsed -> ${element.key}`)
-        context.globalState.update(`itemState:${element.getId()}`, "collapsed")
-    })
+    treeView.onDidExpandElement(({ element }) =>
+        globalStateUpdate(`itemState:${element.getId()}`, "expanded")
+    )
+    treeView.onDidCollapseElement(({ element }) =>
+        globalStateUpdate(`itemState:${element.getId()}`, "collapsed")
+    )
 
     const serializer = new ProblemWebviewPanelSerializer(
         context,
