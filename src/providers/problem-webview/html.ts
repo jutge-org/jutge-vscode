@@ -1,31 +1,63 @@
 import { Testcase } from "@/jutge_api_client"
-import { ProblemHandler } from "@/types"
+import { CustomTestcase, ProblemHandler } from "@/types"
 import { Button } from "@/webview/components/button"
 import { chevronDown, warningIcon } from "@/webview/components/icons"
 import { makeSpacesVisible } from "@/webview/utils"
 import { Uri } from "vscode"
 
-export function htmlForTestcase(testcase: Testcase, index: number): string {
-    const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
-    const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
+export function htmlForTestcaseCommon(
+    type: "normal" | "custom",
+    input: { actual: string; displayed: string },
+    output: { actual: string; displayed: string } | undefined,
+    index: number
+) {
+    let props: { title: string; extraCssClass: string; elemId: string; runId: string }
 
-    const inputDisplayed = makeSpacesVisible(inputDecoded)
-    const correctDisplayed = makeSpacesVisible(correctDecoded)
+    switch (type) {
+        case "normal":
+            props = {
+                elemId: `testcase-${index}`,
+                title: "Testcase",
+                extraCssClass: "",
+                runId: `run-testcase-${index}`,
+            }
+            break
+        case "custom":
+            props = {
+                elemId: `custom-testcase-${index}`,
+                title: "Custom Testcase",
+                extraCssClass: "custom",
+                runId: `run-custom-testcase-${index}`,
+            }
+            break
+    }
+
+    let expectedOutputHtml = ""
+    if (type === "normal") {
+        expectedOutputHtml = `
+            <div class="container expected">
+                <div class="title">Expected Output:</div>
+                <div class="clipboard" title="Copy to clipboard">Copy</div>
+                <div id="expected" class="selectable textarea">
+                    <pre data-original-text="${output?.actual || ""}">${output?.displayed || ""}</pre>
+                </div>
+            </div>`
+    }
 
     return /*html*/ `
-        <div class="testcase" id="testcase-${index + 1}">
+        <div class="testcase ${props.extraCssClass}" id="${props.elemId}">
             <div class="metadata">
                 <div class="toggle-minimize">
                     <div class="title">
                         <div class="icon">${chevronDown()}</div>
-                        Testcase ${index + 1}
+                        ${props.title} ${index}
                     </div>
                     <span class="running-text"></span>
                 </div>
                 <div className="run-button">
                     ${Button({
                         text: "",
-                        id: `run-testcase-${index + 1}`,
+                        id: props.runId,
                         title: "Run this testcase only",
                         icon: "run",
                     })}
@@ -37,20 +69,14 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
                     <div class="title">Input:</div>
                     <div class="clipboard" title="Copy to clipboard">Copy</div>
                     <div id="input" class="selectable textarea">
-                        <pre data-original-text="${inputDecoded}">${inputDisplayed}</pre>
+                        <pre data-original-text="${input}">${input.displayed}</pre>
                     </div>
                 </div>
-                <div class="output container">
-                    <div class="container expected">
-                        <div class="title">Expected Output:</div>
-                        <div class="clipboard" title="Copy to clipboard">Copy</div>
-                        <div id="expected" class="selectable textarea">
-                            <pre data-original-text="${correctDecoded}">${correctDisplayed}</pre>
-                        </div>
-                    </div>
+                <div class="output container ${props.extraCssClass}">
+                    ${expectedOutputHtml}
                     <div class="container received">
                         <div class="title">Received Output:</div>
-                        <div class="compare-diff" title="Compare with expected">Compare</div>
+                        ${type === "normal" ? `<div class="compare-diff" title="Compare with expected">Compare</div>` : ""}
                         <div id="received" class="selectable textarea"><pre></pre></div>
                     </div>
                 </div>
@@ -59,8 +85,36 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     `
 }
 
+export function htmlForTestcase(testcase: Testcase, index: number): string {
+    const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
+    const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
+
+    const inputDisplayed = makeSpacesVisible(inputDecoded)
+    const correctDisplayed = makeSpacesVisible(correctDecoded)
+
+    return htmlForTestcaseCommon(
+        "normal",
+        { actual: inputDecoded, displayed: inputDisplayed },
+        { actual: correctDecoded, displayed: correctDisplayed },
+        index + 1
+    )
+}
+
+export function htmlForCustomTestcase(customTestcase: CustomTestcase, index: number) {
+    const { input } = customTestcase
+    const inputDisplayed = makeSpacesVisible(customTestcase.input)
+
+    return htmlForTestcaseCommon(
+        "custom",
+        { actual: input, displayed: inputDisplayed },
+        undefined,
+        index + 1
+    )
+}
+
 export function htmlForAllTestcases(
     problemTestcases: Testcase[],
+    customTestcases: CustomTestcase[] | null,
     problemHandler: ProblemHandler | null
 ): string {
     let handler: string = problemHandler?.handler || ""
@@ -85,14 +139,14 @@ export function htmlForAllTestcases(
                 <div class="header">
                     <h2 class="flex-grow-1">Testcases</h2>
                     <div class="buttons">
-                    ${Button({
-                        id: "submit-to-jutge",
-                        text: "Submit to Jutge",
-                        title: "Submit file to Jutge.org",
-                        icon: "submit",
-                        disabled: false,
-                    })}
-                </div>
+                        ${Button({
+                            id: "submit-to-jutge",
+                            text: "Submit to Jutge",
+                            title: "Submit file to Jutge.org",
+                            icon: "submit",
+                            disabled: false,
+                        })}
+                    </div>
                 </div>
                 <div class="panels">
                     No testcases found.
@@ -106,14 +160,8 @@ export function htmlForAllTestcases(
                 <h2 class="flex-grow-1">Testcases</h2>
                 <div class="buttons">
                     ${Button({
-                        id: "add-new-testcase",
-                        text: "Add new testcase",
-                        title: "Add new testcase",
-                        icon: "add",
-                    })}
-                    ${Button({
                         id: "run-all-testcases",
-                        text: "Run All Testcases",
+                        text: "Run All",
                         title: "Run all testscases",
                         icon: "run-all",
                     })}
@@ -122,6 +170,25 @@ export function htmlForAllTestcases(
             <div class="panels">
                 ${problemTestcases.map(htmlForTestcase).join("")}
             </div>
+            
+            <div class="header">
+                <h2 class="flex-grow-1">Custom Testcases</h2>
+                <div class="buttons">
+                    ${Button({
+                        id: "add-new-testcase",
+                        text: "Add new testcase",
+                        title: "Add new testcase",
+                        icon: "add",
+                    })}
+                </div>
+            </div>
+            ${
+                customTestcases &&
+                `<div class="panels">
+                    ${customTestcases.map(htmlForCustomTestcase).join("")}
+                </div>`
+            }
+
             <div class="flex flex-row justify-end mt-4">
                 <div class="buttons">
                     ${Button({

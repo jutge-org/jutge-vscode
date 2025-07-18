@@ -49,6 +49,11 @@ export type ProblemHandler = {
     compilers: string
 }
 
+export type CustomTestcase = {
+    name: string
+    input: string
+}
+
 export type Problem = {
     problem_id: string
     problem_nm: string
@@ -76,6 +81,7 @@ export type VSCodeToWebviewMessage = {
 
 export enum VSCodeToWebviewCommand {
     UPDATE_TESTCASE = "update-testcase",
+    UPDATE_CUSTOM_TESTCASE = "update-custom-testcase",
     UPDATE_SUBMISSION_STATUS = "update-submission-status",
 }
 
@@ -90,6 +96,7 @@ export enum WebviewToVSCodeCommand {
     SUBMIT_TO_JUTGE = "submit-to-jutge",
     RUN_ALL_TESTCASES = "run-all-testcases",
     RUN_TESTCASE = "run-testcase",
+    RUN_CUSTOM_TESTCASE = "run-custom-testcase",
     ADD_NEW_TESTCASE = "add-new-testcase",
     SHOW_DIFF = "show-diff",
 }

@@ -2,11 +2,17 @@ import { AbstractProblem } from "@/jutge_api_client"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
 import { makeProblemHandler, ProblemHandler } from "@/services/problem-handler"
-import { Problem, WebviewToVSCodeCommand, WebviewToVSCodeMessage } from "@/types"
+import {
+    CustomTestcase,
+    Problem,
+    WebviewToVSCodeCommand,
+    WebviewToVSCodeMessage,
+} from "@/types"
 import * as utils from "@/utils"
 import * as vscode from "vscode"
 import { htmlForAllTestcases, htmlForWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
+import { FileService } from "@/services/file"
 
 const _info = (msg: string) => {
     console.info(`[ProblemWebviewPanel] ${msg}`)
@@ -24,6 +30,7 @@ export class ProblemWebviewPanel {
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
     public problemHandler: ProblemHandler | null = null
+    public customTestcases: CustomTestcase[] | null = null
 
     public constructor(
         panel: vscode.WebviewPanel,
@@ -102,6 +109,9 @@ export class ProblemWebviewPanel {
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 return this.handler.runTestcaseByIndex(data.testcaseId)
 
+            case WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE:
+                return this.handler.runCustomTestcaseByIndex(data.testcaseId)
+
             case WebviewToVSCodeCommand.SHOW_DIFF:
                 return this._showDiff(data)
 
@@ -123,6 +133,7 @@ export class ProblemWebviewPanel {
                 statementHtml: this.problem.statementHtml || "",
                 testcasesHtml: htmlForAllTestcases(
                     this.problem.testcases || [],
+                    this.customTestcases,
                     this.problem.handler
                 ),
                 handler: this.problem.handler,
@@ -181,17 +192,30 @@ export class ProblemWebviewPanel {
                             message: "Loaded HTML statement",
                         })
                     }
+                    const _loadCustomTestcases = async () => {
+                        this.customTestcases = await FileService.loadCustomTestcases(
+                            this.problem
+                        )
+                        progress.report({
+                            increment: 10,
+                            message: "Loaded Custom testcases",
+                        })
+                    }
 
                     progress.report({ message: "Loading..." })
                     await Promise.allSettled([
                         _loadHandler(),
                         _loadTestcases(),
                         _loadStatementHtml(),
+                        _loadCustomTestcases(),
                     ])
 
                     // Once everything is loaded, we create a problem handler
                     // which will take care of all operations
-                    this.problemHandler = await makeProblemHandler(this.problem)
+                    this.problemHandler = await makeProblemHandler(
+                        this.problem,
+                        this.customTestcases
+                    )
                     //
                 } catch (e) {
                     console.error(e)

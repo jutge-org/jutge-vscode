@@ -1,7 +1,7 @@
-import fs from "fs"
+import fs, { existsSync, readFileSync } from "fs"
 import * as vscode from "vscode"
 
-import { Problem } from "@/types"
+import { CustomTestcase, Problem } from "@/types"
 import { StaticLogger, sanitizeTitle } from "@/utils"
 import { JutgeService } from "./jutge"
 import {
@@ -59,8 +59,8 @@ export class FileService extends StaticLogger {
         return `${problem.problem_id}_${sanitizeTitle(problem.title)}${defaultExtension}`
     }
 
-    static makeTestcaseFilename({ problem_id, title }: Problem) {
-        return `${problem_id}_${sanitizeTitle(title)}.test1.inp`
+    static makeTestcaseFilename({ problem_id, title }: Problem, index: number = 1) {
+        return `${problem_id}_${sanitizeTitle(title)}.test-${index}.inp`
     }
 
     static async createNewTestcaseFile(
@@ -87,6 +87,31 @@ export class FileService extends StaticLogger {
             throw error
         }
         return uri
+    }
+
+    static async loadCustomTestcases(problem: Problem): Promise<CustomTestcase[]> {
+        const customTestcases: CustomTestcase[] = []
+
+        const workspace = getWorkspaceFolder()
+        if (!workspace) {
+            return []
+        }
+
+        // FIXME(pauek): Do we need more than 5??
+        for (let i = 1; i <= 5; i++) {
+            const filename = this.makeTestcaseFilename(problem, i)
+            const { fsPath } = vscode.Uri.joinPath(workspace.uri, filename)
+            if (existsSync(fsPath)) {
+                const fileContent = await readFile(fsPath)
+                customTestcases.push({
+                    input: fileContent.toString(),
+                    correct: "",
+                    name: `Custom Testcase ${i}`,
+                })
+            }
+        }
+
+        return customTestcases
     }
 
     static async createNewFileFor(problem: Problem): Promise<vscode.Uri | undefined> {

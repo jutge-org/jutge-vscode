@@ -9,6 +9,7 @@ import {
     proglangFromFilepath,
 } from "@/services/runners/languages"
 import {
+    CustomTestcase,
     InputExpected,
     Problem,
     TestcaseRun,
@@ -29,11 +30,13 @@ export class ProblemHandler extends Logger {
     problem_: Problem
     proglang_: Proglang | undefined
     langInfo_: LanguageInfo | undefined
+    customTestcases_: CustomTestcase[] | null
 
-    constructor(problem: Problem) {
+    constructor(problem: Problem, customTestcases: CustomTestcase[] | null) {
         super()
 
         this.problem_ = problem
+        this.customTestcases_ = customTestcases
 
         // Launch loading of testcases already
         if (!this.problem_.testcases) {
@@ -90,40 +93,40 @@ export class ProblemHandler extends Logger {
         return compiler_id
     }
 
-    async writeFileWithStarterContent(fileUri: vscode.Uri) {
-        // Write file with starter content
-        try {
-            const handler = this.problem_.handler?.handler || ""
-            const source_modifier = this.problem_.handler?.source_modifier || ""
-            const compiler_id = this.getCompilerId()
-            const cmt = this.langInfo.commentPrefix
+    // async writeFileWithStarterContent(fileUri: vscode.Uri) {
+    //     // Write file with starter content
+    //     try {
+    //         const handler = this.problem_.handler?.handler || ""
+    //         const source_modifier = this.problem_.handler?.source_modifier || ""
+    //         const compiler_id = this.getCompilerId()
+    //         const cmt = this.langInfo.commentPrefix
 
-            const profileRes = JutgeService.getProfileSWR()
-            const profile = profileRes.data
-            const fileHeader = [
-                `${cmt} ${this.problem_.title}\n`,
-                `${cmt} https://jutge.org/problems/${this.problem_.problem_id}\n`,
-                `${cmt} ${this.problem_.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
-                `${cmt} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
-                `\n`,
-            ].join("")
+    //         const profileRes = JutgeService.getProfileSWR()
+    //         const profile = profileRes.data
+    //         const fileHeader = [
+    //             `${cmt} ${this.problem_.title}\n`,
+    //             `${cmt} https://jutge.org/problems/${this.problem_.problem_id}\n`,
+    //             `${cmt} ${this.problem_.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
+    //             `${cmt} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
+    //             `\n`,
+    //         ].join("")
 
-            const body = await this.__fileBody(this.langInfo, handler, source_modifier)
-            if (typeof body === "string") {
-                this.log.info(`Wrote string to ${fileUri.fsPath}`)
-                fs.writeFileSync(fileUri.fsPath, fileHeader + body)
-            } else {
-                this.log.info(`Wrote Uint8Array to ${fileUri.fsPath}`)
-                fs.writeFileSync(fileUri.fsPath, body)
-            }
-            //
-        } catch (error) {
-            vscode.window.showErrorMessage(
-                `Failed to create file in ${fileUri.fsPath}: ${error}`
-            )
-            throw error
-        }
-    }
+    //         const body = await this.__fileBody(this.langInfo, handler, source_modifier)
+    //         if (typeof body === "string") {
+    //             this.log.info(`Wrote string to ${fileUri.fsPath}`)
+    //             fs.writeFileSync(fileUri.fsPath, fileHeader + body)
+    //         } else {
+    //             this.log.info(`Wrote Uint8Array to ${fileUri.fsPath}`)
+    //             fs.writeFileSync(fileUri.fsPath, body)
+    //         }
+    //         //
+    //     } catch (error) {
+    //         vscode.window.showErrorMessage(
+    //             `Failed to create file in ${fileUri.fsPath}: ${error}`
+    //         )
+    //         throw error
+    //     }
+    // }
 
     async getProglangFromProblem(): Promise<Proglang | null> {
         const compiler_id = this.getCompilerId()
@@ -247,13 +250,39 @@ export class ProblemHandler extends Logger {
             this.log.debug(`Running testcase ${index}`)
 
             const { problem_nm } = this.problem_
-            this.__sendMessage(problem_nm, index, TestcaseStatus.RUNNING)
-            const { status, output } = await this.__run(testcase, filePath)
-            this.__sendMessage(problem_nm, index, status, output)
+            this.__sendUpdate(problem_nm, index, TestcaseStatus.RUNNING)
+
+            const { status, output } = await this.__runExpecting(testcase, filePath)
+            this.__sendUpdate(problem_nm, index, status, output)
 
             return status === TestcaseStatus.PASSED
             //
         } catch (e: any) {
+            this.log.error(e)
+            if (e instanceof Error) {
+                vscode.window.showErrorMessage(e.message)
+            }
+            return false
+        }
+    }
+
+    async runCustomTestcaseByIndex(index: number): Promise<boolean> {
+        try {
+            const filePath = await this.__getEditorFilepath()
+            this.log.debug(`Running testcase on file ${filePath}`)
+
+            const testcase = await this.__getCustomTestcase(index)
+            this.log.debug(`Running custom testcase ${index}`)
+
+            const { problem_nm } = this.problem_
+            this.__sendUpdateCustom(problem_nm, index, TestcaseStatus.RUNNING)
+
+            const output = await this.__run(testcase, filePath)
+            this.__sendUpdateCustom(problem_nm, index, TestcaseStatus.PASSED, output)
+
+            return true
+            //
+        } catch (e: unknown) {
             this.log.error(e)
             if (e instanceof Error) {
                 vscode.window.showErrorMessage(e.message)
@@ -291,7 +320,10 @@ export class ProblemHandler extends Logger {
         await SubmissionService.submitProblem(this.problem_, editor.document.uri.fsPath)
     }
 
-    async __run(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {
+    async __runExpecting(
+        testcase: InputExpected,
+        filePath: string
+    ): Promise<TestcaseRun> {
         try {
             const proglang = proglangFromFilepath(filePath)
             const runner = proglangInfoGet(proglang).runner
@@ -313,17 +345,60 @@ export class ProblemHandler extends Logger {
         }
     }
 
+    async __run(input: string, filePath: string): Promise<string> {
+        const proglang = proglangFromFilepath(filePath)
+        const runner = proglangInfoGet(proglang).runner
+        const document = await this.__getDocument(filePath)
+
+        this.log.debug(`Executing code with ${runner.constructor.name}`)
+        const output = runner.run(filePath, input, document)
+        this.log.debug(`Code execution completed`)
+
+        return output
+    }
+
     async __sendMessage(
+        command: VSCodeToWebviewCommand,
         problemNm: string,
         testcaseId: number,
         status: TestcaseStatus,
         output: string | null = ""
     ) {
         const message = {
-            command: VSCodeToWebviewCommand.UPDATE_TESTCASE,
+            command,
             data: { testcaseId, status, output },
         }
         WebviewPanelRegistry.sendMessage(problemNm, message)
+    }
+
+    async __sendUpdate(
+        problemNm: string,
+        testcaseId: number,
+        status: TestcaseStatus,
+        output: string | null = ""
+    ) {
+        this.__sendMessage(
+            VSCodeToWebviewCommand.UPDATE_TESTCASE,
+            problemNm,
+            testcaseId,
+            status,
+            output
+        )
+    }
+
+    async __sendUpdateCustom(
+        problemNm: string,
+        testcaseId: number,
+        status: TestcaseStatus,
+        output: string | null = ""
+    ) {
+        this.__sendMessage(
+            VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE,
+            problemNm,
+            testcaseId,
+            status,
+            output
+        )
     }
 
     async __getEditorFilepath(): Promise<string> {
@@ -354,6 +429,20 @@ export class ProblemHandler extends Logger {
         return decodeTestcase(testcases[k])
     }
 
+    async __getCustomTestcase(index: number): Promise<string> {
+        const customTestcases = this.customTestcases_
+        if (customTestcases === null) {
+            throw new Error(`Internal Error: there are no custom testcases!`)
+        }
+        const k = index - 1
+        if (k < 0 || k >= customTestcases.length) {
+            throw new Error(
+                `Internal error: custom testcase index ${index} does not exist!`
+            )
+        }
+        return customTestcases[k].input
+    }
+
     async __getDocument(filePath: string): Promise<vscode.TextDocument> {
         const document = vscode.workspace.textDocuments.find(
             (doc) => doc.uri.fsPath === filePath
@@ -373,8 +462,11 @@ export class ProblemHandler extends Logger {
  * @param problem
  * @returns The problem handler
  */
-export const makeProblemHandler = async (problem: Problem) => {
-    const handler = new ProblemHandler(problem)
+export const makeProblemHandler = async (
+    problem: Problem,
+    customTestcases: CustomTestcase[] | null
+) => {
+    const handler = new ProblemHandler(problem, customTestcases)
     await handler.initProglang()
     return handler
 }

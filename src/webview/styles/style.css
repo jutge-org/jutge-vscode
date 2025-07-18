@@ -1,20 +1,14 @@
 * {
-    -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-    -khtml-user-select: none; /* Konqueror HTML */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* Internet Explorer/Edge */
-    user-select: none; /* Non-prefixed version, currently
-                                    supported by Chrome and Opera */
-    cursor: default !important;
     box-sizing: border-box;
 }
 
 :root {
     --monospace-color: hsl(27, 16%, 70%);
+    --custom-testcase-background: rgba(233, 229, 0, 0.05);
 }
 .vscode-light {
     --monospace-color: hsl(27, 16%, 30%);
+    --custom-testcase-background: rgba(31, 30, 0, 0.05);
 }
 
 body {
@@ -365,6 +359,10 @@ textarea {
                     }
                 }
             }
+        }
+
+        & .testcase.custom {
+            background: var(--custom-testcase-background);
         }
     }
 }

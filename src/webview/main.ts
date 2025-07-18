@@ -46,7 +46,10 @@ function onEvent(event: MessageEvent<any>) {
     // Save state whenever we receive updates
     switch (command) {
         case VSCodeToWebviewCommand.UPDATE_TESTCASE:
-            updateTestcase(data.testcaseId, data.status, data.output)
+            updateTestcase(data.testcaseId, data.status, data.output, "normal")
+            break
+        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE:
+            updateTestcase(data.testcaseId, data.status, data.output, "custom")
             break
         case VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS:
             updateSubmissionStatus(data.status)
@@ -95,6 +98,14 @@ function addOnClickEventListeners() {
             })
         })
     })
+    document.querySelectorAll('[id^="run-custom-testcase-"]').forEach((button) => {
+        button.addEventListener("click", () => {
+            postMessage(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE, {
+                testcaseId: parseInt(button.id.split("-").slice(-1)[0]),
+            })
+        })
+    })
+
     document.querySelectorAll(".clipboard").forEach((button) => {
         button.addEventListener("click", () => {
             const textElement = button.nextElementSibling as HTMLDivElement
@@ -153,8 +164,16 @@ function addOnClickEventListeners() {
     })
 }
 
-function updateTestcase(testcaseIndex: number, status: string, outputText: string) {
-    const testcaseId = `testcase-${testcaseIndex}`
+function updateTestcase(
+    testcaseIndex: number,
+    status: string,
+    outputText: string,
+    type: "custom" | "normal"
+) {
+    const testcaseId =
+        type === "normal"
+            ? `testcase-${testcaseIndex}`
+            : `custom-testcase-${testcaseIndex}`
     const testcase = document.getElementById(testcaseId) as HTMLDivElement
     const content = testcase.querySelector(`.content`) as HTMLDivElement
     const running = testcase.querySelector(".running-text") as HTMLSpanElement
@@ -188,7 +207,7 @@ function updateTestcase(testcaseIndex: number, status: string, outputText: strin
         case "passed":
             setTestcaseAppearance("Passed", "green")
             setOutputText(outputText)
-            content.style.display = "none"
+            content.style.display = type === "normal" ? "none" : "flex"
             passedTestcases.set(testcaseId, true)
             break
 
