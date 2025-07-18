@@ -1,10 +1,11 @@
 import * as fs from "fs"
-import { dirname } from "path"
+import { dirname, extname } from "path"
 import * as vscode from "vscode"
 import { Testcase } from "./jutge_api_client"
 import { Problem } from "./types"
 import {
     Proglang,
+    getProglangExtensions,
     proglangFromCompiler,
     proglangInfoGet,
 } from "./services/runners/languages"
@@ -164,10 +165,17 @@ export async function findCodeFilenameForProblem(
         return null
     }
 
+    const proglangExtensions = getProglangExtensions()
+
     // Find files that match
     const candidates: vscode.Uri[] = []
     for (let ent of await readdir(workspace.uri.fsPath, { withFileTypes: true })) {
-        if (ent.isFile() && ent.name.startsWith(problemId)) {
+        const extension = extname(ent.name)
+        if (
+            ent.isFile() &&
+            ent.name.startsWith(problemId) &&
+            proglangExtensions.includes(extension)
+        ) {
             candidates.push(vscode.Uri.joinPath(workspace.uri, ent.name))
         }
     }

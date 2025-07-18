@@ -49,6 +49,14 @@ const __languages: Record<Proglang, LanguageInfo> = {
     },
 }
 
+export function getProglangExtensions() {
+    const extensions: string[] = []
+    for (const info of Object.values(__languages)) {
+        extensions.push(...info.extensions)
+    }
+    return extensions
+}
+
 export function proglangFindIf(
     func: (info: LanguageInfo) => boolean,
     errorMsg: string
