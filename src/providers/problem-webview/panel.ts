@@ -100,7 +100,7 @@ export class ProblemWebviewPanel extends Logger {
                 return
 
             case WebviewToVSCodeCommand.NEW_FILE:
-                await this.handler.createStarterCode()
+                await this.handler.createNewFile()
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
                 return
 

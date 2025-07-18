@@ -127,7 +127,7 @@ export class ProblemHandler extends Logger {
         )
     }
 
-    async createStarterCode(): Promise<void> {
+    async createNewFile(): Promise<void> {
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {
             return
