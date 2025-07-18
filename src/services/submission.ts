@@ -14,10 +14,6 @@ export type Veredict = {
     status: SubmissionStatus
 }
 
-const info_ = (msg: string) => {
-    console.log("[SubmissionService]:", msg)
-}
-
 export class SubmissionService extends StaticLogger {
     private static MONITOR_INTERVAL_MS = 5000
 
@@ -91,7 +87,7 @@ export class SubmissionService extends StaticLogger {
 
                     this._showVerdictNotification(problem, submission_id, verdict)
 
-                    info_(
+                    this.log.info(
                         `Emitting onDidReceiveVeredict (${problem.problem_nm}, ${verdict})`
                     )
                     this.emitter_.fire({

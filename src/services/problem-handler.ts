@@ -24,8 +24,6 @@ import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
 import { FileService } from "./file"
 
-const info_ = (msg: unknown) => console.info(`[ProblemHandler] ${msg}`)
-
 export class ProblemHandler extends Logger {
     problem_: Problem
     proglang_: Proglang | undefined
@@ -156,7 +154,8 @@ export class ProblemHandler extends Logger {
     }
 
     async addNewTestcase(): Promise<void> {
-        info_(`addNewTestcase`)
+        this.log.info(`addNewTestcase`)
+
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {
             return

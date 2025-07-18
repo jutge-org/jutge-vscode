@@ -9,6 +9,7 @@ import * as j from "@/jutge_api_client"
 import * as fs from "fs"
 import * as vscode from "vscode"
 import deepEqual from "deep-equal"
+import { Logger, StaticLogger } from "@/utils"
 
 const jutgeClient = new j.JutgeApiClient()
 jutgeClient.useCache = false
@@ -25,26 +26,22 @@ type AskPasswordParams = {
     prompt: string
 }
 
-const error_ = (msg: unknown) => console.error(`[JutgeService] ${msg}`)
-const info_ = (msg: unknown) => console.info(`[JutgeService] ${msg}`)
-const debug_ = (msg: unknown) => console.debug(`[JutgeService] ${msg}`)
-
-export class JutgeService {
+export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
     static examMode_: boolean = false
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
-        info_("Initializing...")
+        this.log.info("Initializing...")
         JutgeService.context_ = context
 
         const token = await JutgeService.getTokenAtActivation()
         if (token) {
-            debug_("Token found during activation")
+            this.log.debug("Token found during activation")
             await JutgeService.setToken(token)
         } else {
-            debug_("No valid token found during activation")
+            this.log.debug("No valid token found during activation")
         }
-        info_("Initialization complete")
+        this.log.info("Initialization complete")
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
@@ -123,7 +120,7 @@ export class JutgeService {
             return credentials.token
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
-            error_(`Error signing in: ${error}`)
+            this.log.error(`Error signing in: ${error}`)
             return
         }
     }
@@ -134,7 +131,7 @@ export class JutgeService {
             return exams.map((e) => e.exam_key)
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Could not get exams.")
-            error_(`Could not get exams: ${error}`)
+            this.log.error(`Could not get exams: ${error}`)
             return
         }
     }
@@ -199,7 +196,7 @@ export class JutgeService {
             }
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
-            error_(`JutgeService: Error signing in: ${error}`)
+            this.log.error(`JutgeService: Error signing in: ${error}`)
             jutgeClient.headers = oldHeaders
             return
         }
@@ -225,7 +222,7 @@ export class JutgeService {
         for (const source of tokenSources) {
             const token = await source.fn
             if (token && (await JutgeService.isTokenValid(token))) {
-                info_(`Using token from ${source.id}`)
+                this.log.info(`Using token from ${source.id}`)
                 return token
             }
         }
@@ -310,19 +307,19 @@ export class JutgeService {
         }
 
         const _revalidate = async () => {
-            info_(`Revalidating '${funcCallId}'...`)
+            this.log.info(`Revalidating '${funcCallId}'...`)
             try {
                 const newData: T = await getData()
                 // Don't call update or save if data is identical
                 if (!deepEqual(result.data, newData)) {
-                    info_(`Revalidated '${funcCallId}': update!`)
+                    this.log.info(`Revalidated '${funcCallId}': update!`)
                     this.context_.globalState.update(dbkey, newData)
                     result.onUpdate(newData)
                 } else {
-                    info_(`Revalidated '${funcCallId}': no changes.`)
+                    this.log.info(`Revalidated '${funcCallId}': no changes.`)
                 }
             } catch (e) {
-                info_(`Error getting data: ${e}`)
+                this.log.info(`Error getting data: ${e}`)
                 result.onUpdate(null)
             }
         }
@@ -376,7 +373,7 @@ export class JutgeService {
                     jutgeClient.student.lists.getAll(),
                 ])
                 if (courseRes.status === "rejected" || listsRes.status === "rejected") {
-                    error_(`getCourse: Could not load course or all lists`)
+                    this.log.error(`getCourse: Could not load course or all lists`)
                     throw new Error(
                         `[JutgeService] getCourse: Could not load course or all lists`
                     )

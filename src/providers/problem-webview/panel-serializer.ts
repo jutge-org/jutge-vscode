@@ -19,6 +19,7 @@ export class ProblemWebviewPanelSerializer
             this.log.debug(
                 `Deserializing webview panel with state: ${JSON.stringify(state)}`
             )
+
             if (!state?.problemNm) {
                 this.log.warn("[WebviewPanel] No problem number found in state")
                 webviewPanel.dispose()
@@ -28,7 +29,9 @@ export class ProblemWebviewPanelSerializer
             const panel = new ProblemWebviewPanel(webviewPanel, this.context_, {
                 problemNm: state.problemNm,
             })
+
             WebviewPanelRegistry.register(state.problemNm, panel)
+            //
         } catch (error) {
             this.log.error("[WebviewPanel] Error deserializing webview panel: ", error)
             webviewPanel.dispose()

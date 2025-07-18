@@ -7,11 +7,12 @@ import { IconStatus, status2IconStatus } from "@/types"
 import { CourseItemType, CourseTreeElement } from "./element"
 import { CourseTreeItem } from "./item"
 import { Veredict } from "@/services/submission"
+import { Logger } from "@/utils"
 
 const error_ = (msg: unknown) => console.error(`[TreeViewProvider] ${msg}`)
-const info_ = (msg: unknown) => console.info(`[TreeViewProvider] ${msg}`)
 
 export class JutgeCourseTreeProvider
+    extends Logger
     implements vscode.TreeDataProvider<CourseTreeElement>
 {
     private emitter_: vscode.EventEmitter<CourseTreeElement | undefined | null | void> =
@@ -27,11 +28,11 @@ export class JutgeCourseTreeProvider
     private problemName2TreeItem: Map<string, CourseTreeItem> = new Map()
 
     getTreeItem(element: CourseTreeElement): CourseTreeItem {
-        info_(`getTreeItem for ${element.getId()} (${element.key})`)
+        this.log.info(`getTreeItem for ${element.getId()} (${element.key})`)
 
         const oldItem = this.problemName2TreeItem.get(element.key)
         if (oldItem?.element !== element) {
-            info_(`Old element != than new element`)
+            this.log.info(`Old element != than new element`)
         }
         const item = new CourseTreeItem(element)
 
@@ -83,12 +84,12 @@ export class JutgeCourseTreeProvider
     }
 
     public refreshProblem({ problem_nm, status }: Veredict) {
-        info_(`Refresh Problem ${problem_nm}`)
+        this.log.info(`Refresh Problem ${problem_nm}`)
         const item = this.problemName2TreeItem.get(problem_nm)
         if (!item) {
             console.error(`Received 'refresh' call for unknown problem '${problem_nm}'`)
         } else {
-            info_(`Status ${item.element.iconStatus} -> ${status}`)
+            this.log.info(`Status ${item.element.iconStatus} -> ${status}`)
             item.element.updateIconStatus(status)
             this.refresh_(item.element)
         }
