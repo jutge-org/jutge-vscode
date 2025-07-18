@@ -56,7 +56,7 @@ export function htmlForTestcaseCommon(
                 </div>
                 <div className="run-button">
                     ${Button({
-                        text: "",
+                        text: "Run",
                         id: props.runId,
                         title: "Run this testcase only",
                         icon: "run",
