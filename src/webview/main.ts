@@ -230,7 +230,7 @@ function updateTestcaseStatus(
             break
 
         case "passed":
-            setTestcaseAppearance("Passed", "green")
+            setTestcaseAppearance(type === "normal" ? "Passed" : "Done", "green")
             setOutputText(outputText)
             content.style.display = type === "normal" ? "none" : "flex"
             passedTestcases.set(testcaseId, true)
