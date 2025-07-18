@@ -1,11 +1,25 @@
 import * as vscode from "vscode"
 
 import { getWebviewOptions } from "@/extension"
-import * as utils from "@/utils"
 import { VSCodeToWebviewMessage } from "@/types"
+import { StaticLogger } from "@/loggers"
 import { ProblemWebviewPanel } from "./panel"
+import { JutgeService } from "@/services/jutge"
 
-export class WebviewPanelRegistry extends utils.StaticLogger {
+/**
+ * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
+ *
+ */
+export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
+    try {
+        await JutgeService.getAbstractProblemSWR(problemNm)
+        return true
+    } catch (error) {
+        return false
+    }
+}
+
+export class WebviewPanelRegistry extends StaticLogger {
     private static createdPanels_: Map<string, ProblemWebviewPanel> = new Map()
 
     /**
@@ -17,7 +31,7 @@ export class WebviewPanelRegistry extends utils.StaticLogger {
     static async createOrShow(context: vscode.ExtensionContext, problemNm: string) {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
 
-        if (!(await utils.isProblemValidAndAccessible(problemNm))) {
+        if (!(await isProblemValidAndAccessible(problemNm))) {
             this.log.warn(`Problem ${problemNm} not valid or accessible`)
             vscode.window.showErrorMessage("Problem not valid or accessible.")
             return

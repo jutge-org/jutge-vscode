@@ -1,17 +1,13 @@
-import fs, { existsSync, readFileSync } from "fs"
+import fs, { existsSync } from "fs"
 import * as vscode from "vscode"
 
-import { CustomTestcase, Problem } from "@/types"
-import { StaticLogger, sanitizeTitle } from "@/utils"
-import { JutgeService } from "./jutge"
-import {
-    chooseProgrammingLanguage,
-    proglangInfoGet,
-    LanguageInfo,
-    Proglang,
-} from "./runners/languages"
-import { readFile } from "fs/promises"
 import { getWorkspaceFolder } from "@/extension"
+import { CustomTestcase, Problem } from "@/types"
+import { sanitizeTitle } from "@/utils"
+import { readFile } from "fs/promises"
+import { JutgeService } from "./jutge"
+import { Proglang, chooseProgrammingLanguage, proglangInfoGet } from "./runners/languages"
+import { StaticLogger } from "@/loggers"
 
 type HeaderInfo = {
     problem_id: string
@@ -105,7 +101,6 @@ export class FileService extends StaticLogger {
                 const fileContent = await readFile(fsPath)
                 customTestcases.push({
                     input: fileContent.toString(),
-                    correct: "",
                     name: `Custom Testcase ${i}`,
                 })
             }

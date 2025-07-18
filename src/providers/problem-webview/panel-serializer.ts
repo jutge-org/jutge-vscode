@@ -1,4 +1,4 @@
-import { Logger } from "@/utils"
+import { Logger } from "@/loggers"
 import * as vscode from "vscode"
 import { ProblemWebviewPanel } from "./panel"
 import { WebviewPanelRegistry } from "./panel-registry"

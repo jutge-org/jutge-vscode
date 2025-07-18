@@ -1,10 +1,11 @@
+import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
 import { TerminalService } from "@/services/terminal"
-import { getWorkingDirectory, Logger } from "@/utils"
+import { getWorkingDirectory } from "@/utils"
 import * as childProcess from "child_process"
 import * as vscode from "vscode"
-import { LanguageRunner } from "../languages"
 import { handleRuntimeErrors } from "../errors"
+import { LanguageRunner } from "../languages"
 
 export class PythonRunner extends Logger implements LanguageRunner {
     run(codePath: string, input: string, document: vscode.TextDocument): string {

@@ -7,9 +7,7 @@ import { IconStatus, status2IconStatus } from "@/types"
 import { CourseItemType, CourseTreeElement } from "./element"
 import { CourseTreeItem } from "./item"
 import { Veredict } from "@/services/submission"
-import { Logger } from "@/utils"
-
-const error_ = (msg: unknown) => console.error(`[TreeViewProvider] ${msg}`)
+import { Logger } from "@/loggers"
 
 export class JutgeCourseTreeProvider
     extends Logger
@@ -143,7 +141,7 @@ export class JutgeCourseTreeProvider
             return items
             //
         } catch (error) {
-            error_(error)
+            this.log.error(error)
             vscode.window.showErrorMessage("Failed ot get exam problems")
             return []
         }
@@ -160,7 +158,7 @@ export class JutgeCourseTreeProvider
             }
             return [this.makeTreeElement("exam", "exam", exam.title, IconStatus.NONE)]
         } catch (error) {
-            error_(error)
+            this.log.error(error)
             vscode.window.showErrorMessage("Failed ot get exam")
             return []
         }

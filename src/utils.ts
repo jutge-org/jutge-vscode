@@ -1,5 +1,4 @@
 import * as fs from "fs"
-import { JutgeService } from "@/services/jutge"
 import { dirname } from "path"
 import * as vscode from "vscode"
 import { Testcase } from "./jutge_api_client"
@@ -19,19 +18,6 @@ export function getNonce() {
         text += possible.charAt(Math.floor(Math.random() * possible.length))
     }
     return text
-}
-
-/**
- * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
- *
- */
-export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
-    try {
-        await JutgeService.getAbstractProblemSWR(problemNm)
-        return true
-    } catch (error) {
-        return false
-    }
 }
 
 export async function chooseFromEditorList(
@@ -102,35 +88,6 @@ export function decodeTestcase(testcase: Testcase): { input: string; expected: s
     const input = Buffer.from(input_b64, "base64").toString("utf-8")
     const expected = Buffer.from(correct_b64, "base64").toString("utf-8")
     return { input, expected }
-}
-
-type LoggerKind = "debug" | "info" | "warn" | "error"
-const allKinds: LoggerKind[] = ["debug", "info", "warn", "error"]
-
-export class Logger {
-    get log() {
-        const _class = this.constructor.name
-
-        const logger =
-            (kind: LoggerKind) =>
-            (...msgs: any[]) =>
-                console[kind](`[${_class}]:`, ...msgs)
-
-        return Object.fromEntries(allKinds.map((kind) => [kind, logger(kind)]))
-    }
-}
-
-export class StaticLogger {
-    static get log() {
-        const _class = this.name
-
-        const logger =
-            (kind: LoggerKind) =>
-            (...msgs: any[]) =>
-                console[kind](`[${_class}]:`, ...msgs)
-
-        return Object.fromEntries(allKinds.map((kind) => [kind, logger(kind)]))
-    }
 }
 
 export function fileExistsOrThrow(filePath: string) {

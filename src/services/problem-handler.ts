@@ -1,12 +1,13 @@
 import { getWorkspaceFolder } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
+import { Logger } from "@/loggers"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import {
-    proglangInfoGet,
     LanguageInfo,
     Proglang,
     proglangFromCompiler,
     proglangFromFilepath,
+    proglangInfoGet,
 } from "@/services/runners/languages"
 import {
     CustomTestcase,
@@ -16,13 +17,13 @@ import {
     TestcaseStatus,
     VSCodeToWebviewCommand,
 } from "@/types"
-import { chooseFromEditorList, decodeTestcase, Logger, sanitizeTitle } from "@/utils"
-import fs, { existsSync } from "fs"
+import { chooseFromEditorList, decodeTestcase, sanitizeTitle } from "@/utils"
+import { existsSync } from "fs"
 import { extname } from "path"
 import * as vscode from "vscode"
+import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
-import { FileService } from "./file"
 
 export class ProblemHandler extends Logger {
     problem_: Problem

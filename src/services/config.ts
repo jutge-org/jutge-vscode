@@ -1,5 +1,5 @@
 import { LanguageCode } from "@/types"
-import { StaticLogger } from "@/utils"
+import { StaticLogger } from "@/loggers"
 import { PythonExtension } from "@vscode/python-extension"
 import * as vscode from "vscode"
 

@@ -6,10 +6,10 @@
 */
 
 import * as j from "@/jutge_api_client"
+import { StaticLogger } from "@/loggers"
+import deepEqual from "deep-equal"
 import * as fs from "fs"
 import * as vscode from "vscode"
-import deepEqual from "deep-equal"
-import { Logger, StaticLogger } from "@/utils"
 
 const jutgeClient = new j.JutgeApiClient()
 jutgeClient.useCache = false

@@ -1,13 +1,14 @@
 import * as vscode from "vscode"
 
+import { StaticLogger } from "@/loggers"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
-import { StaticLogger, waitMilliseconds } from "@/utils"
+import { waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename } from "path"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
-import { proglangInfoGet, proglangFromFilepath } from "./runners/languages"
+import { proglangFromFilepath, proglangInfoGet } from "./runners/languages"
 
 export type Veredict = {
     problem_nm: string
