@@ -126,7 +126,7 @@ export class FileService extends StaticLogger {
                 const fileContent = await readFile(fsPath)
                 customTestcases.push({
                     input: fileContent.toString(),
-                    name: `Custom Testcase ${i}`,
+                    index: i,
                 })
             }
         }

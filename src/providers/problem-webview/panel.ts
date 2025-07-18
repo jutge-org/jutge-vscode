@@ -73,13 +73,9 @@ export class ProblemWebviewPanel extends Logger {
 
     public async updateCustomTestcases() {
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
-
-        const htmlTestcases = this.customTestcases.map((testcase, index) =>
-            htmlForCustomTestcase(testcase, index)
-        )
-        this.panel.webview.postMessage({
+        await this.panel.webview.postMessage({
             command: VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES,
-            data: { htmlTestcases },
+            data: { htmlTestcases: this.customTestcases.map(htmlForCustomTestcase) },
         })
     }
 
@@ -105,6 +101,7 @@ export class ProblemWebviewPanel extends Logger {
         await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
 
         await this.updateCustomTestcases()
+        this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {

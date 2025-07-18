@@ -100,15 +100,15 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     )
 }
 
-export function htmlForCustomTestcase(customTestcase: CustomTestcase, index: number) {
-    const { input } = customTestcase
+export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
+    const { input, index } = customTestcase
     const inputDisplayed = makeSpacesVisible(customTestcase.input)
 
     return htmlForTestcaseCommon(
         "custom",
         { actual: input, displayed: inputDisplayed },
         undefined,
-        index + 1
+        index
     )
 }
 

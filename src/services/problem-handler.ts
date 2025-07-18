@@ -219,7 +219,7 @@ export class ProblemHandler extends Logger {
     }
 
     async __sendMessage(command: VSCodeToWebviewCommand, problemNm: string, data: any) {
-        WebviewPanelRegistry.sendMessage(problemNm, { command, data })
+        await WebviewPanelRegistry.sendMessage(problemNm, { command, data })
     }
 
     async __sendUpdate(

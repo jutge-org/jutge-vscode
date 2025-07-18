@@ -99,10 +99,10 @@ export class WebviewPanelRegistry extends StaticLogger {
         this.createdPanels_.delete(problemNm)
     }
 
-    static sendMessage(problemNm: string, message: VSCodeToWebviewMessage) {
+    static async sendMessage(problemNm: string, message: VSCodeToWebviewMessage) {
         const panel = this.createdPanels_.get(problemNm)
         if (panel) {
-            panel.panel.webview.postMessage(message)
+            await panel.panel.webview.postMessage(message)
         } else {
             console.error(`Panel ${problemNm} not found.`)
         }

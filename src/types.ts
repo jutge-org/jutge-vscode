@@ -50,7 +50,7 @@ export type ProblemHandler = {
 }
 
 export type CustomTestcase = {
-    name: string
+    index: number
     input: string
 }
 

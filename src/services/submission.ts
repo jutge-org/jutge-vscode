@@ -56,7 +56,7 @@ export class SubmissionService extends StaticLogger {
                 this.log.debug(`Using compiler ID: ${compiler_id}`)
 
                 progress.report({ message: "Submitting..." })
-                this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
+                await this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
 
                 const nowDate = new Date().toLocaleDateString()
                 const nowTime = new Date().toLocaleTimeString()
@@ -86,7 +86,7 @@ export class SubmissionService extends StaticLogger {
                         progress
                     )
 
-                    this._showVerdictNotification(problem, submission_id, verdict)
+                    await this._showVerdictNotification(problem, submission_id, verdict)
 
                     this.log.info(
                         `Emitting onDidReceiveVeredict (${problem.problem_nm}, ${verdict})`
@@ -134,7 +134,7 @@ export class SubmissionService extends StaticLogger {
             times++
         }
 
-        this._sendStatusUpdate(problem_nm, verdict)
+        await this._sendStatusUpdate(problem_nm, verdict)
         return verdict
     }
 
@@ -154,8 +154,8 @@ export class SubmissionService extends StaticLogger {
         }
     }
 
-    private static _sendStatusUpdate(problemNm: string, status: SubmissionStatus) {
-        WebviewPanelRegistry.sendMessage(problemNm, {
+    private static async _sendStatusUpdate(problemNm: string, status: SubmissionStatus) {
+        await WebviewPanelRegistry.sendMessage(problemNm, {
             command: VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS,
             data: { status },
         })
