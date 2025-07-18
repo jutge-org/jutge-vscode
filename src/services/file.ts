@@ -55,10 +55,38 @@ export class FileService extends StaticLogger {
         }
     }
 
-    static makeFilename(problem: Problem, extension: string) {
-        const sanitizedTitle = sanitizeTitle(problem.title)
-        const defaultExtension = extension
-        return `${problem.problem_id}_${sanitizedTitle}${defaultExtension}`
+    static makeSolutionFilename(problem: Problem, defaultExtension: string) {
+        return `${problem.problem_id}_${sanitizeTitle(problem.title)}${defaultExtension}`
+    }
+
+    static makeTestcaseFilename({ problem_id, title }: Problem) {
+        return `${problem_id}_${sanitizeTitle(title)}.test1.inp`
+    }
+
+    static async createNewTestcaseFile(
+        problem: Problem
+    ): Promise<vscode.Uri | undefined> {
+        const workspace = getWorkspaceFolder()
+        if (!workspace) {
+            return
+        }
+
+        const filename = this.makeTestcaseFilename(problem)
+
+        let fileContent = ""
+        if (problem.testcases) {
+            const testcase = problem.testcases[0]
+            fileContent = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
+        }
+
+        const uri = vscode.Uri.joinPath(workspace.uri, filename)
+        try {
+            fs.writeFileSync(uri.fsPath, fileContent, { flag: "w" })
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
+            throw error
+        }
+        return uri
     }
 
     static async createNewFileFor(problem: Problem): Promise<vscode.Uri | undefined> {
@@ -68,7 +96,7 @@ export class FileService extends StaticLogger {
         }
 
         const { commentPrefix, extensions } = proglangInfoGet(proglang)
-        const suggestedFilename = this.makeFilename(problem, extensions[0])
+        const suggestedFilename = this.makeSolutionFilename(problem, extensions[0])
 
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {

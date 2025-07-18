@@ -90,5 +90,6 @@ export enum WebviewToVSCodeCommand {
     SUBMIT_TO_JUTGE = "submit-to-jutge",
     RUN_ALL_TESTCASES = "run-all-testcases",
     RUN_TESTCASE = "run-testcase",
+    ADD_NEW_TESTCASE = "add-new-testcase",
     SHOW_DIFF = "show-diff",
 }

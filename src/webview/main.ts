@@ -81,6 +81,7 @@ function addOnClickEventListeners() {
         ["new-file", WebviewToVSCodeCommand.NEW_FILE],
         ["submit-to-jutge", WebviewToVSCodeCommand.SUBMIT_TO_JUTGE],
         ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
+        ["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE],
     ]
     for (const [id, command] of id2command) {
         getButton(id)?.addEventListener("click", () => {

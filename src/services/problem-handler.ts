@@ -23,6 +23,8 @@ import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
 import { FileService } from "./file"
 
+const info_ = (msg: unknown) => console.info(`[ProblemHandler] ${msg}`)
+
 export class ProblemHandler extends Logger {
     problem_: Problem
     proglang_: Proglang | undefined
@@ -147,7 +149,20 @@ export class ProblemHandler extends Logger {
             throw new Error(`File ${suggestedFileName} does not exist in workspace!`)
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
+        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+    }
 
+    async addNewTestcase(): Promise<void> {
+        info_(`addNewTestcase`)
+        const workspaceFolder = getWorkspaceFolder()
+        if (!workspaceFolder) {
+            return
+        }
+        const fileUri = await FileService.createNewTestcaseFile(this.problem_)
+        if (!fileUri) {
+            return
+        }
+        const document = await vscode.workspace.openTextDocument(fileUri)
         vscode.window.showTextDocument(document, vscode.ViewColumn.One)
     }
 

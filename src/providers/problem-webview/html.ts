@@ -106,6 +106,12 @@ export function htmlForAllTestcases(
                 <h2 class="flex-grow-1">Testcases</h2>
                 <div class="buttons">
                     ${Button({
+                        id: "add-new-testcase",
+                        text: "Add new testcase",
+                        title: "Add new testcase",
+                        icon: "add",
+                    })}
+                    ${Button({
                         id: "run-all-testcases",
                         text: "Run All Testcases",
                         title: "Run all testscases",

@@ -89,6 +89,10 @@ export class ProblemWebviewPanel {
                 this.panel.reveal(vscode.ViewColumn.Beside, true)
                 return
 
+            case WebviewToVSCodeCommand.ADD_NEW_TESTCASE:
+                await this.handler.addNewTestcase()
+                return
+
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
                 return this.handler.runTestcaseAll()
 
