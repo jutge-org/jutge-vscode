@@ -82,6 +82,67 @@ function getButton(id: string): HTMLButtonElement | null {
     return button as HTMLButtonElement
 }
 
+function runCustomTestcase() {
+    postMessage(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE, {
+        testcaseId: parseInt(this.id.split("-").slice(-1)[0]),
+    })
+}
+
+function copyToClipboard() {
+    const textElement = this.nextElementSibling as HTMLDivElement
+    const preElement = textElement.querySelector("pre")
+    assertNotNull(preElement, `Pre element not found!`)
+
+    // Store the original text in a data attribute when generating the HTML
+    const originalText =
+        preElement.getAttribute("data-original-text") || preElement.textContent || ""
+
+    navigator.clipboard.writeText(originalText)
+
+    // Optional: Show a temporary "Copied!" feedback
+    const originalButtonText = this.textContent
+    this.textContent = "Copied!"
+
+    setTimeout(() => {
+        this.textContent = originalButtonText
+    }, 1000)
+}
+
+function minimize() {
+    const icon = this.querySelector(".icon") as HTMLSpanElement
+    const testcaseContent = this.parentElement?.nextElementSibling as HTMLElement
+    const isMinimized = testcaseContent.style.display === "none"
+    icon.innerHTML = isMinimized ? chevronDown() : chevronRight()
+    testcaseContent.style.display = isMinimized ? "flex" : "none"
+}
+
+function compareDiff() {
+    const testcaseId = parseInt(this.closest(".testcase")!.id.split("-")[1])
+
+    // Get the expected and received output texts
+    const testcase = document.getElementById(`testcase-${testcaseId}`)!
+    const expected = testcase.querySelector(".expected pre")!
+    const received = testcase.querySelector(".received pre")!
+
+    // Original text (without special chars visualization)
+    const expectedText =
+        expected.getAttribute("data-original-text") || expected.textContent || ""
+    const receivedText =
+        received.getAttribute("data-original-text") || received.textContent || ""
+
+    vscode.postMessage({
+        command: WebviewToVSCodeCommand.SHOW_DIFF,
+        data: {
+            testcaseId: testcaseId,
+            expected: expectedText,
+            received: receivedText,
+        },
+    })
+}
+
+const onClick = (fn: EventListenerOrEventListenerObject) => (element: Element) =>
+    element.addEventListener("click", fn)
+
 function addOnClickEventListeners() {
     let id2command: [string, WebviewToVSCodeCommand][] = [
         ["open-file", WebviewToVSCodeCommand.OPEN_FILE],
@@ -105,72 +166,13 @@ function addOnClickEventListeners() {
         })
     })
 
-    document.querySelectorAll('[id^="run-custom-testcase-"]').forEach((button) => {
-        button.addEventListener("click", () => {
-            postMessage(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE, {
-                testcaseId: parseInt(button.id.split("-").slice(-1)[0]),
-            })
-        })
-    })
+    document
+        .querySelectorAll('[id^="run-custom-testcase-"]')
+        .forEach(onClick(runCustomTestcase))
 
-    document.querySelectorAll(".clipboard").forEach((button) => {
-        button.addEventListener("click", () => {
-            const textElement = button.nextElementSibling as HTMLDivElement
-            const preElement = textElement.querySelector("pre")
-            assertNotNull(preElement, `Pre element not found!`)
-
-            // Store the original text in a data attribute when generating the HTML
-            const originalText =
-                preElement.getAttribute("data-original-text") ||
-                preElement.textContent ||
-                ""
-            navigator.clipboard.writeText(originalText)
-
-            // Optional: Show a temporary "Copied!" feedback
-            const originalButtonText = button.textContent
-            button.textContent = "Copied!"
-            setTimeout(() => {
-                button.textContent = originalButtonText
-            }, 1000)
-        })
-    })
-
-    document.querySelectorAll(".toggle-minimize").forEach((button) => {
-        button.addEventListener("click", () => {
-            const icon = button.querySelector(".icon") as HTMLSpanElement
-            const testcaseContent = button.parentElement
-                ?.nextElementSibling as HTMLElement
-            const isMinimized = testcaseContent.style.display === "none"
-            icon.innerHTML = isMinimized ? chevronDown() : chevronRight()
-            testcaseContent.style.display = isMinimized ? "flex" : "none"
-        })
-    })
-
-    document.querySelectorAll(".compare-diff").forEach((button) => {
-        button.addEventListener("click", () => {
-            const testcaseId = parseInt(button.closest(".testcase")!.id.split("-")[1])
-
-            // Get the expected and received output texts
-            const testcase = document.getElementById(`testcase-${testcaseId}`)!
-            const expected = testcase.querySelector(".expected pre")!
-            const received = testcase.querySelector(".received pre")!
-
-            // Original text (without special chars visualization)
-            const expectedText =
-                expected.getAttribute("data-original-text") || expected.textContent || ""
-            const receivedText =
-                received.getAttribute("data-original-text") || received.textContent || ""
-
-            vscode.postMessage({
-                command: WebviewToVSCodeCommand.SHOW_DIFF,
-                data: {
-                    testcaseId: testcaseId,
-                    expected: expectedText,
-                    received: receivedText,
-                },
-            })
-        })
-    })
+    document.querySelectorAll(".clipboard").forEach(onClick(copyToClipboard))
+    document.querySelectorAll(".toggle-minimize").forEach(onClick(minimize))
+    document.querySelectorAll(".compare-diff").forEach(onClick(compareDiff))
 }
 
 function updateCustomTestcases(customTestcases: string[] /* html for testcases */) {
@@ -179,6 +181,12 @@ function updateCustomTestcases(customTestcases: string[] /* html for testcases *
         throw new Error(`Div with id "custom-testcases" not found`)
     }
     customTestcasesDiv.innerHTML = customTestcases.join("\n")
+
+    customTestcasesDiv
+        .querySelectorAll('[id^="run-custom-testcase-"]')
+        .forEach(onClick(runCustomTestcase))
+
+    customTestcasesDiv.querySelectorAll(".toggle-minimize").forEach(onClick(minimize))
 }
 
 function updateTestcaseStatus(
