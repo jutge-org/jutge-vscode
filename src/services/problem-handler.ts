@@ -2,7 +2,7 @@ import { getWorkspaceFolder } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import {
-    infoForProglang,
+    proglangInfoGet,
     LanguageInfo,
     Proglang,
     proglangFromCompiler,
@@ -21,6 +21,7 @@ import { extname } from "path"
 import * as vscode from "vscode"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
+import { FileService } from "./file"
 
 export class ProblemHandler extends Logger {
     problem_: Problem
@@ -42,7 +43,7 @@ export class ProblemHandler extends Logger {
 
     async initProglang() {
         this.proglang_ = (await this.getProglangFromProblem()) || Proglang.CPP
-        this.langInfo_ = infoForProglang(this.proglang_)
+        this.langInfo_ = proglangInfoGet(this.proglang_)
     }
 
     get langInfo() {
@@ -151,27 +152,14 @@ export class ProblemHandler extends Logger {
     }
 
     async createStarterCode(): Promise<void> {
-        console.log("createStarterCode", this.problem_.problem_id)
-
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {
             return
         }
-        const suggestedFileName = await this.defaultFilenameForProblem()
-
-        // Ask the user where to save the file
-        const fileUri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFileName),
-            filters: { "All files": ["*"] },
-            saveLabel: "Create",
-            title: `Create new file for ${this.problem_.title}`,
-        })
+        const fileUri = await FileService.createNewFileFor(this.problem_)
         if (!fileUri) {
-            return // user cancelled
+            return
         }
-
-        await this.writeFileWithStarterContent(fileUri)
-
         const document = await vscode.workspace.openTextDocument(fileUri)
         await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
     }
@@ -291,7 +279,7 @@ export class ProblemHandler extends Logger {
     async __run(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {
         try {
             const proglang = proglangFromFilepath(filePath)
-            const runner = infoForProglang(proglang).runner
+            const runner = proglangInfoGet(proglang).runner
             const document = await this.__getDocument(filePath)
 
             this.log.debug(`Executing code with ${runner.constructor.name}`)

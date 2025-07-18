@@ -79,7 +79,7 @@ export function proglangFromFilepath(filePath: string): Proglang {
     return proglangFromExtension(extname(basename(filePath)))
 }
 
-export function infoForProglang(proglang: Proglang): LanguageInfo {
+export function proglangInfoGet(proglang: Proglang): LanguageInfo {
     for (const [lang, info] of Object.entries(__languages)) {
         if (lang === proglang) {
             return info

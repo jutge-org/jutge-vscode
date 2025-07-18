@@ -7,7 +7,7 @@ import { readFile } from "fs/promises"
 import { basename } from "path"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
-import { infoForProglang, proglangFromFilepath } from "./runners/languages"
+import { proglangInfoGet, proglangFromFilepath } from "./runners/languages"
 
 export type Veredict = {
     problem_nm: string
@@ -52,7 +52,7 @@ export class SubmissionService extends StaticLogger {
                 )
 
                 const proglang = proglangFromFilepath(filePath)
-                const langInfo = infoForProglang(proglang)
+                const langInfo = proglangInfoGet(proglang)
 
                 const header = await FileService.parseFileHeader(filePath)
                 let compiler_id = header.compiler_id || langInfo.compilers[0]

@@ -4,8 +4,14 @@ import * as vscode from "vscode"
 import { Problem } from "@/types"
 import { StaticLogger, sanitizeTitle } from "@/utils"
 import { JutgeService } from "./jutge"
-import { chooseProgrammingLanguage, infoForProglang, Proglang } from "./runners/languages"
+import {
+    chooseProgrammingLanguage,
+    proglangInfoGet,
+    LanguageInfo,
+    Proglang,
+} from "./runners/languages"
 import { readFile } from "fs/promises"
+import { getWorkspaceFolder } from "@/extension"
 
 type HeaderInfo = {
     problem_id: string
@@ -17,44 +23,13 @@ type HeaderInfo = {
 }
 
 export class FileService extends StaticLogger {
-    static async createNewFileFor(problem: Problem): Promise<vscode.Uri | undefined> {
-        const proglang = await chooseProgrammingLanguage(problem.problem_nm)
-        if (!proglang) {
-            return
-        }
-
-        const langInfo = infoForProglang(proglang)
-        const sanitizedTitle = sanitizeTitle(problem.title)
-        const defaultExtension = langInfo.extensions[0]
-
-        const suggestedFileName = `${problem.problem_id}_${sanitizedTitle}.${defaultExtension}`
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-        if (!workspaceFolder) {
-            vscode.window.showErrorMessage("No workspace folder open.")
-            return
-        }
-
-        const uri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFileName),
-            filters: {
-                "All files": ["*"],
-            },
-            saveLabel: "Create",
-            title: `Create new file for ${problem.title}`,
-        })
-        if (!uri) {
-            return
-        }
-
-        // TODO: If extension is changed by user in the save dialog, update fileLang?
-        const comment = langInfo.commentPrefix
-
-        const profileRes = JutgeService.getProfileSWR()
-        const profile = profileRes.data
+    static makeHeader(comment: string, problem: Problem) {
+        const { data: profile } = JutgeService.getProfileSWR()
 
         const handler = problem.handler?.handler || ""
         const source_modifier = problem.handler?.source_modifier || ""
         const compilers = problem.handler?.compilers
+
         let compiler_id = ""
         if (Array.isArray(compilers)) {
             compiler_id = compilers[0]
@@ -62,21 +37,60 @@ export class FileService extends StaticLogger {
             compiler_id = compilers
         }
 
-        const fileHeader = [
+        return [
             `${comment} ${problem.title}\n`,
             `${comment} https://jutge.org/problems/${problem.problem_id}\n`,
             `${comment} ${problem.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
             `${comment} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
             `\n`,
         ].join("")
+    }
 
-        let body = ""
-        if (proglang === Proglang.CPP) {
-            body = `#include <iostream>\nusing namespace std;\n\nint main() {\n\n}\n`
+    static makeBody(proglang: Proglang) {
+        switch (proglang) {
+            case Proglang.CPP:
+                return `#include <iostream>\nusing namespace std;\n\nint main() {\n\n}\n`
+            default:
+                return ``
+        }
+    }
+
+    static makeFilename(problem: Problem, extension: string) {
+        const sanitizedTitle = sanitizeTitle(problem.title)
+        const defaultExtension = extension
+        return `${problem.problem_id}_${sanitizedTitle}${defaultExtension}`
+    }
+
+    static async createNewFileFor(problem: Problem): Promise<vscode.Uri | undefined> {
+        const proglang = await chooseProgrammingLanguage(problem.problem_nm)
+        if (!proglang) {
+            return
         }
 
+        const { commentPrefix, extensions } = proglangInfoGet(proglang)
+        const suggestedFilename = this.makeFilename(problem, extensions[0])
+
+        const workspaceFolder = getWorkspaceFolder()
+        if (!workspaceFolder) {
+            return
+        }
+
+        const uri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFilename),
+            filters: { "All files": ["*"] },
+            saveLabel: "Create",
+            title: `Create new file for ${problem.title}`,
+        })
+        if (!uri) {
+            return
+        }
+
+        const fileHeader = this.makeHeader(commentPrefix, problem)
+        const fileBody = this.makeBody(proglang)
+        const fileContent = fileHeader + fileBody
+
         try {
-            fs.writeFileSync(uri.fsPath, fileHeader + body, { flag: "w" })
+            fs.writeFileSync(uri.fsPath, fileContent, { flag: "w" })
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
             throw error
