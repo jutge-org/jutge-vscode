@@ -4,6 +4,10 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## Version 0.0.16
+
+- Fixed a regression where upon pressing "+ New File", the language of the file was not asked.
+
 ## Version 0.0.15
 
 - Fixed the update mechanism for the problem icon (the traffic lights icon), which triggers when the veredict is given as a notification. Before 0.0.15, it didn't update properly (and internally it used a convoluted mechanism, now it is much simpler).
