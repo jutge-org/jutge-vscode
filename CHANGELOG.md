@@ -6,9 +6,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## Version 0.0.16
 
-- Fixed a regression where upon pressing "+ New File", the language of the file was not asked.
+- Added custom testcases. These are stored as files and are also updated whenever files change, are created or deleted. (Some subtle bugs remain, but the feature is quite usable.)
 
-- Improved the traffic lights icons even further.
+- Improved the traffic lights icons further.
+
+- Fixed a regression where upon pressing "+ New File", the language of the file was not asked.
 
 - Fixed a bug where the mouse cursor in the problem statement was not changing to reveal interactive elements (buttons, etc.)
 
