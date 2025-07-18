@@ -59,6 +59,30 @@ export class FileService extends StaticLogger {
         return `${problem_id}_${sanitizeTitle(title)}.test-${index}.inp`
     }
 
+    static findFirstUnusedCustomTestcase(problem: Problem): vscode.Uri | null {
+        const workspace = getWorkspaceFolder()
+        if (!workspace) {
+            return null
+        }
+
+        // Find out the first testcase which is not used yet
+        let index = 1
+        while (index <= 100) {
+            const filename = this.makeTestcaseFilename(problem, index)
+            const uri = vscode.Uri.joinPath(workspace.uri, filename)
+            if (!existsSync(uri.fsPath)) {
+                break
+            }
+            index++
+        }
+        if (index > 100) {
+            return null
+        }
+
+        const filename = this.makeTestcaseFilename(problem, index)
+        return vscode.Uri.joinPath(workspace.uri, filename)
+    }
+
     static async createNewTestcaseFile(
         problem: Problem
     ): Promise<vscode.Uri | undefined> {
@@ -66,23 +90,22 @@ export class FileService extends StaticLogger {
         if (!workspace) {
             return
         }
-
-        const filename = this.makeTestcaseFilename(problem)
-
+        let fileUri = this.findFirstUnusedCustomTestcase(problem)
+        if (!fileUri) {
+            return
+        }
         let fileContent = ""
         if (problem.testcases) {
             const testcase = problem.testcases[0]
             fileContent = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
         }
-
-        const uri = vscode.Uri.joinPath(workspace.uri, filename)
         try {
-            fs.writeFileSync(uri.fsPath, fileContent, { flag: "w" })
+            fs.writeFileSync(fileUri.fsPath, fileContent, { flag: "w" })
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
+            vscode.window.showErrorMessage(`Failed to create file in ${fileUri.fsPath} `)
             throw error
         }
-        return uri
+        return fileUri
     }
 
     static async loadCustomTestcases(problem: Problem): Promise<CustomTestcase[]> {
