@@ -1,3 +1,4 @@
+import { getWorkspaceFolder } from "@/extension"
 import { AbstractProblem } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
@@ -72,6 +73,7 @@ export class ProblemWebviewPanel extends Logger {
 
     public async updateCustomTestcases() {
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
+
         const htmlTestcases = this.customTestcases.map((testcase, index) =>
             htmlForCustomTestcase(testcase, index)
         )
@@ -86,6 +88,23 @@ export class ProblemWebviewPanel extends Logger {
             throw new Error(`Handler is null!`)
         }
         return this.problemHandler
+    }
+
+    async addNewTestcase() {
+        this.log.info(`Adding new test case`)
+
+        const workspaceFolder = getWorkspaceFolder()
+        if (!workspaceFolder) {
+            return
+        }
+        const fileUri = await FileService.createNewTestcaseFile(this.problem)
+        if (!fileUri) {
+            return
+        }
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+
+        await this.updateCustomTestcases()
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
@@ -105,7 +124,7 @@ export class ProblemWebviewPanel extends Logger {
                 return
 
             case WebviewToVSCodeCommand.ADD_NEW_TESTCASE:
-                await this.handler.addNewTestcase()
+                await this.addNewTestcase()
                 return
 
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
@@ -221,10 +240,7 @@ export class ProblemWebviewPanel extends Logger {
 
                     // Once everything is loaded, we create a problem handler
                     // which will take care of all operations
-                    this.problemHandler = new ProblemHandler(
-                        this.problem,
-                        this.customTestcases
-                    )
+                    this.problemHandler = new ProblemHandler(this, this.problem)
                     //
                 } catch (e) {
                     console.error(e)

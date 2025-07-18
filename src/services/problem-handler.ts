@@ -1,17 +1,15 @@
 import { getWorkspaceFolder } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
-import { htmlForCustomTestcase } from "@/providers/problem-webview/html"
+import { ProblemWebviewPanel } from "@/providers/problem-webview/panel"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import {
     LanguageInfo,
     Proglang,
-    proglangFromCompiler,
     proglangFromFilepath,
     proglangInfoGet,
 } from "@/services/runners/languages"
 import {
-    CustomTestcase,
     InputExpected,
     Problem,
     TestcaseRun,
@@ -25,25 +23,23 @@ import {
     fileUriExists,
     getProglangFromProblem,
     openFileUriColumnOne,
-    sanitizeTitle,
 } from "@/utils"
-import { readFile } from "fs/promises"
 import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
 
 export class ProblemHandler extends Logger {
+    panel_: ProblemWebviewPanel
     problem_: Problem
     proglang_: Proglang | undefined
     langInfo_: LanguageInfo | undefined
-    customTestcases_: CustomTestcase[] | null
 
-    constructor(problem: Problem, customTestcases: CustomTestcase[] | null) {
+    constructor(panel: ProblemWebviewPanel, problem: Problem) {
         super()
 
+        this.panel_ = panel
         this.problem_ = problem
-        this.customTestcases_ = customTestcases
 
         // Launch loading of testcases already
         if (!this.problem_.testcases) {
@@ -91,40 +87,6 @@ export class ProblemHandler extends Logger {
             throw new Error(`File ${suggestedFileName} does not exist in workspace!`)
         }
         openFileUriColumnOne(fileUri)
-    }
-
-    async addNewTestcase(): Promise<void> {
-        this.log.info(`addNewTestcase`)
-
-        const workspaceFolder = getWorkspaceFolder()
-        if (!workspaceFolder) {
-            return
-        }
-        const fileUri = await FileService.createNewTestcaseFile(this.problem_)
-        if (!fileUri) {
-            return
-        }
-        const document = await vscode.workspace.openTextDocument(fileUri)
-        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
-
-        const fileContent = (await readFile(fileUri.fsPath)).toString()
-        if (this.customTestcases_ === null) {
-            this.customTestcases_ = []
-        }
-        this.customTestcases_.push({
-            input: fileContent,
-            name: `Custom Testcase ${this.customTestcases_.length}`,
-        })
-
-        const htmlTestcases = this.customTestcases_.map((testcase, index) =>
-            htmlForCustomTestcase(testcase, index)
-        )
-
-        this.__sendMessage(
-            VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES,
-            this.problem_.problem_nm,
-            { htmlTestcases }
-        )
     }
 
     async createNewFile(): Promise<void> {
@@ -315,7 +277,7 @@ export class ProblemHandler extends Logger {
     }
 
     async __getCustomTestcase(index: number): Promise<string> {
-        const customTestcases = this.customTestcases_
+        const { customTestcases } = this.panel_
         if (customTestcases === null) {
             throw new Error(`Internal Error: there are no custom testcases!`)
         }
