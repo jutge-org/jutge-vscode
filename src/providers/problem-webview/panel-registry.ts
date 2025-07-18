@@ -30,25 +30,27 @@ export class WebviewPanelRegistry extends StaticLogger {
      * @param context The context of the extension.
      * @param problemNm The problem number.
      */
-    static async createOrShow(context: vscode.ExtensionContext, problemNm: string) {
+    static async createOrReveal(
+        context: vscode.ExtensionContext,
+        problemNm: string
+    ): Promise<ProblemWebviewPanel | null> {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
 
         if (!(await isProblemValidAndAccessible(problemNm))) {
             this.log.warn(`Problem ${problemNm} not valid or accessible`)
             vscode.window.showErrorMessage("Problem not valid or accessible.")
-            return
+            return null
         }
 
-        // Get an existing panel if it exists
-        const [existingPanel] = [...this.createdPanels_.values()]
-        const viewColumn = existingPanel?.panel.viewColumn || vscode.ViewColumn.Beside
+        // NOTE(pauek): Always show problem panels on column two!
+        const viewColumn = vscode.ViewColumn.Beside
 
         // If we already have a panel, show it.
         if (this.createdPanels_.has(problemNm)) {
             this.log.debug(`Reusing existing panel for ${problemNm}`)
             let panel = this.createdPanels_.get(problemNm) as ProblemWebviewPanel
             panel.panel.reveal(viewColumn, true)
-            return this.createdPanels_.get(problemNm)
+            return panel
         }
 
         this.log.debug(`Creating new panel for ${problemNm}`)

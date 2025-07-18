@@ -1,7 +1,9 @@
 import { AbstractProblem } from "@/jutge_api_client"
+import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
+import { FileService } from "@/services/file"
 import { JutgeService } from "@/services/jutge"
-import { makeProblemHandler, ProblemHandler } from "@/services/problem-handler"
+import { ProblemHandler } from "@/services/problem-handler"
 import {
     CustomTestcase,
     Problem,
@@ -13,18 +15,13 @@ import * as utils from "@/utils"
 import * as vscode from "vscode"
 import { htmlForAllTestcases, htmlForCustomTestcase, htmlForWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
-import { FileService } from "@/services/file"
-
-const _info = (msg: string) => {
-    console.info(`[ProblemWebviewPanel] ${msg}`)
-}
 
 type ProblemWebviewState = {
     problemNm: string
     title?: string
 }
 
-export class ProblemWebviewPanel {
+export class ProblemWebviewPanel extends Logger {
     public static readonly viewType = "problemWebview"
     private context_: vscode.ExtensionContext
 
@@ -38,16 +35,16 @@ export class ProblemWebviewPanel {
         context: vscode.ExtensionContext,
         { problemNm, title }: ProblemWebviewState
     ) {
-        _info(
-            `Constructing a webview panel for problem ${problemNm} (${context.extensionUri})`
-        )
+        super()
+
+        this.log.info(`New panel for problem ${problemNm} (${context.extensionUri})`)
 
         this.context_ = context
-
         this.panel = panel
+
         context.subscriptions.push(
-            this.panel.onDidDispose(() => this.dispose(), null, context.subscriptions),
-            this.panel.webview.onDidReceiveMessage(
+            panel.onDidDispose(() => this.dispose(), null, context.subscriptions),
+            panel.webview.onDidReceiveMessage(
                 this._handleMessage,
                 this,
                 context.subscriptions
@@ -65,7 +62,7 @@ export class ProblemWebviewPanel {
         }
 
         // Initialize problem info and update webview
-        this._loadProblemAndShow()
+        this._loadProblem()
     }
 
     public dispose() {
@@ -99,8 +96,7 @@ export class ProblemWebviewPanel {
         const { command, data } = message
         switch (command) {
             case WebviewToVSCodeCommand.OPEN_FILE:
-                await this.handler.openExistingFile()
-                this.panel.reveal(vscode.ViewColumn.Beside, true)
+                this.handler.openExistingFile()
                 return
 
             case WebviewToVSCodeCommand.NEW_FILE:
@@ -134,9 +130,9 @@ export class ProblemWebviewPanel {
         }
     }
 
-    private async _loadProblemAndShow() {
+    private async _loadProblem() {
         const updateWebview = async () => {
-            _info(`Updating HTML for ${this.problem.problem_nm}`)
+            this.log.info(`Updating HTML for ${this.problem.problem_nm}`)
 
             this.panel.webview.html = htmlForWebview({
                 problemId: this.problem.problem_id,
@@ -170,12 +166,13 @@ export class ProblemWebviewPanel {
                 try {
                     progress.report({ increment: 0, message: "Loading..." })
 
-                    _info(`Updating webview contents for ${problemNm}`)
+                    this.log.info(`Updating webview contents for ${problemNm}`)
 
                     progress.report({
                         increment: 20,
                         message: "Getting concrete problem...",
                     })
+
                     const absProb = await JutgeService.getAbstractProblem(problemNm)
                     const { problem_id, title } = this.__chooseConcreteProblem(
                         problemNm,
@@ -224,7 +221,7 @@ export class ProblemWebviewPanel {
 
                     // Once everything is loaded, we create a problem handler
                     // which will take care of all operations
-                    this.problemHandler = await makeProblemHandler(
+                    this.problemHandler = new ProblemHandler(
                         this.problem,
                         this.customTestcases
                     )

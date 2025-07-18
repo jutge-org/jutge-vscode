@@ -21,7 +21,12 @@ import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
 import { JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
-import { getProblemIdFromFilename } from "./utils"
+import {
+    defaultFilenameForProblem,
+    findCodeFilenameForProblem,
+    getProblemIdFromFilename,
+    openFileUriColumnOne,
+} from "./utils"
 import { basename } from "path"
 
 /**
@@ -152,11 +157,20 @@ const commandShowProblem = async (problemNm: string | undefined) => {
             prompt: "Please write the problem ID.",
             value: "",
         })
+        if (!problemNm) {
+            return
+        }
     }
 
-    if (problemNm) {
-        WebviewPanelRegistry.createOrShow(getContext_(), problemNm)
+    const workspace = getWorkspaceFolder()
+    if (!workspace) {
+        return
     }
+    const fileUri = await findCodeFilenameForProblem(problemNm)
+    if (fileUri) {
+        await openFileUriColumnOne(fileUri)
+    }
+    await WebviewPanelRegistry.createOrReveal(getContext_(), problemNm)
 }
 
 /**

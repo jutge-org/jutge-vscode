@@ -2,6 +2,15 @@ import * as fs from "fs"
 import { dirname } from "path"
 import * as vscode from "vscode"
 import { Testcase } from "./jutge_api_client"
+import { Problem } from "./types"
+import {
+    Proglang,
+    proglangFromCompiler,
+    proglangInfoGet,
+} from "./services/runners/languages"
+import { getWorkspaceFolder } from "./extension"
+import { readdir } from "fs/promises"
+import { JutgeService } from "./services/jutge"
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -101,4 +110,67 @@ const jutgeFileRegex = /([P-Z]\d{5}).*/
 export function getProblemIdFromFilename(filePath: string) {
     const m = filePath.match(jutgeFileRegex)
     return m === null ? null : m[1]
+}
+
+export function fileUriExists(fileUri: vscode.Uri | null): boolean {
+    return fileUri ? fs.existsSync(fileUri.fsPath) : false
+}
+
+export async function openFileUriColumnOne(fileUri: vscode.Uri) {
+    const document = await vscode.workspace.openTextDocument(fileUri)
+    vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+}
+
+export function getCompilerId(problem: Problem): string {
+    const compilers = problem.handler?.compilers
+    let compiler_id = ""
+    if (Array.isArray(compilers)) {
+        compiler_id = compilers[0]
+    } else if (typeof compilers === "string") {
+        compiler_id = compilers
+    }
+    return compiler_id
+}
+
+export function getProglangFromProblem(problem: Problem): Proglang | null {
+    const compiler_id = getCompilerId(problem)
+    if (!compiler_id) {
+        return null
+    }
+    try {
+        return proglangFromCompiler(compiler_id)
+        //
+    } catch (e) {
+        vscode.window.showErrorMessage(`Could not determine programming language`)
+        return null
+    }
+}
+
+export function defaultFilenameForProblem(problem: Problem) {
+    const { problem_id, title } = problem
+    const proglang = getProglangFromProblem(problem) || Proglang.CPP
+    const langInfo = proglangInfoGet(proglang)
+    const defaultExtension = langInfo.extensions[0]
+    return `${problem_id}_${sanitizeTitle(title)}${defaultExtension}`
+}
+
+export async function findCodeFilenameForProblem(
+    problemNm: string
+): Promise<vscode.Uri | null> {
+    const problemId = getDefaultProblemId(problemNm)
+
+    const workspace = getWorkspaceFolder()
+    if (!workspace) {
+        return null
+    }
+
+    // Find files that match
+    const candidates: vscode.Uri[] = []
+    for (let ent of await readdir(workspace.uri.fsPath, { withFileTypes: true })) {
+        if (ent.isFile() && ent.name.startsWith(problemId)) {
+            candidates.push(vscode.Uri.joinPath(workspace.uri, ent.name))
+        }
+    }
+
+    return candidates[0] || null
 }
