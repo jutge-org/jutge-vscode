@@ -21,6 +21,8 @@ import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
 import { JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
+import { getProblemIdFromFilename } from "./utils"
+import { basename } from "path"
 
 /**
  * Get the webview options for the webview panel.
@@ -177,6 +179,17 @@ export async function activate(context: vscode.ExtensionContext) {
         ProblemWebviewPanel.viewType,
         new ProblemWebviewPanelSerializer(context)
     )
+
+    // Update custom testcases whenever the user deletes a test file
+    vscode.workspace.onDidDeleteFiles((event) => {
+        WebviewPanelRegistry.updatePanelsOnChangedFiles(event.files)
+    })
+    vscode.workspace.onDidCreateFiles((event) => {
+        WebviewPanelRegistry.updatePanelsOnChangedFiles(event.files)
+    })
+    vscode.workspace.onDidSaveTextDocument((event) => {
+        WebviewPanelRegistry.updatePanelsOnChangedFiles([event.uri])
+    })
 
     registerCommands([
         ["jutge-vscode.signIn", JutgeService.signIn],

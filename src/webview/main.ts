@@ -1,5 +1,6 @@
 import { allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
 import {
+    CustomTestcase,
     SubmissionStatus,
     VSCodeToWebviewCommand,
     VSCodeToWebviewMessage,
@@ -45,11 +46,14 @@ function onEvent(event: MessageEvent<any>) {
 
     // Save state whenever we receive updates
     switch (command) {
-        case VSCodeToWebviewCommand.UPDATE_TESTCASE:
-            updateTestcase(data.testcaseId, data.status, data.output, "normal")
+        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES:
+            updateCustomTestcases(data.htmlTestcases)
             break
-        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE:
-            updateTestcase(data.testcaseId, data.status, data.output, "custom")
+        case VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS:
+            updateTestcaseStatus(data.testcaseId, data.status, data.output, "normal")
+            break
+        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS:
+            updateTestcaseStatus(data.testcaseId, data.status, data.output, "custom")
             break
         case VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS:
             updateSubmissionStatus(data.status)
@@ -86,11 +90,13 @@ function addOnClickEventListeners() {
         ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
         ["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE],
     ]
+
     for (const [id, command] of id2command) {
         getButton(id)?.addEventListener("click", () => {
             postMessage(command)
         })
     }
+
     document.querySelectorAll('[id^="run-testcase-"]').forEach((button) => {
         button.addEventListener("click", () => {
             postMessage(WebviewToVSCodeCommand.RUN_TESTCASE, {
@@ -98,6 +104,7 @@ function addOnClickEventListeners() {
             })
         })
     })
+
     document.querySelectorAll('[id^="run-custom-testcase-"]').forEach((button) => {
         button.addEventListener("click", () => {
             postMessage(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE, {
@@ -127,6 +134,7 @@ function addOnClickEventListeners() {
             }, 1000)
         })
     })
+
     document.querySelectorAll(".toggle-minimize").forEach((button) => {
         button.addEventListener("click", () => {
             const icon = button.querySelector(".icon") as HTMLSpanElement
@@ -137,6 +145,7 @@ function addOnClickEventListeners() {
             testcaseContent.style.display = isMinimized ? "flex" : "none"
         })
     })
+
     document.querySelectorAll(".compare-diff").forEach((button) => {
         button.addEventListener("click", () => {
             const testcaseId = parseInt(button.closest(".testcase")!.id.split("-")[1])
@@ -164,7 +173,15 @@ function addOnClickEventListeners() {
     })
 }
 
-function updateTestcase(
+function updateCustomTestcases(customTestcases: string[] /* html for testcases */) {
+    const customTestcasesDiv = document.getElementById(`custom-testcases`)
+    if (!customTestcasesDiv) {
+        throw new Error(`Div with id "custom-testcases" not found`)
+    }
+    customTestcasesDiv.innerHTML = customTestcases.join("\n")
+}
+
+function updateTestcaseStatus(
     testcaseIndex: number,
     status: string,
     outputText: string,

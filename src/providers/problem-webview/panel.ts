@@ -5,12 +5,13 @@ import { makeProblemHandler, ProblemHandler } from "@/services/problem-handler"
 import {
     CustomTestcase,
     Problem,
+    VSCodeToWebviewCommand,
     WebviewToVSCodeCommand,
     WebviewToVSCodeMessage,
 } from "@/types"
 import * as utils from "@/utils"
 import * as vscode from "vscode"
-import { htmlForAllTestcases, htmlForWebview } from "./html"
+import { htmlForAllTestcases, htmlForCustomTestcase, htmlForWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
 import { FileService } from "@/services/file"
 
@@ -70,6 +71,17 @@ export class ProblemWebviewPanel {
     public dispose() {
         WebviewPanelRegistry.remove(this.problem.problem_nm)
         this.panel.dispose()
+    }
+
+    public async updateCustomTestcases() {
+        this.customTestcases = await FileService.loadCustomTestcases(this.problem)
+        const htmlTestcases = this.customTestcases.map((testcase, index) =>
+            htmlForCustomTestcase(testcase, index)
+        )
+        this.panel.webview.postMessage({
+            command: VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES,
+            data: { htmlTestcases },
+        })
     }
 
     get handler(): ProblemHandler {

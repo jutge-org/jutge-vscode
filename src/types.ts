@@ -80,8 +80,9 @@ export type VSCodeToWebviewMessage = {
 }
 
 export enum VSCodeToWebviewCommand {
-    UPDATE_TESTCASE = "update-testcase",
-    UPDATE_CUSTOM_TESTCASE = "update-custom-testcase",
+    UPDATE_CUSTOM_TESTCASES = "update-custom-testcases",
+    UPDATE_TESTCASE_STATUS = "update-testcase-status",
+    UPDATE_CUSTOM_TESTCASE_STATUS = "update-custom-testcase-status",
     UPDATE_SUBMISSION_STATUS = "update-submission-status",
 }
 

@@ -1,10 +1,12 @@
 import * as vscode from "vscode"
 
 import { getWebviewOptions } from "@/extension"
-import { VSCodeToWebviewMessage } from "@/types"
+import { VSCodeToWebviewCommand, VSCodeToWebviewMessage } from "@/types"
 import { StaticLogger } from "@/loggers"
 import { ProblemWebviewPanel } from "./panel"
 import { JutgeService } from "@/services/jutge"
+import { getProblemIdFromFilename } from "@/utils"
+import { basename } from "path"
 
 /**
  * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
@@ -61,6 +63,26 @@ export class WebviewPanelRegistry extends StaticLogger {
         })
         this.createdPanels_.set(problemNm, panel)
         return panel
+    }
+
+    static updatePanelsOnChangedFiles(files: readonly vscode.Uri[]) {
+        const problemNms = files.map((uri) =>
+            getProblemIdFromFilename(basename(uri.fsPath))
+        )
+        for (const problemNm of problemNms) {
+            if (problemNm) {
+                WebviewPanelRegistry.updateCustomTestcases(problemNm)
+            }
+        }
+    }
+
+    static updateCustomTestcases(problemNm: string) {
+        const panel = this.get(problemNm)
+        if (!panel) {
+            this.log.info(`updateCustomTestcases: Problem ${problemNm} not found`)
+            return
+        }
+        panel.updateCustomTestcases()
     }
 
     static register(problemNm: string, panel: ProblemWebviewPanel) {

@@ -184,7 +184,7 @@ export function htmlForAllTestcases(
             </div>
             ${
                 customTestcases &&
-                `<div class="panels">
+                `<div class="panels" id="custom-testcases">
                     ${customTestcases.map(htmlForCustomTestcase).join("")}
                 </div>`
             }

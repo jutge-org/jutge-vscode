@@ -24,6 +24,8 @@ import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
+import { readFile } from "fs/promises"
+import { htmlForCustomTestcase, htmlForTestcase } from "@/providers/problem-webview/html"
 
 export class ProblemHandler extends Logger {
     problem_: Problem
@@ -132,6 +134,25 @@ export class ProblemHandler extends Logger {
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
         vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+
+        const fileContent = (await readFile(fileUri.fsPath)).toString()
+        if (this.customTestcases_ === null) {
+            this.customTestcases_ = []
+        }
+        this.customTestcases_.push({
+            input: fileContent,
+            name: `Custom Testcase ${this.customTestcases_.length}`,
+        })
+
+        const htmlTestcases = this.customTestcases_.map((testcase, index) =>
+            htmlForCustomTestcase(testcase, index)
+        )
+
+        this.__sendMessage(
+            VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES,
+            this.problem_.problem_nm,
+            { htmlTestcases }
+        )
     }
 
     async createStarterCode(): Promise<void> {
@@ -145,65 +166,6 @@ export class ProblemHandler extends Logger {
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
         await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
-    }
-
-    private async __fileBody(
-        langInfo: LanguageInfo,
-        handler: string,
-        source_modifier: string
-    ): Promise<string | Uint8Array<ArrayBufferLike>> {
-        switch (handler) {
-            case "std": {
-                switch (source_modifier) {
-                    case "no_main": {
-                        return this.__stdNoMainBody(langInfo)
-                    }
-                    default: {
-                        switch (langInfo.proglang) {
-                            case Proglang.CPP: {
-                                return `#include <iostream>\nusing namespace std;\n\nint main() {\n\n}\n`
-                            }
-                            default: {
-                                return ``
-                            }
-                        }
-                    }
-                }
-            }
-            default: {
-                throw new Error(`Handler '${handler}' unimplemented yet`)
-            }
-        }
-    }
-
-    private async __stdNoMainBody(
-        langInfo: LanguageInfo
-    ): Promise<Uint8Array<ArrayBufferLike>> {
-        const { problem_id } = this.problem_
-
-        const findTemplate = async () => {
-            const templateList = await JutgeService.getTemplateList(problem_id)
-            for (const template of templateList) {
-                const ext = extname(template)
-                if (langInfo.extensions.includes(ext)) {
-                    return template
-                }
-            }
-            return null
-        }
-
-        const template = await findTemplate()
-        if (template === null) {
-            throw new Error(`No template for language ${langInfo.proglang}`)
-        }
-        this.log.info(`Found template '${template}'`)
-
-        const { data, name, type } = await JutgeService.getTemplate(problem_id, template)
-
-        this.log.info(
-            `Got template '${template}': ${name} - ${type} (${data.constructor.name})`
-        )
-        return data
     }
 
     async runTestcaseByIndex(index: number): Promise<boolean> {
@@ -322,18 +284,8 @@ export class ProblemHandler extends Logger {
         return output
     }
 
-    async __sendMessage(
-        command: VSCodeToWebviewCommand,
-        problemNm: string,
-        testcaseId: number,
-        status: TestcaseStatus,
-        output: string | null = ""
-    ) {
-        const message = {
-            command,
-            data: { testcaseId, status, output },
-        }
-        WebviewPanelRegistry.sendMessage(problemNm, message)
+    async __sendMessage(command: VSCodeToWebviewCommand, problemNm: string, data: any) {
+        WebviewPanelRegistry.sendMessage(problemNm, { command, data })
     }
 
     async __sendUpdate(
@@ -342,13 +294,11 @@ export class ProblemHandler extends Logger {
         status: TestcaseStatus,
         output: string | null = ""
     ) {
-        this.__sendMessage(
-            VSCodeToWebviewCommand.UPDATE_TESTCASE,
-            problemNm,
+        this.__sendMessage(VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS, problemNm, {
             testcaseId,
             status,
-            output
-        )
+            output,
+        })
     }
 
     async __sendUpdateCustom(
@@ -358,11 +308,9 @@ export class ProblemHandler extends Logger {
         output: string | null = ""
     ) {
         this.__sendMessage(
-            VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE,
+            VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS,
             problemNm,
-            testcaseId,
-            status,
-            output
+            { testcaseId, status, output }
         )
     }
 

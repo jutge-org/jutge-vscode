@@ -9,6 +9,8 @@ import { JutgeService } from "./jutge"
 import { Proglang, chooseProgrammingLanguage, proglangInfoGet } from "./runners/languages"
 import { StaticLogger } from "@/loggers"
 
+const MAX_CUSTOM_TEXTCASES = 100 // FIXME(pauek): is this enough?? ;)
+
 type HeaderInfo = {
     problem_id: string
     handler: string
@@ -67,7 +69,7 @@ export class FileService extends StaticLogger {
 
         // Find out the first testcase which is not used yet
         let index = 1
-        while (index <= 100) {
+        while (index <= MAX_CUSTOM_TEXTCASES) {
             const filename = this.makeTestcaseFilename(problem, index)
             const uri = vscode.Uri.joinPath(workspace.uri, filename)
             if (!existsSync(uri.fsPath)) {
@@ -75,7 +77,7 @@ export class FileService extends StaticLogger {
             }
             index++
         }
-        if (index > 100) {
+        if (index > MAX_CUSTOM_TEXTCASES) {
             return null
         }
 
@@ -117,7 +119,7 @@ export class FileService extends StaticLogger {
         }
 
         // FIXME(pauek): Do we need more than 5??
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= MAX_CUSTOM_TEXTCASES; i++) {
             const filename = this.makeTestcaseFilename(problem, i)
             const { fsPath } = vscode.Uri.joinPath(workspace.uri, filename)
             if (existsSync(fsPath)) {

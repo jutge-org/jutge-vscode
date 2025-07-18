@@ -95,3 +95,10 @@ export function fileExistsOrThrow(filePath: string) {
         throw new Error(`File '${filePath}' does not exist.`)
     }
 }
+
+const jutgeFileRegex = /([P-Z]\d{5}).*/
+
+export function getProblemIdFromFilename(filePath: string) {
+    const m = filePath.match(jutgeFileRegex)
+    return m === null ? null : m[1]
+}
