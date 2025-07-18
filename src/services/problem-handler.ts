@@ -92,41 +92,6 @@ export class ProblemHandler extends Logger {
         return compiler_id
     }
 
-    // async writeFileWithStarterContent(fileUri: vscode.Uri) {
-    //     // Write file with starter content
-    //     try {
-    //         const handler = this.problem_.handler?.handler || ""
-    //         const source_modifier = this.problem_.handler?.source_modifier || ""
-    //         const compiler_id = this.getCompilerId()
-    //         const cmt = this.langInfo.commentPrefix
-
-    //         const profileRes = JutgeService.getProfileSWR()
-    //         const profile = profileRes.data
-    //         const fileHeader = [
-    //             `${cmt} ${this.problem_.title}\n`,
-    //             `${cmt} https://jutge.org/problems/${this.problem_.problem_id}\n`,
-    //             `${cmt} ${this.problem_.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
-    //             `${cmt} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
-    //             `\n`,
-    //         ].join("")
-
-    //         const body = await this.__fileBody(this.langInfo, handler, source_modifier)
-    //         if (typeof body === "string") {
-    //             this.log.info(`Wrote string to ${fileUri.fsPath}`)
-    //             fs.writeFileSync(fileUri.fsPath, fileHeader + body)
-    //         } else {
-    //             this.log.info(`Wrote Uint8Array to ${fileUri.fsPath}`)
-    //             fs.writeFileSync(fileUri.fsPath, body)
-    //         }
-    //         //
-    //     } catch (error) {
-    //         vscode.window.showErrorMessage(
-    //             `Failed to create file in ${fileUri.fsPath}: ${error}`
-    //         )
-    //         throw error
-    //     }
-    // }
-
     async getProglangFromProblem(): Promise<Proglang | null> {
         const compiler_id = this.getCompilerId()
         if (!compiler_id) {
