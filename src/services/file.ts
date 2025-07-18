@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 
 import { getWorkspaceFolder } from "@/extension"
 import { CustomTestcase, Problem } from "@/types"
-import { sanitizeTitle } from "@/utils"
+import { fileUriExists, sanitizeTitle } from "@/utils"
 import { readFile } from "fs/promises"
 import { JutgeService } from "./jutge"
 import { Proglang, chooseProgrammingLanguage, proglangInfoGet } from "./runners/languages"
@@ -148,21 +148,26 @@ export class FileService extends StaticLogger {
             return
         }
 
-        const uri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFilename),
-            filters: { "All files": ["*"] },
-            saveLabel: "Create",
-            title: `Create new file for ${problem.title}`,
-        })
-        if (!uri) {
-            return
+        let uri: vscode.Uri | undefined = vscode.Uri.joinPath(
+            workspaceFolder.uri,
+            suggestedFilename
+        )
+        if (fileUriExists(uri)) {
+            uri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFilename),
+                filters: { "All files": ["*"] },
+                saveLabel: "Create",
+                title: `Create new file for ${problem.title}`,
+            })
+            if (!uri) {
+                return
+            }
         }
 
-        const fileHeader = this.makeHeader(commentPrefix, problem)
-        const fileBody = this.makeBody(proglang)
-        const fileContent = fileHeader + fileBody
-
         try {
+            const fileHeader = this.makeHeader(commentPrefix, problem)
+            const fileBody = this.makeBody(proglang)
+            const fileContent = fileHeader + fileBody
             fs.writeFileSync(uri.fsPath, fileContent, { flag: "w" })
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
