@@ -26,14 +26,7 @@ export class JutgeCourseTreeProvider
     private problemName2TreeItem: Map<string, CourseTreeItem> = new Map()
 
     getTreeItem(element: CourseTreeElement): CourseTreeItem {
-        this.log.info(`getTreeItem for ${element.getId()} (${element.key})`)
-
-        const oldItem = this.problemName2TreeItem.get(element.key)
-        if (oldItem?.element !== element) {
-            this.log.info(`Old element != than new element`)
-        }
         const item = new CourseTreeItem(element)
-
         if (item.element.type === "problem") {
             item.command = {
                 command: "jutge-vscode.showProblem",
@@ -41,7 +34,6 @@ export class JutgeCourseTreeProvider
                 arguments: [item.element.key],
             }
         }
-
         this.problemName2TreeItem.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
         return item
     }
