@@ -4,11 +4,9 @@ import * as vscode from "vscode"
 /*
 
 TODO:
-1. Change to events to communicate between parts (webview and treeview)
-2. Show _status_ of a problem in the tree (not last veredict)
-3. Review all problems with errors in statement, etc. 
+1. Review all problems with errors in statement, etc. 
    Make a list of things that do not work.
-4. Let the user create a test-case (and store it in a file).
+2. Let the user create a test-case (and store it in a file).
 
 IDEAS:
 1. Download previous submissions (so you can use Jutge as a "repo", like many people do).
