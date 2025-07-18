@@ -10,6 +10,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Improved the traffic lights icons even further.
 
+- Fixed a bug where the mouse cursor in the problem statement was not changing to reveal interactive elements (buttons, etc.)
+
 ## Version 0.0.15
 
 - Fixed the update mechanism for the problem icon (the traffic lights icon), which triggers when the veredict is given as a notification. Before 0.0.15, it didn't update properly (and internally it used a convoluted mechanism, now it is much simpler).
