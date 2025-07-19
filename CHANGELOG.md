@@ -6,11 +6,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## Version 0.0.17
 
-- Improved input/output layout for regular and custom testcases.
-
 - Added new button to edit a custom testcase. It will open the file containing the testcase.
 
 - Added new button to expand or collapse all testcases of a certain type.
+
+- Improved input/output layout for regular and custom testcases.
+
+- Fixed regression bug whereby the verdict notification appeared on top of the "waiting" notification when sending a problem.
 
 ## Version 0.0.16
 
