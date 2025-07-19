@@ -4,6 +4,12 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## Version 0.0.17
+
+- Improved input/output layout for regular and custom testcases.
+
+-
+
 ## Version 0.0.16
 
 - Added custom testcases. These are stored as files and are also updated whenever files change, are created or deleted. (Some subtle bugs remain, but the feature is quite usable.)
