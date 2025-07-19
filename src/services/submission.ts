@@ -16,7 +16,7 @@ export type Veredict = {
 }
 
 export class SubmissionService extends StaticLogger {
-    private static MONITOR_INTERVAL_MS = 5000
+    private static MONITOR_INTERVAL_MS = 2000
 
     private static emitter_: vscode.EventEmitter<Veredict> =
         new vscode.EventEmitter<Veredict>()
@@ -36,7 +36,7 @@ export class SubmissionService extends StaticLogger {
      * If that is not available, we can try with the default compiler for a certain extension.
      */
     public static async submitProblem(problem: Problem, filePath: string): Promise<void> {
-        vscode.window.withProgress(
+        const result = await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
                 title: `Submitting ${problem.problem_nm}`,
@@ -56,7 +56,7 @@ export class SubmissionService extends StaticLogger {
                 this.log.debug(`Using compiler ID: ${compiler_id}`)
 
                 progress.report({ message: "Submitting..." })
-                await this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
+                this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
 
                 const nowDate = new Date().toLocaleDateString()
                 const nowTime = new Date().toLocaleTimeString()
@@ -86,55 +86,57 @@ export class SubmissionService extends StaticLogger {
                         progress
                     )
 
-                    await this._showVerdictNotification(problem, submission_id, verdict)
-
-                    this.log.info(
-                        `Emitting onDidReceiveVeredict (${problem.problem_nm}, ${verdict})`
-                    )
                     this.emitter_.fire({
                         problem_nm: problem.problem_nm,
                         status: verdict,
                     })
-                    //
+
+                    return { submission_id, verdict }
                 } catch (err) {
                     this.log.error(`Error submitting to Jutge: ${err}`)
                     vscode.window.showErrorMessage("Error submitting to Jutge: " + err)
                 }
             }
         )
+        if (result) {
+            await this._showVerdictNotification(
+                problem,
+                result.submission_id,
+                result.verdict
+            )
+        }
     }
 
     private static async _waitForVerdictLoop(
         problem: Problem,
         submission_id: string,
-        progress: vscode.Progress<{
-            message?: string
-            increment?: number
-        }>
-    ) {
-        const { problem_nm, problem_id } = problem
+        progress: vscode.Progress<{ message?: string; increment?: number }>
+    ): Promise<SubmissionStatus> {
         let times = 1
-
         let verdict: SubmissionStatus = SubmissionStatus.PENDING
 
-        while (verdict === SubmissionStatus.PENDING) {
-            await waitMilliseconds(this.MONITOR_INTERVAL_MS)
-            try {
+        try {
+            while (verdict === SubmissionStatus.PENDING) {
+                // NOTE(pauek): Wait first so that the last progress report
+                // (which was the "submission successful") is visible for a while...
+                await waitMilliseconds(this.MONITOR_INTERVAL_MS)
+
+                progress.report({ message: `Waiting (${times++}) ...` })
+
                 const response = await JutgeService.getSubmission({
-                    problem_id,
+                    problem_id: problem.problem_id,
                     submission_id,
                 })
+
                 verdict = response.veredict as SubmissionStatus
-            } catch (error) {
-                vscode.window.showErrorMessage(
-                    "Error getting submission status: " + error
-                )
             }
-            progress.report({ message: `Waiting (${times}) ...` })
-            times++
+        } catch (error) {
+            await vscode.window.showErrorMessage(
+                "Error getting submission status: " + error
+            )
+            verdict = SubmissionStatus.PENDING
         }
 
-        await this._sendStatusUpdate(problem_nm, verdict)
         return verdict
     }
 
@@ -155,7 +157,7 @@ export class SubmissionService extends StaticLogger {
     }
 
     private static async _sendStatusUpdate(problemNm: string, status: SubmissionStatus) {
-        await WebviewPanelRegistry.sendMessage(problemNm, {
+        return WebviewPanelRegistry.sendMessage(problemNm, {
             command: VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS,
             data: { status },
         })
