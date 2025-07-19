@@ -8,7 +8,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Improved input/output layout for regular and custom testcases.
 
--
+- Added new button to edit a custom testcase. It will open the file containing the testcase.
+
+- Added new button to expand or collapse all testcases of a certain type.
 
 ## Version 0.0.16
 

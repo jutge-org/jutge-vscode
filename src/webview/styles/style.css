@@ -96,10 +96,6 @@ textarea {
     gap: 0.2em;
 }
 
-.container {
-    position: relative;
-}
-
 .selectable {
     -webkit-touch-callout: text; /* iOS Safari */
     -webkit-user-select: text; /* Safari */
@@ -136,16 +132,6 @@ textarea {
     & .failed {
         color: red !important;
     }
-}
-
-.container {
-    position: relative;
-}
-
-.clipboard {
-    position: absolute;
-    right: 0;
-    top: 0;
 }
 
 .DISABLED.problem-code {
@@ -186,26 +172,56 @@ textarea {
     }
 }
 
+.small-button {
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+    border-radius: 0.2em;
+    padding: 0.2em 0.3em;
+    background-color: rgba(0, 0, 0, 0.1);
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+}
+
+.text-button {
+    cursor: pointer;
+    filter: grayscale(100%);
+    padding: 1px 4px;
+    opacity: 0.5;
+    font-size: 0.7rem;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
 .testcases {
     margin-top: 2em;
 
     & .header {
+        position: relative;
         display: flex;
         flex-direction: row;
-        @media (width <= 480px) {
-            flex-direction: column;
-            gap: 0.3em;
-        }
-        column-gap: 0.2em;
-        padding: 0.8em 0 0.8em;
+        align-items: center;
+        padding: 0.4em 0 0.6em;
 
         & h2 {
             margin: 0;
             font-size: 1.1rem;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            column-gap: 0.6em;
         }
     }
 
     & .buttons {
+        flex-grow: 1;
         flex: 1;
         flex-shrink: 0;
         display: flex;
@@ -274,29 +290,13 @@ textarea {
                         font-size: 0.8rem;
                     }
                 }
-
-                & .small-button {
-                    cursor: pointer;
-                    font-size: 0.75rem;
-                    display: flex;
-                    flex-direction: row;
-                    gap: 0.5em;
-                    border-radius: 0.2em;
-                    padding: 0.2em 0.3em;
-                    background-color: rgba(0, 0, 0, 0.1);
-
-                    &:hover {
-                        background-color: rgba(255, 255, 255, 0.2);
-                    }
-                }
             }
 
             & .content {
                 display: flex;
                 flex-direction: column;
-                justify-content: flex-start;
                 align-items: stretch;
-                gap: 1.2em;
+                row-gap: 0.6em;
                 padding: 0.3rem;
 
                 &.compare {
@@ -326,8 +326,14 @@ textarea {
 
                 & .container {
                     flex: 1;
-                    position: relative;
                     overflow: visible;
+
+                    & .title {
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: space-between;
+                        align-items: baseline;
+                    }
 
                     & .textarea {
                         display: block;
@@ -347,21 +353,6 @@ textarea {
                         & pre .text-muted {
                             color: var(--foreground);
                             opacity: 27%;
-                        }
-                    }
-
-                    & .clipboard {
-                        filter: grayscale(100%);
-                        position: absolute;
-                        top: 0;
-                        right: 0;
-                        padding: 1px 4px;
-                        cursor: pointer;
-                        opacity: 0.5;
-                        font-size: 0.7rem;
-
-                        &:hover {
-                            opacity: 1;
                         }
                     }
 
@@ -421,9 +412,30 @@ textarea {
 .justify-center {
     justify-content: center;
 }
+.items-center {
+    align-items: center;
+}
 .mt-4 {
     margin-top: 1em;
 }
 .w-full {
     width: 100%;
+}
+.top-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+.right {
+    position: absolute;
+    right: 0;
+}
+.relative {
+    position: relative;
+}
+.pr-20 {
+    padding-right: 5em;
+}
+.select-none {
+    user-select: none;
 }

@@ -10,82 +10,6 @@ type ActualAndDisplayed = {
     displayed: string
 }
 
-export function htmlForTestcaseCommon(
-    type: "normal" | "custom",
-    input: { actual: string; displayed: string },
-    output: { actual: string; displayed: string } | undefined,
-    index: number
-) {
-    let props: { title: string; extraCssClass: string; elemId: string; runId: string }
-
-    switch (type) {
-        case "normal":
-            props = {
-                elemId: `testcase-${index}`,
-                title: "Testcase",
-                extraCssClass: "",
-                runId: `run-testcase-${index}`,
-            }
-            break
-        case "custom":
-            props = {
-                elemId: `custom-testcase-${index}`,
-                title: "Custom Testcase",
-                extraCssClass: "custom",
-                runId: `run-custom-testcase-${index}`,
-            }
-            break
-    }
-
-    let expectedOutputHtml = ""
-    if (type === "normal") {
-        expectedOutputHtml = `
-            <div class="container expected">
-                <div class="title">Expected Output:</div>
-                <div class="clipboard" title="Copy to clipboard">Copy</div>
-                <div id="expected" class="selectable textarea">
-                    <pre data-original-text="${output?.actual || ""}">${output?.displayed || ""}</pre>
-                </div>
-            </div>`
-    }
-
-    return /*html*/ `
-        <div class="testcase ${props.extraCssClass}" id="${props.elemId}">
-            <div class="metadata">
-                <div class="toggle-minimize">
-                    <div class="title">
-                        <div class="icon">${chevronDown()}</div>
-                        ${props.title} ${index}
-                    </div>
-                    <span class="running-text"></span>
-                </div>
-                <div id="${props.runId}" class="small-button" title="Run this testcase only">
-                    <div class="icon">${icons["run"]()}</div>
-                    <span>Run</span>
-                </div>
-            </div>
-
-            <div class="content">
-                <div class="input container">
-                    <div class="title">Input:</div>
-                    <div class="clipboard" title="Copy to clipboard">Copy</div>
-                    <div id="input" class="selectable textarea">
-                        <pre data-original-text="${input}">${input.displayed}</pre>
-                    </div>
-                </div>
-                <div class="output container ${props.extraCssClass}">
-                    ${expectedOutputHtml}
-                    <div class="container received">
-                        <div class="title">Received Output:</div>
-                        ${type === "normal" ? `<div class="compare-diff" title="Compare with expected">Compare</div>` : ""}
-                        <div id="received" class="selectable textarea"><pre></pre></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `
-}
-
 function actualAndDisplayed(base_64: string): ActualAndDisplayed {
     const text_ = Buffer.from(base_64, "base64").toString("utf-8")
     return {
@@ -96,7 +20,7 @@ function actualAndDisplayed(base_64: string): ActualAndDisplayed {
 
 export function htmlTestcaseMetadata(title: string, index: number, children: string) {
     return `
-        <div class="metadata">
+        <div class="metadata select-none">
             <div class="toggle-minimize">
                 <div class="title">
                     <div class="icon">${chevronDown()}</div>
@@ -115,13 +39,15 @@ function htmlTestcaseIOContainer(
     options: { copyToClipboard?: boolean; cssClass?: string }
 ) {
     const copyToClipboardButton = options.copyToClipboard
-        ? `<div class="clipboard" title="Copy to clipboard">Copy</div>`
+        ? `<div class="text-button copy-to-clipboard" title="Copy to clipboard">Copy</div>`
         : ``
 
     return `
         <div class="container ${options.cssClass || ""}">
-            <div class="title">${title}</div>
-            ${copyToClipboardButton}    
+            <div class="title">
+                ${title}
+                ${copyToClipboardButton}
+            </div>
             <div id="input" class="selectable textarea">
                 <pre data-original-text="${actual}">${displayed}</pre>
             </div>
@@ -198,7 +124,7 @@ export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
 export function htmlNotSupportedHandler() {
     return /*html*/ `
         <div class="testcases">
-            <div class="header">
+            <div class="header select-none">
                 <h2 class="flex-grow-1">Testcases</h2>
             </div>
             <div class="panels">
@@ -209,6 +135,17 @@ export function htmlNotSupportedHandler() {
             </div>
         </div>
       `
+}
+
+export function htmlTestcaseHeader(title: string) {
+    return `
+        <h2>
+            ${title}
+            <span class="text-button collapse-testcases select-none">
+                Collapse All
+            </span>
+        </h2>
+    `
 }
 
 export function htmlTestcases(
@@ -222,7 +159,7 @@ export function htmlTestcases(
     return /*html*/ `
         <vscode-divider></vscode-divider>
         <div class="header">
-            <h2 class="flex-grow-1">Testcases</h2>
+            ${htmlTestcaseHeader("Testcases")}
             <div class="buttons">
                 ${htmlButton({
                     id: "run-all-testcases",
@@ -245,9 +182,9 @@ export function htmlCustomTestcases(customTestcases: CustomTestcase[]) {
     return `
         <vscode-divider></vscode-divider>
         <div class="header">
-            <h2 class="flex-grow-1">Custom Testcases</h2>
+            ${htmlTestcaseHeader("Custom Testcases")}
         </div>
-        <div class="panels" id="custom-testcases">
+        <div class="panels">
             ${customTestcases.map(htmlForCustomTestcase).join("")}
         </div>
         <div class="flex flex-row justify-end mt-4">
@@ -360,7 +297,7 @@ export function htmlWebview(data: WebviewHTMLData) {
                     ${statementHtml}
                 </section>
 
-                <section id="testcases" class="testcases component-container">
+                <section id="normal-testcases" class="testcases component-container">
                     ${htmlTestcases(testcases, handler)}
                 </section>
 

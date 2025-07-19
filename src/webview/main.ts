@@ -115,13 +115,53 @@ function copyToClipboard() {
     }, 1000)
 }
 
-function minimize() {
-    const icon = this.querySelector(".icon") as HTMLSpanElement
-    const testcaseContent = this.parentElement?.nextElementSibling as HTMLElement
-    const isMinimized = testcaseContent.style.display === "none"
-    icon.innerHTML = isMinimized ? chevronDown() : chevronRight()
-    testcaseContent.style.display = isMinimized ? "flex" : "none"
+const collapsed: Record<"normal" | "custom", boolean> = {
+    normal: false,
+    custom: false,
 }
+
+function updateCollapseButton(type: "normal" | "custom") {
+    const contentElems = document.querySelectorAll(
+        `#${type}-testcases > .panels > .testcase > .content`
+    )
+    console.log("contentElems", contentElems)
+    const collapsedElems: boolean[] = []
+    for (const elem of contentElems) {
+        collapsedElems.push((elem as HTMLElement).style.display === "none")
+    }
+    const allCollapsed = collapsedElems.every((p) => p)
+    const allExpanded = collapsedElems.every((p) => !p)
+    if (allCollapsed) {
+        collapsed[type] = true
+    } else if (allExpanded) {
+        collapsed[type] = false
+    }
+    const button = document.querySelector(
+        `#${type}-testcases > .header > h2 > .collapse-testcases`
+    )
+    button.textContent = collapsed[type] ? "Expand All" : "Collapse All"
+}
+
+const minimize = (type: "normal" | "custom") =>
+    function () {
+        const icon = this.querySelector(".icon") as HTMLSpanElement
+        const testcaseContent = this.parentElement?.nextElementSibling as HTMLElement
+        const isMinimized = testcaseContent.style.display === "none"
+        icon.innerHTML = isMinimized ? chevronDown() : chevronRight()
+        testcaseContent.style.display = isMinimized ? "flex" : "none"
+        updateCollapseButton(type)
+    }
+
+const toggleMinimizedExpanded = (type: "normal" | "custom") =>
+    function () {
+        collapsed[type] = !collapsed[type]
+        document
+            .querySelectorAll(`.testcase.${type} > .content`)
+            .forEach((element: HTMLElement) => {
+                element.style.display = collapsed[type] ? "none" : "flex"
+            })
+        updateCollapseButton(type)
+    }
 
 function compareDiff() {
     const testcaseId = parseInt(this.closest(".testcase")!.id.split("-")[1])
@@ -173,9 +213,23 @@ function addEventListeners() {
         .querySelectorAll('[id^="run-custom-testcase-"]')
         .forEach(onClick(runCustomTestcase))
 
-    document.querySelectorAll(".clipboard").forEach(onClick(copyToClipboard))
-    document.querySelectorAll(".toggle-minimize").forEach(onClick(minimize))
+    document.querySelectorAll(".copy-to-clipboard").forEach(onClick(copyToClipboard))
+
+    document
+        .querySelectorAll("#normal-testcases .toggle-minimize")
+        .forEach(onClick(minimize("normal")))
+    document
+        .querySelectorAll("#custom-testcases .toggle-minimize")
+        .forEach(onClick(minimize("custom")))
+
     document.querySelectorAll(".compare-diff").forEach(onClick(compareDiff))
+
+    document
+        .querySelectorAll("#normal-testcases .collapse-testcases")
+        .forEach(onClick(toggleMinimizedExpanded("normal")))
+    document
+        .querySelectorAll("#custom-testcases .collapse-testcases")
+        .forEach(onClick(toggleMinimizedExpanded("custom")))
 }
 
 function updateCustomTestcases(customTestcases: string[] /* html for testcases */) {
@@ -195,7 +249,13 @@ function updateCustomTestcases(customTestcases: string[] /* html for testcases *
 
     addOnClicks([["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE]])
 
-    customTestcasesDiv.querySelectorAll(".toggle-minimize").forEach(onClick(minimize))
+    document
+        .querySelectorAll("#custom-testcases .toggle-minimize")
+        .forEach(onClick(minimize("custom")))
+
+    document
+        .querySelectorAll("#custom-testcases .collapse-testcases")
+        .forEach(onClick(toggleMinimizedExpanded("custom")))
 }
 
 function updateTestcaseStatus(
