@@ -163,6 +163,7 @@ export class ProblemHandler extends Logger {
             for (let index = 1; index <= testcases.length; index++) {
                 allPassed = allPassed && (await this.runTestcaseByIndex(index))
             }
+
             return allPassed
             //
         } catch (error: any) {
@@ -178,7 +179,7 @@ export class ProblemHandler extends Logger {
             vscode.window.showErrorMessage("No text editor open.")
             return
         }
-        await SubmissionService.submitProblem(this.problem_, editor.document.uri.fsPath)
+        return SubmissionService.submitProblem(this.problem_, editor.document.uri.fsPath)
     }
 
     async __runExpecting(
