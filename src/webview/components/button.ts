@@ -2,7 +2,7 @@ import { addIcon, refreshIcon, runAllIcon, runIcon, submitIcon } from "./icons"
 
 type IconType = "add" | "run" | "run-all" | "submit" | "run-again" | "none"
 
-const icons: Record<IconType, () => string> = {
+export const icons: Record<IconType, () => string> = {
     "add": addIcon,
     "run": runIcon,
     "run-all": runAllIcon,

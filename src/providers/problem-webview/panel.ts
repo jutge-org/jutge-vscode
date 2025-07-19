@@ -14,7 +14,7 @@ import {
 } from "@/types"
 import * as utils from "@/utils"
 import * as vscode from "vscode"
-import { htmlForAllTestcases, htmlForCustomTestcase, htmlForWebview } from "./html"
+import { htmlWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
 
 type ProblemWebviewState = {
@@ -75,7 +75,7 @@ export class ProblemWebviewPanel extends Logger {
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
         await this.panel.webview.postMessage({
             command: VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES,
-            data: { htmlTestcases: this.customTestcases.map(htmlForCustomTestcase) },
+            data: { customTestcases: this.customTestcases },
         })
     }
 
@@ -150,17 +150,14 @@ export class ProblemWebviewPanel extends Logger {
         const updateWebview = async () => {
             this.log.info(`Updating HTML for ${this.problem.problem_nm}`)
 
-            this.panel.webview.html = htmlForWebview({
+            this.panel.webview.html = htmlWebview({
                 problemId: this.problem.problem_id,
                 problemNm: this.problem.problem_nm,
                 problemTitle: this.problem.title,
                 statementHtml: this.problem.statementHtml || "",
-                testcasesHtml: htmlForAllTestcases(
-                    this.problem.testcases || [],
-                    this.customTestcases,
-                    this.problem.handler
-                ),
-                handler: this.problem.handler,
+                testcases: this.problem.testcases || [],
+                customTestcases: this.customTestcases || [],
+                handler: this.problem.handler || null,
                 fileExists: await this.handler.suggestedFileExists(),
 
                 nonce: utils.getNonce(),

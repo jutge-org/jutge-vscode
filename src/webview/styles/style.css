@@ -122,17 +122,17 @@ textarea {
     color: yellow;
     padding-right: 5px;
     padding-left: 5px;
-    font-size: 1.15em;
+    font-size: 0.9rem;
 
     & .whitespace-char {
         color: #6a9955; /* light green for special chars */
         opacity: 0.7;
         font-size: 0.9em;
     }
-    &.passed {
+    & .passed {
         color: green !important;
     }
-    &.failed {
+    & .failed {
         color: red !important;
     }
 }
@@ -186,6 +186,8 @@ textarea {
 }
 
 .testcases {
+    margin-top: 2em;
+
     & .header {
         display: flex;
         flex-direction: row;
@@ -198,6 +200,7 @@ textarea {
 
         & h2 {
             margin: 0;
+            font-size: 1.1rem;
         }
     }
 
@@ -213,7 +216,7 @@ textarea {
     & .panels {
         display: flex;
         flex-direction: column;
-        gap: 1.1em;
+        gap: 0.8em;
 
         & .testcase {
             display: flex;
@@ -226,13 +229,15 @@ textarea {
             border: 1px solid var(--panel-view-border);
             border-left: 0.4em solid var(--panel-tab-foreground);
             border-radius: 0.4em;
-            padding: 0.7em;
+            padding: 0.3em;
 
             & .toggle-minimize {
                 display: flex;
                 align-items: center;
                 flex-grow: 1;
                 margin: 0;
+                padding: 0;
+                gap: 1rem;
 
                 &:hover {
                     cursor: pointer;
@@ -258,13 +263,27 @@ textarea {
                 & .title {
                     margin: 0;
                     margin-right: 0.4em;
-                    font-size: 1.1rem;
+                    font-size: 0.95rem;
                     font-weight: bolder;
                     color: var(--list-active-selection-foreground);
+
+                    & .icon {
+                        font-size: 0.8rem;
+                    }
                 }
 
-                & .run-button .icon-button {
-                    transform: scale(0.8);
+                & .run-button {
+                    cursor: pointer;
+                    font-size: 0.75rem;
+                    display: flex;
+                    flex-direction: row;
+                    gap: 0.5em;
+                    padding: 0.2em 0.3em;
+                    background-color: var(--vscode-button-secondaryBackground);
+
+                    &:hover {
+                        background-color: var(--vscode-button-secondaryHoverBackground);
+                    }
                 }
             }
 
@@ -274,6 +293,7 @@ textarea {
                 justify-content: flex-start;
                 align-items: stretch;
                 gap: 1.2em;
+                padding: 0.3rem;
 
                 &.compare {
                     flex-direction: column;
@@ -285,8 +305,10 @@ textarea {
                 }
 
                 & .title {
-                    margin-bottom: 0.5em;
+                    font-size: 0.8rem;
+                    margin-bottom: 0.25em;
                     font-style: italic;
+                    opacity: 75%;
                 }
 
                 & .output {
@@ -327,12 +349,12 @@ textarea {
                     & .clipboard {
                         filter: grayscale(100%);
                         position: absolute;
-                        top: 0px;
-                        right: 0px;
-                        padding: 4px;
+                        top: 0;
+                        right: 0;
+                        padding: 1px 4px;
                         cursor: pointer;
                         opacity: 0.5;
-                        font-size: 80%;
+                        font-size: 0.7rem;
 
                         &:hover {
                             opacity: 1;
@@ -390,8 +412,11 @@ textarea {
     flex-direction: column;
 }
 .justify-end {
-    justify-items: flex-end;
+    justify-content: flex-end;
 }
 .mt-4 {
     margin-top: 1em;
+}
+.w-full {
+    width: 100%;
 }

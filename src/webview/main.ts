@@ -1,17 +1,17 @@
 import { allComponents, provideVSCodeDesignSystem } from "@vscode/webview-ui-toolkit"
 import {
-    CustomTestcase,
     SubmissionStatus,
     VSCodeToWebviewCommand,
     VSCodeToWebviewMessage,
     WebviewToVSCodeCommand,
 } from "../types"
 import { makeSpacesVisible } from "./utils"
+import { htmlCustomTestcases } from "../providers/problem-webview/html"
 
 // Warning: this import is important, it will produce a "main.css" file that
 // later we will refer to from the HTML (esbuild does this)
-import "./styles/style.css"
 import { chevronDown, chevronRight } from "./components/icons"
+import "./styles/style.css"
 
 provideVSCodeDesignSystem().register(allComponents)
 
@@ -34,7 +34,7 @@ document.querySelectorAll(`.testcase`).forEach((elem) => {
 })
 
 function onLoad() {
-    addOnClickEventListeners()
+    addEventListeners()
     const data = document.getElementById("data")!.dataset
     vscode.setState(data)
 }
@@ -47,7 +47,7 @@ function onEvent(event: MessageEvent<any>) {
     // Save state whenever we receive updates
     switch (command) {
         case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES:
-            updateCustomTestcases(data.htmlTestcases)
+            updateCustomTestcases(data.customTestcases)
             break
         case VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS:
             updateTestcaseStatus(data.testcaseId, data.status, data.output, "normal")
@@ -143,20 +143,22 @@ function compareDiff() {
 const onClick = (fn: EventListenerOrEventListenerObject) => (element: Element) =>
     element.addEventListener("click", fn)
 
-function addOnClickEventListeners() {
-    let id2command: [string, WebviewToVSCodeCommand][] = [
-        ["open-file", WebviewToVSCodeCommand.OPEN_FILE],
-        ["new-file", WebviewToVSCodeCommand.NEW_FILE],
-        ["submit-to-jutge", WebviewToVSCodeCommand.SUBMIT_TO_JUTGE],
-        ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
-        ["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE],
-    ]
-
+function addOnClicks(id2command: [string, WebviewToVSCodeCommand][]) {
     for (const [id, command] of id2command) {
         getButton(id)?.addEventListener("click", () => {
             postMessage(command)
         })
     }
+}
+
+function addEventListeners() {
+    addOnClicks([
+        ["open-file", WebviewToVSCodeCommand.OPEN_FILE],
+        ["new-file", WebviewToVSCodeCommand.NEW_FILE],
+        ["submit-to-jutge", WebviewToVSCodeCommand.SUBMIT_TO_JUTGE],
+        ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
+        ["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE],
+    ])
 
     document.querySelectorAll('[id^="run-testcase-"]').forEach((button) => {
         button.addEventListener("click", () => {
@@ -180,11 +182,13 @@ function updateCustomTestcases(customTestcases: string[] /* html for testcases *
     if (!customTestcasesDiv) {
         throw new Error(`Div with id "custom-testcases" not found`)
     }
-    customTestcasesDiv.innerHTML = customTestcases.join("\n")
+    customTestcasesDiv.innerHTML = htmlCustomTestcases(customTestcases)
 
     customTestcasesDiv
         .querySelectorAll('[id^="run-custom-testcase-"]')
         .forEach(onClick(runCustomTestcase))
+
+    addOnClicks([["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE]])
 
     customTestcasesDiv.querySelectorAll(".toggle-minimize").forEach(onClick(minimize))
 }
