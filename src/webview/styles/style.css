@@ -13,6 +13,7 @@
 
 body {
     min-width: 320px;
+    padding-bottom: 4em;
 }
 
 pre {
@@ -259,6 +260,8 @@ textarea {
 
             & .metadata {
                 display: flex;
+                flex-direction: row;
+                gap: 0.4em;
 
                 & .title {
                     margin: 0;
@@ -272,17 +275,18 @@ textarea {
                     }
                 }
 
-                & .run-button {
+                & .small-button {
                     cursor: pointer;
                     font-size: 0.75rem;
                     display: flex;
                     flex-direction: row;
                     gap: 0.5em;
+                    border-radius: 0.2em;
                     padding: 0.2em 0.3em;
-                    background-color: var(--vscode-button-secondaryBackground);
+                    background-color: rgba(0, 0, 0, 0.1);
 
                     &:hover {
-                        background-color: var(--vscode-button-secondaryHoverBackground);
+                        background-color: rgba(255, 255, 255, 0.2);
                     }
                 }
             }
@@ -413,6 +417,9 @@ textarea {
 }
 .justify-end {
     justify-content: flex-end;
+}
+.justify-center {
+    justify-content: center;
 }
 .mt-4 {
     margin-top: 1em;

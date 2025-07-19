@@ -82,11 +82,18 @@ function getButton(id: string): HTMLButtonElement | null {
     return button as HTMLButtonElement
 }
 
-function runCustomTestcase() {
-    postMessage(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE, {
-        testcaseId: parseInt(this.id.split("-").slice(-1)[0]),
-    })
-}
+const postMessageForTestcase = (command: WebviewToVSCodeCommand) =>
+    function () {
+        postMessage(command, {
+            testcaseId: parseInt(this.id.split("-").slice(-1)[0]),
+        })
+    }
+
+const runTestcase = postMessageForTestcase(WebviewToVSCodeCommand.RUN_TESTCASE)
+const editTestcase = postMessageForTestcase(WebviewToVSCodeCommand.EDIT_TESTCASE)
+const runCustomTestcase = postMessageForTestcase(
+    WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE
+)
 
 function copyToClipboard() {
     const textElement = this.nextElementSibling as HTMLDivElement
@@ -160,14 +167,8 @@ function addEventListeners() {
         ["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE],
     ])
 
-    document.querySelectorAll('[id^="run-testcase-"]').forEach((button) => {
-        button.addEventListener("click", () => {
-            postMessage(WebviewToVSCodeCommand.RUN_TESTCASE, {
-                testcaseId: parseInt(button.id.split("-")[2]),
-            })
-        })
-    })
-
+    document.querySelectorAll('[id^="run-testcase-"]').forEach(onClick(runTestcase))
+    document.querySelectorAll('[id^="edit-testcase-"]').forEach(onClick(editTestcase))
     document
         .querySelectorAll('[id^="run-custom-testcase-"]')
         .forEach(onClick(runCustomTestcase))
@@ -183,6 +184,10 @@ function updateCustomTestcases(customTestcases: string[] /* html for testcases *
         throw new Error(`Div with id "custom-testcases" not found`)
     }
     customTestcasesDiv.innerHTML = htmlCustomTestcases(customTestcases)
+
+    customTestcasesDiv
+        .querySelectorAll('[id^="edit-testcase-"]')
+        .forEach(onClick(editTestcase))
 
     customTestcasesDiv
         .querySelectorAll('[id^="run-custom-testcase-"]')

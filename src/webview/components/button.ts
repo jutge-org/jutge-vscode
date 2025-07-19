@@ -1,15 +1,4 @@
-import { addIcon, refreshIcon, runAllIcon, runIcon, submitIcon } from "./icons"
-
-type IconType = "add" | "run" | "run-all" | "submit" | "run-again" | "none"
-
-export const icons: Record<IconType, () => string> = {
-    "add": addIcon,
-    "run": runIcon,
-    "run-all": runAllIcon,
-    "submit": submitIcon,
-    "run-again": refreshIcon,
-    "none": () => "",
-}
+import { icons, IconType } from "./icons"
 
 type ButtonProps = {
     id: string

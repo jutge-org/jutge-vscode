@@ -1,7 +1,7 @@
 import { Testcase } from "@/jutge_api_client"
 import { CustomTestcase, ProblemHandler } from "@/types"
-import { Button as htmlButton, icons } from "@/webview/components/button"
-import { chevronDown, warningIcon } from "@/webview/components/icons"
+import { Button as htmlButton } from "@/webview/components/button"
+import { chevronDown, icons, warningIcon } from "@/webview/components/icons"
 import { makeSpacesVisible } from "@/webview/utils"
 import { Uri } from "vscode"
 
@@ -59,7 +59,7 @@ export function htmlForTestcaseCommon(
                     </div>
                     <span class="running-text"></span>
                 </div>
-                <div id="${props.runId}" class="run-button" title="Run this testcase only">
+                <div id="${props.runId}" class="small-button" title="Run this testcase only">
                     <div class="icon">${icons["run"]()}</div>
                     <span>Run</span>
                 </div>
@@ -94,11 +94,7 @@ function actualAndDisplayed(base_64: string): ActualAndDisplayed {
     }
 }
 
-export function htmlTestcaseMetadata(
-    title: string,
-    index: number,
-    buttonIdPrefix: string
-) {
+export function htmlTestcaseMetadata(title: string, index: number, children: string) {
     return `
         <div class="metadata">
             <div class="toggle-minimize">
@@ -108,10 +104,7 @@ export function htmlTestcaseMetadata(
                 </div>
                 <span class="running-text"></span>
             </div>
-            <div id="${buttonIdPrefix}-${index}" class="run-button" title="Run this testcase only">
-                <div class="icon">${icons["run"]()}</div>
-                <span>Run</span>
-            </div>
+            ${children}
         </div>
     `
 }
@@ -142,7 +135,14 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
 
     return /*html*/ `
         <div class="testcase normal" id="testcase-${index + 1}">
-            ${htmlTestcaseMetadata("Testcase", index + 1, "run-testcase")}
+            ${htmlTestcaseMetadata(
+                "Testcase",
+                index + 1,
+                `<div id="run-testcase-${index + 1}" class="small-button" title="Run this testcase only">
+                    <div class="icon">${icons["run"]()}</div>
+                    <span>Run</span>
+                </div>`
+            )}
             <div class="content">
                 ${htmlTestcaseIOContainer("Input", input, { copyToClipboard: true })}
                 <div class="two-column">
@@ -170,7 +170,18 @@ export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
 
     return /*html*/ `
         <div class="testcase custom" id="custom-testcase-${index}">
-            ${htmlTestcaseMetadata("Custom Testcase", index, "run-custom-testcase")}
+            ${htmlTestcaseMetadata(
+                "Testcase",
+                index,
+                `<div id="edit-testcase-${index}" class="small-button" title="Edit this testcase">
+                    <div class="icon">${icons["edit"]()}</div>
+                    <span>Edit</span>
+                </div>
+                <div id="run-custom-testcase-${index}" class="small-button" title="Run this testcase only">
+                    <div class="icon">${icons["run"]()}</div>
+                    <span>Run</span>
+                </div>`
+            )}
             <div class="content">
                 <div class="two-column">
                     ${htmlTestcaseIOContainer("Input", input, { copyToClipboard: true })}
@@ -235,6 +246,11 @@ export function htmlCustomTestcases(customTestcases: CustomTestcase[]) {
         <vscode-divider></vscode-divider>
         <div class="header">
             <h2 class="flex-grow-1">Custom Testcases</h2>
+        </div>
+        <div class="panels" id="custom-testcases">
+            ${customTestcases.map(htmlForCustomTestcase).join("")}
+        </div>
+        <div class="flex flex-row justify-end mt-4">
             <div class="buttons">
                 ${htmlButton({
                     id: "add-new-testcase",
@@ -244,9 +260,7 @@ export function htmlCustomTestcases(customTestcases: CustomTestcase[]) {
                 })}
             </div>
         </div>
-        <div class="panels" id="custom-testcases">
-            ${customTestcases.map(htmlForCustomTestcase).join("")}
-        </div>
+
     `
 }
 

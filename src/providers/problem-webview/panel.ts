@@ -16,6 +16,7 @@ import * as utils from "@/utils"
 import * as vscode from "vscode"
 import { htmlWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
+import { existsSync } from "node:fs"
 
 type ProblemWebviewState = {
     problemNm: string
@@ -104,6 +105,21 @@ export class ProblemWebviewPanel extends Logger {
         this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
+    async editTestcaseByIndex(index: number) {
+        const workspaceFolder = getWorkspaceFolder()
+        if (!workspaceFolder) {
+            return
+        }
+        const filename = FileService.makeTestcaseFilename(this.problem, index)
+        const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, filename)
+        if (!existsSync(fileUri.fsPath)) {
+            return
+        }
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        this.panel.reveal(vscode.ViewColumn.Beside, true)
+    }
+
     private async _handleMessage(message: WebviewToVSCodeMessage) {
         console.debug(
             `[ProblemWebviewPanel] Received message from webview: ${message.command}`
@@ -132,6 +148,9 @@ export class ProblemWebviewPanel extends Logger {
 
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 return this.handler.runTestcaseByIndex(data.testcaseId)
+
+            case WebviewToVSCodeCommand.EDIT_TESTCASE:
+                return this.editTestcaseByIndex(data.testcaseId)
 
             case WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE:
                 return this.handler.runCustomTestcaseByIndex(data.testcaseId)
