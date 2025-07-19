@@ -5,6 +5,11 @@ import { chevronDown, warningIcon } from "@/webview/components/icons"
 import { makeSpacesVisible } from "@/webview/utils"
 import { Uri } from "vscode"
 
+type ActualAndDisplayed = {
+    actual: string
+    displayed: string
+}
+
 export function htmlForTestcaseCommon(
     type: "normal" | "custom",
     input: { actual: string; displayed: string },
@@ -81,31 +86,102 @@ export function htmlForTestcaseCommon(
     `
 }
 
+function actualAndDisplayed(base_64: string): ActualAndDisplayed {
+    const text_ = Buffer.from(base_64, "base64").toString("utf-8")
+    return {
+        actual: text_,
+        displayed: makeSpacesVisible(text_),
+    }
+}
+
+export function htmlTestcaseMetadata(
+    title: string,
+    index: number,
+    buttonIdPrefix: string
+) {
+    return `
+        <div class="metadata">
+            <div class="toggle-minimize">
+                <div class="title">
+                    <div class="icon">${chevronDown()}</div>
+                    ${title} ${index}
+                </div>
+                <span class="running-text"></span>
+            </div>
+            <div id="${buttonIdPrefix}-${index}" class="run-button" title="Run this testcase only">
+                <div class="icon">${icons["run"]()}</div>
+                <span>Run</span>
+            </div>
+        </div>
+    `
+}
+
+function htmlTestcaseIOContainer(
+    title: string,
+    { actual, displayed }: ActualAndDisplayed,
+    options: { copyToClipboard?: boolean; cssClass?: string }
+) {
+    const copyToClipboardButton = options.copyToClipboard
+        ? `<div class="clipboard" title="Copy to clipboard">Copy</div>`
+        : ``
+
+    return `
+        <div class="container ${options.cssClass || ""}">
+            <div class="title">${title}</div>
+            ${copyToClipboardButton}    
+            <div id="input" class="selectable textarea">
+                <pre data-original-text="${actual}">${displayed}</pre>
+            </div>
+        </div>    
+    `
+}
+
 export function htmlForTestcase(testcase: Testcase, index: number): string {
-    const inputDecoded = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
-    const correctDecoded = Buffer.from(testcase.correct_b64, "base64").toString("utf-8")
+    const input = actualAndDisplayed(testcase.input_b64)
+    const output = actualAndDisplayed(testcase.correct_b64)
 
-    const inputDisplayed = makeSpacesVisible(inputDecoded)
-    const correctDisplayed = makeSpacesVisible(correctDecoded)
-
-    return htmlForTestcaseCommon(
-        "normal",
-        { actual: inputDecoded, displayed: inputDisplayed },
-        { actual: correctDecoded, displayed: correctDisplayed },
-        index + 1
-    )
+    return /*html*/ `
+        <div class="testcase normal" id="testcase-${index + 1}">
+            ${htmlTestcaseMetadata("Testcase", index + 1, "run-testcase")}
+            <div class="content">
+                ${htmlTestcaseIOContainer("Input", input, { copyToClipboard: true })}
+                <div class="two-column">
+                    ${htmlTestcaseIOContainer("Expected Output", output, {
+                        copyToClipboard: true,
+                        cssClass: "expected",
+                    })}
+                    <div class="container received">
+                        <div class="title">Received Output:</div>
+                        <div class="compare-diff" title="Compare with expected">Compare</div>
+                        <div id="received" class="selectable textarea"><pre></pre></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `
 }
 
 export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
-    const { input, index } = customTestcase
-    const inputDisplayed = makeSpacesVisible(customTestcase.input)
+    const { index, input: text } = customTestcase
+    const input = {
+        actual: text,
+        displayed: makeSpacesVisible(text),
+    }
 
-    return htmlForTestcaseCommon(
-        "custom",
-        { actual: input, displayed: inputDisplayed },
-        undefined,
-        index
-    )
+    return /*html*/ `
+        <div class="testcase custom" id="custom-testcase-${index}">
+            ${htmlTestcaseMetadata("Custom Testcase", index, "run-custom-testcase")}
+            <div class="content">
+                <div class="two-column">
+                    ${htmlTestcaseIOContainer("Input", input, { copyToClipboard: true })}
+                    <div class="container received">
+                        <div class="title">Received Output:</div>
+                        <div id="received" class="selectable textarea"><pre></pre></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `
 }
 
 export function htmlNotSupportedHandler() {

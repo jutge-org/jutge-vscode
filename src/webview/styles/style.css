@@ -289,7 +289,7 @@ textarea {
 
             & .content {
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
                 justify-content: flex-start;
                 align-items: stretch;
                 gap: 1.2em;
@@ -311,7 +311,7 @@ textarea {
                     opacity: 75%;
                 }
 
-                & .output {
+                & .two-column {
                     display: flex;
                     flex-direction: row;
                     gap: 0.6em;
@@ -323,7 +323,7 @@ textarea {
                 & .container {
                     flex: 1;
                     position: relative;
-                    overflow-x: auto;
+                    overflow: visible;
 
                     & .textarea {
                         display: block;
@@ -363,11 +363,11 @@ textarea {
 
                     & .compare-diff {
                         position: absolute;
-                        top: 0;
+                        top: -0.3em;
                         right: 0;
                         cursor: pointer;
-                        padding: 3px 5px;
-                        border-radius: 3px;
+                        padding: 0.1em 0.3em;
+                        border-radius: 0.1em;
                         background-color: var(--vscode-button-secondaryBackground);
                         color: var(--vscode-button-secondaryForeground);
                         font-size: 0.85em;
