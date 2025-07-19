@@ -48,12 +48,15 @@ function onEvent(event: MessageEvent<any>) {
     switch (command) {
         case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES:
             updateCustomTestcases(data.customTestcases)
+            updateCollapseButton("custom")
             break
         case VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS:
             updateTestcaseStatus(data.testcaseId, data.status, data.output, "normal")
+            updateCollapseButton("normal")
             break
         case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS:
             updateTestcaseStatus(data.testcaseId, data.status, data.output, "custom")
+            updateCollapseButton("custom")
             break
         case VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS:
             updateSubmissionStatus(data.status)
