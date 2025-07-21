@@ -1,4 +1,4 @@
-import { getWorkspaceFolder } from "@/extension"
+import { getContext, getWorkspaceFolder } from "@/extension"
 import { AbstractProblem } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
@@ -13,10 +13,10 @@ import {
     WebviewToVSCodeMessage,
 } from "@/types"
 import * as utils from "@/utils"
+import { existsSync } from "node:fs"
 import * as vscode from "vscode"
 import { htmlWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
-import { existsSync } from "node:fs"
 
 type ProblemWebviewState = {
     problemNm: string
@@ -25,7 +25,6 @@ type ProblemWebviewState = {
 
 export class ProblemWebviewPanel extends Logger {
     public static readonly viewType = "problemWebview"
-    private context_: vscode.ExtensionContext
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
@@ -34,14 +33,14 @@ export class ProblemWebviewPanel extends Logger {
 
     public constructor(
         panel: vscode.WebviewPanel,
-        context: vscode.ExtensionContext,
         { problemNm, title }: ProblemWebviewState
     ) {
         super()
 
+        const context = getContext()
+
         this.log.info(`New panel for problem ${problemNm} (${context.extensionUri})`)
 
-        this.context_ = context
         this.panel = panel
 
         context.subscriptions.push(
@@ -128,17 +127,13 @@ export class ProblemWebviewPanel extends Logger {
         const { command, data } = message
         switch (command) {
             case WebviewToVSCodeCommand.OPEN_FILE:
-                this.handler.openExistingFile()
-                return
+                return this.handler.openExistingFile(this.panel)
 
             case WebviewToVSCodeCommand.NEW_FILE:
-                await this.handler.createNewFile()
-                this.panel.reveal(vscode.ViewColumn.Beside, true)
-                return
+                return this.handler.createNewFile(this.panel)
 
             case WebviewToVSCodeCommand.ADD_NEW_TESTCASE:
-                await this.addNewTestcase()
-                return
+                return this.addNewTestcase()
 
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
                 return this.handler.runTestcaseAll()
@@ -291,7 +286,8 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     private _getUri(...path: string[]) {
-        const uri = vscode.Uri.joinPath(this.context_.extensionUri, ...path)
+        const context = getContext()
+        const uri = vscode.Uri.joinPath(context.extensionUri, ...path)
         return this.panel.webview.asWebviewUri(uri)
     }
 

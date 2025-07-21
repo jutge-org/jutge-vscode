@@ -20,15 +20,13 @@ import {
     chooseFromEditorList,
     decodeTestcase,
     defaultFilenameForProblem,
-    fileUriExists,
     getProglangFromProblem,
-    openFileUriColumnOne,
 } from "@/utils"
+import { basename } from "path"
 import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
-import { basename } from "path"
 
 export class ProblemHandler extends Logger {
     panel_: ProblemWebviewPanel
@@ -90,7 +88,7 @@ export class ProblemHandler extends Logger {
         return compatibleUris.length > 0
     }
 
-    async openExistingFile() {
+    async openExistingFile(panel: vscode.WebviewPanel) {
         if (!getWorkspaceFolder()) {
             return
         }
@@ -99,10 +97,24 @@ export class ProblemHandler extends Logger {
         if (!fileUri) {
             throw new Error(`File '${filename}${extension}' does not exist in workspace!`)
         }
-        openFileUriColumnOne(fileUri)
+
+        //
+
+        // NOTE(pauek): This ensures that we can open the webview besides the code file,
+        // if we don't do this the "createOrReveal" call fails the second time. I don't know
+        // why that is, but even if this is inefficient, we at least ensure that the source
+        // code is on the left and the webview on the right.
+        //
+        panel.dispose()
+
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+
+        const { problem_nm } = this.problem_
+        WebviewPanelRegistry.createOrReveal(problem_nm)
     }
 
-    async createNewFile(): Promise<void> {
+    async createNewFile(panel: vscode.WebviewPanel): Promise<void> {
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {
             return
@@ -112,7 +124,9 @@ export class ProblemHandler extends Logger {
             return
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
-        await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+
+        panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
     async runTestcaseByIndex(index: number): Promise<boolean> {

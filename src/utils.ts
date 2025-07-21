@@ -117,11 +117,6 @@ export function fileUriExists(fileUri: vscode.Uri | null): boolean {
     return fileUri ? fs.existsSync(fileUri.fsPath) : false
 }
 
-export async function openFileUriColumnOne(fileUri: vscode.Uri) {
-    const document = await vscode.workspace.openTextDocument(fileUri)
-    vscode.window.showTextDocument(document, vscode.ViewColumn.One)
-}
-
 export function getCompilerId(problem: Problem): string {
     const compilers = problem.handler?.compilers
     let compiler_id = ""

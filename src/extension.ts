@@ -21,13 +21,7 @@ import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
 import { JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
-import {
-    defaultFilenameForProblem,
-    findCodeFilenameForProblem,
-    getProblemIdFromFilename,
-    openFileUriColumnOne,
-} from "./utils"
-import { basename } from "path"
+import { findCodeFilenameForProblem } from "./utils"
 
 /**
  * Get the webview options for the webview panel.
@@ -57,7 +51,7 @@ const setContext_ = (context: vscode.ExtensionContext) => {
     context_ = context
 }
 
-const getContext_ = (): vscode.ExtensionContext => {
+export const getContext = (): vscode.ExtensionContext => {
     if (!context_) {
         throw new Error(`Context is undefined!!!`)
     }
@@ -74,17 +68,17 @@ export function getWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
 }
 
 export const getIconUri = (theme: "dark" | "light", filename: string) =>
-    vscode.Uri.joinPath(getContext_().extensionUri, "resources", theme, filename)
+    vscode.Uri.joinPath(getContext().extensionUri, "resources", theme, filename)
 
 export const globalStateGet = (key: string): string | undefined =>
-    getContext_().globalState.get(key)
+    getContext().globalState.get(key)
 
 export const globalStateUpdate = (key: string, value: string) =>
-    getContext_().globalState.update(key, value)
+    getContext().globalState.update(key, value)
 
 const registerCommand = (command: string, callback: (...args: any[]) => any) => {
     const disposable = vscode.commands.registerCommand(command, callback)
-    getContext_().subscriptions.push(disposable)
+    getContext().subscriptions.push(disposable)
 }
 
 const registerWebviewPanelSerializer = (
@@ -92,7 +86,7 @@ const registerWebviewPanelSerializer = (
     serializer: vscode.WebviewPanelSerializer
 ) => {
     const disposable = vscode.window.registerWebviewPanelSerializer(viewType, serializer)
-    getContext_().subscriptions.push(disposable)
+    getContext().subscriptions.push(disposable)
 }
 
 const showExtensionInfo = () => {
@@ -168,9 +162,10 @@ const commandShowProblem = async (problemNm: string | undefined) => {
     }
     const fileUri = await findCodeFilenameForProblem(problemNm)
     if (fileUri) {
-        await openFileUriColumnOne(fileUri)
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
     }
-    await WebviewPanelRegistry.createOrReveal(getContext_(), problemNm)
+    await WebviewPanelRegistry.createOrReveal(problemNm)
 }
 
 /**

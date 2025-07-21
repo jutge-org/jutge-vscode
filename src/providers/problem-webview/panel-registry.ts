@@ -1,12 +1,12 @@
 import * as vscode from "vscode"
 
-import { getWebviewOptions } from "@/extension"
-import { VSCodeToWebviewCommand, VSCodeToWebviewMessage } from "@/types"
+import { getContext, getWebviewOptions } from "@/extension"
 import { StaticLogger } from "@/loggers"
-import { ProblemWebviewPanel } from "./panel"
 import { JutgeService } from "@/services/jutge"
+import { VSCodeToWebviewMessage } from "@/types"
 import { getProblemIdFromFilename } from "@/utils"
 import { basename } from "path"
+import { ProblemWebviewPanel } from "./panel"
 
 /**
  * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
@@ -30,11 +30,10 @@ export class WebviewPanelRegistry extends StaticLogger {
      * @param context The context of the extension.
      * @param problemNm The problem number.
      */
-    static async createOrReveal(
-        context: vscode.ExtensionContext,
-        problemNm: string
-    ): Promise<ProblemWebviewPanel | null> {
+    static async createOrReveal(problemNm: string): Promise<ProblemWebviewPanel | null> {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
+
+        const context = getContext()
 
         if (!(await isProblemValidAndAccessible(problemNm))) {
             this.log.warn(`Problem ${problemNm} not valid or accessible`)
@@ -60,9 +59,7 @@ export class WebviewPanelRegistry extends StaticLogger {
             { viewColumn, preserveFocus: true },
             getWebviewOptions(context.extensionUri)
         )
-        const panel = new ProblemWebviewPanel(webviewPanel, context, {
-            problemNm,
-        })
+        const panel = new ProblemWebviewPanel(webviewPanel, { problemNm })
         this.createdPanels_.set(problemNm, panel)
         return panel
     }
