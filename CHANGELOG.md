@@ -4,6 +4,12 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## Version 0.0.18
+
+- Fixed regression where the source code generated with the "+ New File" button didn't use the template present at Jutge.org. Now it does again.
+
+- Additionally, we try to make sure the source code window is at the left and the statement of the problem is to the right. (Still to be improved.)
+
 ## Version 0.0.17
 
 - Added new button to edit a custom testcase. It will open the file containing the testcase.
