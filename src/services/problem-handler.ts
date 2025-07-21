@@ -28,6 +28,7 @@ import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
+import { basename } from "path"
 
 export class ProblemHandler extends Logger {
     panel_: ProblemWebviewPanel
@@ -59,32 +60,44 @@ export class ProblemHandler extends Logger {
         return this.langInfo_
     }
 
-    findFileInWorkspace(filename: string): vscode.Uri | undefined {
+    async chooseSourceFile(
+        filename: string,
+        extension: string
+    ): Promise<vscode.Uri | undefined> {
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {
             return undefined
         }
-        return vscode.Uri.joinPath(workspaceFolder.uri, filename)
+
+        // Compile all files that start with `filename` and have `extension`
+        const possibleUris = await vscode.workspace.findFiles(`${filename}*${extension}`)
+        const filenames = possibleUris.map((uri) => basename(uri.fsPath))
+        let chosen: string | undefined = filenames[0]
+        if (filenames.length > 1) {
+            chosen = await vscode.window.showQuickPick(filenames)
+        }
+        if (!chosen) {
+            return
+        }
+        return vscode.Uri.joinPath(workspaceFolder.uri, chosen)
     }
 
-    suggestedFileUri(): vscode.Uri | null {
-        const suggestedFilename = defaultFilenameForProblem(this.problem_)
-        const fileUri = this.findFileInWorkspace(suggestedFilename)
-        return fileUri || null
+    async sourceFileExists(): Promise<boolean> {
+        const { filename, extension } = defaultFilenameForProblem(this.problem_)
+        const compatibleUris = await vscode.workspace.findFiles(
+            `${filename}*${extension}`
+        )
+        return compatibleUris.length > 0
     }
 
-    async suggestedFileExists(): Promise<boolean> {
-        return fileUriExists(this.suggestedFileUri())
-    }
-
-    openExistingFile() {
+    async openExistingFile() {
         if (!getWorkspaceFolder()) {
             return
         }
-        const suggestedFileName = defaultFilenameForProblem(this.problem_)
-        const fileUri = this.findFileInWorkspace(suggestedFileName)
+        const { filename, extension } = defaultFilenameForProblem(this.problem_)
+        const fileUri = await this.chooseSourceFile(filename, extension)
         if (!fileUri) {
-            throw new Error(`File ${suggestedFileName} does not exist in workspace!`)
+            throw new Error(`File '${filename}${extension}' does not exist in workspace!`)
         }
         openFileUriColumnOne(fileUri)
     }

@@ -177,7 +177,7 @@ export class ProblemWebviewPanel extends Logger {
                 testcases: this.problem.testcases || [],
                 customTestcases: this.customTestcases || [],
                 handler: this.problem.handler || null,
-                fileExists: await this.handler.suggestedFileExists(),
+                fileExists: await this.handler.sourceFileExists(),
 
                 nonce: utils.getNonce(),
                 styleUri: this._getUri("dist", "webview", "main.css"),

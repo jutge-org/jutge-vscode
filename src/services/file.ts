@@ -2,12 +2,23 @@ import fs, { existsSync } from "fs"
 import * as vscode from "vscode"
 
 import { getWorkspaceFolder } from "@/extension"
-import { CustomTestcase, Problem } from "@/types"
-import { fileUriExists, sanitizeTitle } from "@/utils"
-import { readFile } from "fs/promises"
-import { JutgeService } from "./jutge"
-import { Proglang, chooseProgrammingLanguage, proglangInfoGet } from "./runners/languages"
 import { StaticLogger } from "@/loggers"
+import { CustomTestcase, Problem } from "@/types"
+import {
+    fileUriExists,
+    findFirstAvailableNumberedFilename,
+    sanitizeTitle,
+    string2Uint8Array,
+} from "@/utils"
+import { readFile } from "fs/promises"
+import { extname } from "path"
+import { JutgeService } from "./jutge"
+import {
+    LanguageInfo,
+    Proglang,
+    chooseProgrammingLanguage,
+    proglangInfoGet,
+} from "./runners/languages"
 
 const MAX_CUSTOM_TEXTCASES = 100 // FIXME(pauek): is this enough?? ;)
 
@@ -44,12 +55,69 @@ export class FileService extends StaticLogger {
         ].join("")
     }
 
-    static makeBody(proglang: Proglang) {
-        switch (proglang) {
-            case Proglang.CPP:
+    private static async makeBodyStdNoMain_(
+        langInfo: LanguageInfo,
+        problemId: string
+    ): Promise<Uint8Array<ArrayBufferLike>> {
+        const findTemplate = async () => {
+            const templateList = await JutgeService.getTemplateList(problemId)
+            for (const template of templateList) {
+                const ext = extname(template)
+                if (langInfo.extensions.includes(ext)) {
+                    return template
+                }
+            }
+            return null
+        }
+
+        const template = await findTemplate()
+        if (template === null) {
+            throw new Error(`No template for language ${langInfo.proglang}`)
+        }
+        this.log.info(`Found template '${template}'`)
+
+        const { data, name, type } = await JutgeService.getTemplate(problemId, template)
+
+        this.log.info(
+            `Got template '${template}': ${name} - ${type} (${data.constructor.name})`
+        )
+
+        return data
+    }
+
+    private static makeBodyStd_(langInfo: LanguageInfo): string {
+        switch (langInfo.proglang) {
+            case Proglang.CPP: {
                 return `#include <iostream>\nusing namespace std;\n\nint main() {\n\n}\n`
-            default:
+            }
+            default: {
                 return ``
+            }
+        }
+    }
+
+    private static async makeBody(
+        langInfo: LanguageInfo,
+        problem: Problem
+    ): Promise<Uint8Array<ArrayBufferLike>> {
+        const { handler, problem_id: problemId } = problem
+        if (handler === null) {
+            throw new Error(`Problem ${problem.problem_id} does not have a handler!`)
+        }
+        switch (handler.handler) {
+            case "std": {
+                switch (handler.source_modifier) {
+                    case "no_main": {
+                        return this.makeBodyStdNoMain_(langInfo, problemId)
+                    }
+                    default: {
+                        return string2Uint8Array(this.makeBodyStd_(langInfo))
+                    }
+                }
+            }
+            default: {
+                throw new Error(`Handler '${handler}' not implemented yet`)
+            }
         }
     }
 
@@ -140,8 +208,11 @@ export class FileService extends StaticLogger {
             return
         }
 
-        const { commentPrefix, extensions } = proglangInfoGet(proglang)
-        const suggestedFilename = this.makeSolutionFilename(problem, extensions[0])
+        const langinfo = proglangInfoGet(proglang)
+        const suggestedFilename = this.makeSolutionFilename(
+            problem,
+            langinfo.extensions[0]
+        )
 
         const workspaceFolder = getWorkspaceFolder()
         if (!workspaceFolder) {
@@ -152,23 +223,42 @@ export class FileService extends StaticLogger {
             workspaceFolder.uri,
             suggestedFilename
         )
+        let needsConfirmation: boolean = false
         if (fileUriExists(uri)) {
+            //
+            // NOTE(pauek): If the file already exists, we should suggest a different
+            // filename so that the user doesn't overwrite the file by chance.
+            // This is what addParenthesizedNumberToPath does.
+            //
+            const suggestedUri = vscode.Uri.from({
+                scheme: uri.scheme,
+                authority: uri.authority,
+                fragment: uri.fragment,
+                query: uri.query,
+                path: findFirstAvailableNumberedFilename(uri.path),
+            })
+
             uri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, suggestedFilename),
+                defaultUri: suggestedUri,
                 filters: { "All files": ["*"] },
                 saveLabel: "Create",
                 title: `Create new file for ${problem.title}`,
             })
             if (!uri) {
+                // Cancelled
                 return
             }
         }
 
         try {
-            const fileHeader = this.makeHeader(commentPrefix, problem)
-            const fileBody = this.makeBody(proglang)
-            const fileContent = fileHeader + fileBody
-            fs.writeFileSync(uri.fsPath, fileContent, { flag: "w" })
+            const fileHeader = string2Uint8Array(
+                this.makeHeader(langinfo.commentPrefix, problem)
+            )
+            const fileBody = await this.makeBody(langinfo, problem)
+            const fileContent = new Uint8Array([...fileHeader, ...fileBody])
+
+            await vscode.workspace.fs.writeFile(uri, fileContent)
+            //
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to create file in ${uri.fsPath} `)
             throw error

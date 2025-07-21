@@ -1,5 +1,5 @@
 import * as fs from "fs"
-import { dirname, extname } from "path"
+import { basename, dirname, extname, join } from "path"
 import * as vscode from "vscode"
 import { Testcase } from "./jutge_api_client"
 import { Problem } from "./types"
@@ -152,7 +152,10 @@ export function defaultFilenameForProblem(problem: Problem) {
     const proglang = getProglangFromProblem(problem) || Proglang.CPP
     const langInfo = proglangInfoGet(proglang)
     const defaultExtension = langInfo.extensions[0]
-    return `${problem_id}_${sanitizeTitle(title)}${defaultExtension}`
+    return {
+        filename: `${problem_id}_${sanitizeTitle(title)}`,
+        extension: defaultExtension,
+    }
 }
 
 export async function findCodeFilenameForProblem(
@@ -181,4 +184,36 @@ export async function findCodeFilenameForProblem(
     }
 
     return candidates[0] || null
+}
+
+export function string2Uint8Array(data: string): Uint8Array<ArrayBufferLike> {
+    const encoder = new TextEncoder()
+    return encoder.encode(data)
+}
+
+const endsWithParenNumRegex = / \(([0-9]+)\)$/
+
+export function addParenthesizedNumerToPath(path: string): string {
+    const baseDir = dirname(path)
+    const filename = basename(path)
+    const extension = extname(filename)
+
+    let filenameNoExt = filename.slice(0, -extension.length)
+
+    const match = filenameNoExt.match(endsWithParenNumRegex)
+    let num: number = 1
+    let newFilename: string = filenameNoExt
+    if (match) {
+        num = 1 + Number(match[1])
+        newFilename = filenameNoExt.slice(0, match.index)
+    }
+    newFilename += ` (${num})` + extension
+    return join(baseDir, newFilename)
+}
+
+export function findFirstAvailableNumberedFilename(path: string): string {
+    while (fs.existsSync(path)) {
+        path = addParenthesizedNumerToPath(path)
+    }
+    return path
 }
