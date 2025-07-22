@@ -1,4 +1,4 @@
-import { getContext, getWorkspaceFolder } from "@/extension"
+import { getContext, getWorkspaceFolderWithErrorMessage } from "@/extension"
 import { AbstractProblem } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
@@ -17,6 +17,7 @@ import { existsSync } from "node:fs"
 import * as vscode from "vscode"
 import { htmlWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
+import { showCodeDocument } from "@/utils"
 
 type ProblemWebviewState = {
     problemNm: string
@@ -89,7 +90,7 @@ export class ProblemWebviewPanel extends Logger {
     async addNewTestcase() {
         this.log.info(`Adding new test case`)
 
-        const workspaceFolder = getWorkspaceFolder()
+        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {
             return
         }
@@ -98,14 +99,14 @@ export class ProblemWebviewPanel extends Logger {
             return
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
-        await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        await showCodeDocument(document)
 
         await this.updateCustomTestcases()
         this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
     async editTestcaseByIndex(index: number) {
-        const workspaceFolder = getWorkspaceFolder()
+        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {
             return
         }
@@ -115,7 +116,7 @@ export class ProblemWebviewPanel extends Logger {
             return
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
-        await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        await showCodeDocument(document)
         this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 

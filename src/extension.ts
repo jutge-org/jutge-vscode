@@ -21,7 +21,7 @@ import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
 import { JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
-import { findCodeFilenameForProblem } from "./utils"
+import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
 
 /**
  * Get the webview options for the webview panel.
@@ -58,11 +58,24 @@ export const getContext = (): vscode.ExtensionContext => {
     return context_
 }
 
+export async function whenWorkspaceFolder(
+    bodyFunc: (workspace: vscode.WorkspaceFolder) => Promise<void>
+) {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+    if (workspaceFolder) {
+        await bodyFunc(workspaceFolder)
+    }
+}
+
 export function getWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
+    return vscode.workspace.workspaceFolders?.[0]
+}
+
+export function getWorkspaceFolderWithErrorMessage(): vscode.WorkspaceFolder | undefined {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
     if (!workspaceFolder) {
         // FIXME: Show a dialog to open a workspace instead??'
-        vscode.window.showErrorMessage("No workspace folder open.")
+        vscode.window.showErrorMessage("Please open a folder to store the problem files.")
     }
     return workspaceFolder
 }
@@ -156,15 +169,14 @@ const commandShowProblem = async (problemNm: string | undefined) => {
         }
     }
 
-    const workspace = getWorkspaceFolder()
-    if (!workspace) {
-        return
-    }
-    const fileUri = await findCodeFilenameForProblem(problemNm)
-    if (fileUri) {
-        const document = await vscode.workspace.openTextDocument(fileUri)
-        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
-    }
+    await whenWorkspaceFolder(async (workspace) => {
+        const fileUri = await findCodeFilenameForProblem(workspace, problemNm)
+        if (fileUri) {
+            const document = await vscode.workspace.openTextDocument(fileUri)
+            await showCodeDocument(document)
+        }
+    })
+
     await WebviewPanelRegistry.createOrReveal(problemNm)
 }
 

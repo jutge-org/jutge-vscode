@@ -1,7 +1,7 @@
 import fs, { existsSync } from "fs"
 import * as vscode from "vscode"
 
-import { getWorkspaceFolder } from "@/extension"
+import { getWorkspaceFolder, getWorkspaceFolderWithErrorMessage } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { CustomTestcase, Problem } from "@/types"
 import {
@@ -130,7 +130,7 @@ export class FileService extends StaticLogger {
     }
 
     static findFirstUnusedCustomTestcase(problem: Problem): vscode.Uri | null {
-        const workspace = getWorkspaceFolder()
+        const workspace = getWorkspaceFolderWithErrorMessage()
         if (!workspace) {
             return null
         }
@@ -156,7 +156,7 @@ export class FileService extends StaticLogger {
     static async createNewTestcaseFile(
         problem: Problem
     ): Promise<vscode.Uri | undefined> {
-        const workspace = getWorkspaceFolder()
+        const workspace = getWorkspaceFolderWithErrorMessage()
         if (!workspace) {
             return
         }
@@ -214,7 +214,7 @@ export class FileService extends StaticLogger {
             langinfo.extensions[0]
         )
 
-        const workspaceFolder = getWorkspaceFolder()
+        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {
             return
         }

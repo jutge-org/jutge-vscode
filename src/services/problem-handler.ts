@@ -1,4 +1,4 @@
-import { getWorkspaceFolder } from "@/extension"
+import { getWorkspaceFolderWithErrorMessage } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ProblemWebviewPanel } from "@/providers/problem-webview/panel"
@@ -21,6 +21,7 @@ import {
     decodeTestcase,
     defaultFilenameForProblem,
     getProglangFromProblem,
+    showCodeDocument,
 } from "@/utils"
 import { basename } from "path"
 import * as vscode from "vscode"
@@ -62,7 +63,7 @@ export class ProblemHandler extends Logger {
         filename: string,
         extension: string
     ): Promise<vscode.Uri | undefined> {
-        const workspaceFolder = getWorkspaceFolder()
+        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {
             return undefined
         }
@@ -89,7 +90,7 @@ export class ProblemHandler extends Logger {
     }
 
     async openExistingFile(panel: vscode.WebviewPanel) {
-        if (!getWorkspaceFolder()) {
+        if (!getWorkspaceFolderWithErrorMessage()) {
             return
         }
         const { filename, extension } = defaultFilenameForProblem(this.problem_)
@@ -108,14 +109,14 @@ export class ProblemHandler extends Logger {
         panel.dispose()
 
         const document = await vscode.workspace.openTextDocument(fileUri)
-        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        showCodeDocument(document)
 
         const { problem_nm } = this.problem_
         WebviewPanelRegistry.createOrReveal(problem_nm)
     }
 
     async createNewFile(panel: vscode.WebviewPanel): Promise<void> {
-        const workspaceFolder = getWorkspaceFolder()
+        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {
             return
         }
@@ -124,7 +125,7 @@ export class ProblemHandler extends Logger {
             return
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
-        vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+        showCodeDocument(document)
 
         panel.reveal(vscode.ViewColumn.Beside, true)
     }

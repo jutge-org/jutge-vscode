@@ -9,7 +9,7 @@ import {
     proglangFromCompiler,
     proglangInfoGet,
 } from "./services/runners/languages"
-import { getWorkspaceFolder } from "./extension"
+import { getWorkspaceFolder, getWorkspaceFolderWithErrorMessage } from "./extension"
 import { readdir } from "fs/promises"
 import { JutgeService } from "./services/jutge"
 
@@ -154,15 +154,10 @@ export function defaultFilenameForProblem(problem: Problem) {
 }
 
 export async function findCodeFilenameForProblem(
+    workspace: vscode.WorkspaceFolder,
     problemNm: string
 ): Promise<vscode.Uri | null> {
     const problemId = getDefaultProblemId(problemNm)
-
-    const workspace = getWorkspaceFolder()
-    if (!workspace) {
-        return null
-    }
-
     const proglangExtensions = getProglangExtensions()
 
     // Find files that match
@@ -211,4 +206,11 @@ export function findFirstAvailableNumberedFilename(path: string): string {
         path = addParenthesizedNumerToPath(path)
     }
     return path
+}
+
+export async function showCodeDocument(document: vscode.TextDocument) {
+    return vscode.window.showTextDocument(document, {
+        preview: false,
+        viewColumn: vscode.ViewColumn.One,
+    })
 }
