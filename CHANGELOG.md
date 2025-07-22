@@ -2,44 +2,71 @@
 
 All notable changes to the "jutge-vscode" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Version 0.0.18
+## [0.0.19] - 2025-07-22
 
-- Fixed regression where the source code generated with the "+ New File" button didn't use the template present at Jutge.org. Now it does again.
+### Added
+
+- Made the code editors not "previews" so that they are kept open when opening more editors (and not substituted).
+
+### Fixed
+
+- Opening a problem statement without a workspace folder didn't work.
+
+## [0.0.18] - 2025-07-21
+
+### Fixed
+
+- The source code generated with the "+ New File" button didn't use the template present at Jutge.org. Now it does again.
 
 - Additionally, we try to make sure the source code window is at the left and the statement of the problem is to the right. (Still to be improved.)
 
-## Version 0.0.17
+## [0.0.17] - 2025-07-19
 
-- Added new button to edit a custom testcase. It will open the file containing the testcase.
+### Added
 
-- Added new button to expand or collapse all testcases of a certain type.
+- Button to edit a custom testcase. It will open the file containing the testcase.
+- Button to expand or collapse all testcases of a certain type.
 
-- Improved input/output layout for regular and custom testcases.
+### Fixed
 
-- Fixed regression bug whereby the verdict notification appeared on top of the "waiting" notification when sending a problem.
+- Input/output layout for regular and custom testcases.
+- The verdict notification appeared on top of the "waiting" notification when sending a problem.
 
-## Version 0.0.16
+## [0.0.16] - 2025-07-18
 
-- Added custom testcases. These are stored as files and are also updated whenever files change, are created or deleted. (Some subtle bugs remain, but the feature is quite usable.)
+### Added
+
+- Custom testcases. These are stored as files and are also updated whenever files change, are created or deleted. (Some subtle bugs remain, but the feature is quite usable.)
+
+### Fixed
 
 - Improved the traffic lights icons further.
+- Upon pressing "+ New File", the language of the file was not asked.
+- The mouse cursor in the problem statement was not changing to reveal interactive elements (buttons, etc.)
 
-- Fixed a regression where upon pressing "+ New File", the language of the file was not asked.
+## [0.0.15] - 2025-07-17
 
-- Fixed a bug where the mouse cursor in the problem statement was not changing to reveal interactive elements (buttons, etc.)
+### Added
 
-## Version 0.0.15
+- Icon for "presentation error" (yellow).
 
-- Fixed the update mechanism for the problem icon (the traffic lights icon), which triggers when the veredict is given as a notification. Before 0.0.15, it didn't update properly (and internally it used a convoluted mechanism, now it is much simpler).
+- Messages shown for rejected problems include more cases found in Jutge.org, such as "PE" and "IC", which were shown confusingly as a question mark without any text.
 
-- There is now an icon for "presentation error" (yellow).
+- Button "Open Existing File" in the problem page (beside the "+ New File" button) whenever a file with the default filename is present in the workspace directory. This makes it much easier to find the file implementing a particular problem, whenever you work on problems and just accept the filenames produced by the extension.
 
-- The messages shown for rejected problems include more cases found in Jutge.org, such as "PE" and "IC", which were shown confusingly as a question mark without any text.
+### Fixed
 
-- Added a "Open Existing File" in the problem page (beside the "+ New File" button) whenever a file with the default filename is present in the workspace directory. This makes it much easier to find the file implementing a particular problem, whenever you work on problems and just accept the filenames produced by the extension.
+- Update mechanism for the problem icon (the traffic lights icon), which triggers when the veredict is given as a notification. Before 0.0.15, it didn't update properly (and internally it used a convoluted mechanism, now it is much simpler).
 
-## Version 0.0.14
+## [0.0.14] - 2025-07-17
 
-- Introduced new icons for the state of problems, and refactored code in the extension for a speed improvement.
+### Added
+
+- Introduced new icons for the state of problems.
+
+### Fixed
+
+- Refactored code in the extension for a speed improvement.
