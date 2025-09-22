@@ -119,7 +119,7 @@ export class JutgeService extends StaticLogger {
             const credentials = await jutgeClient.login({ email, password })
             return credentials.token
         } catch (error) {
-            vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
+            vscode.window.showErrorMessage(`Jutge.org: error signing in. ${error}.`)
             this.log.error(`Error signing in: ${error}`)
             return
         }
