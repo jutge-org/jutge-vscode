@@ -26,7 +26,7 @@ export class ProblemWebviewPanelSerializer
                 return
             }
 
-            const panel = new ProblemWebviewPanel(webviewPanel, this.context_, {
+            const panel = new ProblemWebviewPanel(webviewPanel, {
                 problemNm: state.problemNm,
             })
 
