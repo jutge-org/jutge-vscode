@@ -112,6 +112,7 @@ const showExtensionInfo = () => {
     console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
     console.info(`Node.js Version: ${process.version}`)
     console.info(`Date: ${new Date().toISOString()}`)
+    console.info(`JUTGE_API_URL: '${process.env.JUTGE_API_URL}'`)
     console.info("===================================")
 }
 
