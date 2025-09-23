@@ -150,24 +150,24 @@
     },
     "devDependencies": {
         "@types/deep-equal": "^1.0.4",
-        "@types/node": "^18.19.80",
-        "@types/vscode": "^1.87.0",
+        "@types/node": "^18.19.127",
+        "@types/vscode": "^1.104.0",
         "@types/vscode-webview": "^1.57.5",
         "@typescript-eslint/eslint-plugin": "^7.18.0",
         "@typescript-eslint/parser": "^7.18.0",
-        "@vscode/vsce": "^3.6.0",
-        "esbuild": "^0.25.4",
+        "@vscode/vsce": "^3.6.1",
+        "esbuild": "^0.25.10",
         "eslint": "^8.57.1",
         "husky": "^9.1.7",
-        "lint-staged": "^15.5.0",
-        "prettier": "^3.5.3",
-        "typescript": "^5.8.2"
+        "lint-staged": "^15.5.2",
+        "prettier": "^3.6.2",
+        "typescript": "^5.9.2"
     },
     "dependencies": {
-        "@vscode/python-extension": "^1.0.5",
+        "@vscode/python-extension": "^1.0.6",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "deep-equal": "^2.2.3",
-        "yaml": "^2.7.0"
+        "yaml": "^2.8.1"
     },
     "lint-staged": {
         "*.ts": "eslint --cache --fix",
