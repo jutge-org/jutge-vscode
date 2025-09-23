@@ -64,10 +64,10 @@ export class SubmissionService extends StaticLogger {
                 try {
                     this.log.debug(`Reading file content`)
                     const code = await readFile(filePath)
-                    const buffer = Buffer.from(code)
-                    const file = new File([buffer], basename(filePath), {
+                    const file = new File([Buffer.from(code)], basename(filePath), {
                         type: langInfo.mimeType,
                     })
+                    this.log.debug(`File has ${file.size} bytes`)
 
                     this.log.info(`Submitting to Jutge.org`)
                     const { submission_id } = await JutgeService.submit(file, {
