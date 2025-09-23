@@ -64,7 +64,8 @@ export class SubmissionService extends StaticLogger {
                 try {
                     this.log.debug(`Reading file content`)
                     const code = await readFile(filePath)
-                    const file = new File([code], basename(filePath), {
+                    const buffer = Buffer.from(code)
+                    const file = new File([buffer], basename(filePath), {
                         type: langInfo.mimeType,
                     })
 
