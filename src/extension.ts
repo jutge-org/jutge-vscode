@@ -22,6 +22,7 @@ import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel
 import { JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
+import { JutgeApiClient } from "./jutge_api_client"
 
 /**
  * Get the webview options for the webview panel.
@@ -112,7 +113,7 @@ const showExtensionInfo = () => {
     console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
     console.info(`Node.js Version: ${process.version}`)
     console.info(`Date: ${new Date().toISOString()}`)
-    console.info(`JUTGE_API_URL: '${process.env.JUTGE_API_URL}'`)
+    console.info(`JUTGE_API_URL: '${JutgeApiClient.JUTGE_API_URL}'`)
     console.info("===================================")
 }
 
