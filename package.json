@@ -3,13 +3,13 @@
     "displayName": "jutge-vscode",
     "publisher": "jutge-org",
     "description": "Visual Studio Code extension for Jutge.org",
-    "version": "0.0.22",
+    "version": "0.0.23",
     "repository": "https://github.com/jutge-org/jutge-vscode",
     "license": "See license in LICENSE",
     "icon": "resources/jutge.png",
     "preview": true,
     "engines": {
-        "vscode": "^1.104.0"
+        "vscode": "^1.87.0"
     },
     "categories": [
         "Other"
@@ -151,7 +151,7 @@
     "devDependencies": {
         "@types/deep-equal": "^1.0.4",
         "@types/node": "^18.19.127",
-        "@types/vscode": "^1.104.0",
+        "@types/vscode": "1.87.0",
         "@types/vscode-webview": "^1.57.5",
         "@typescript-eslint/eslint-plugin": "^7.18.0",
         "@typescript-eslint/parser": "^7.18.0",
