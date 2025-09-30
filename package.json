@@ -50,6 +50,11 @@
                     "command": "jutge-vscode.refreshTree",
                     "when": "view == jutgeTreeView",
                     "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.signOut",
+                    "when": "view == jutgeTreeView",
+                    "group": "navigation"
                 }
             ]
         },
@@ -64,7 +69,11 @@
             },
             {
                 "command": "jutge-vscode.signOut",
-                "title": "Jutge.org: Sign Out"
+                "title": "Jutge.org: Sign Out",
+                "icon": {
+                    "light": "resources/light/signout.svg",
+                    "dark": "resources/dark/signout.svg"
+                }
             },
             {
                 "command": "jutge-vscode.showProblem",
