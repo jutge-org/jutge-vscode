@@ -6,6 +6,7 @@
 */
 
 import * as j from "@/jutge_api_client"
+import { JutgeApiClient } from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import deepEqual from "deep-equal"
 import * as fs from "fs"
@@ -29,6 +30,7 @@ type AskPasswordParams = {
 export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
     static examMode_: boolean = false
+    static oldJutgeClientHeaders_: Record<string, string> = {}
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
         this.log.info("Initializing...")
@@ -136,6 +138,24 @@ export class JutgeService extends StaticLogger {
         }
     }
 
+    private static enterExamMode() {
+        // Enter exam mode by setting headers on the client
+        this.oldJutgeClientHeaders_ = jutgeClient.headers
+        jutgeClient.headers = {
+            "jutge-host": "exam.api.jutge.org",
+        }
+        // TODO(pauek): Switch to this
+        // JutgeApiClient.JUTGE_API_URL = "https://exam.api.jutge.org"
+        this.examMode_ = true
+        this.log.info(`Entered exam mode.`)
+    }
+
+    private static exitExamMode() {
+        jutgeClient.headers = this.oldJutgeClientHeaders_
+        this.examMode_ = false
+        this.log.info(`Exited exam mode.`)
+    }
+
     private static async getExamTokenFromCredentials(): Promise<
         { exam_key: string; token: string } | undefined
     > {
@@ -153,22 +173,17 @@ export class JutgeService extends StaticLogger {
             return
         }
 
-        // Enter exam mode by setting headers on the client
-        const oldHeaders = jutgeClient.headers
-        jutgeClient.headers = {
-            "jutge-host": "exam.api.jutge.org",
-        }
-        this.examMode_ = true
+        this.enterExamMode()
 
         // Retrieve a list of exams for the user
         const exams = await this.getReadyExams()
         if (!exams) {
-            jutgeClient.headers = oldHeaders
+            this.exitExamMode()
             return
         }
         const chosenExam = await this.pickOneOf(exams)
         if (!chosenExam) {
-            jutgeClient.headers = oldHeaders
+            this.exitExamMode()
             return
         }
 
@@ -178,7 +193,7 @@ export class JutgeService extends StaticLogger {
             prompt: "Please write the exam password provided by the teacher",
         })
         if (!examPassword) {
-            jutgeClient.headers = oldHeaders
+            this.exitExamMode()
             return
         }
 
@@ -197,7 +212,7 @@ export class JutgeService extends StaticLogger {
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
             this.log.error(`JutgeService: Error signing in: ${error}`)
-            jutgeClient.headers = oldHeaders
+            this.exitExamMode()
             return
         }
     }
