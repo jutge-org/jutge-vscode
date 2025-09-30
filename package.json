@@ -3,13 +3,13 @@
     "displayName": "jutge-vscode",
     "publisher": "jutge-org",
     "description": "Visual Studio Code extension for Jutge.org",
-    "version": "0.0.23",
+    "version": "0.0.24",
     "repository": "https://github.com/jutge-org/jutge-vscode",
     "license": "See license in LICENSE",
     "icon": "resources/jutge.png",
     "preview": true,
     "engines": {
-        "vscode": "^1.87.0"
+        "vscode": "^1.90.0"
     },
     "categories": [
         "Other"
