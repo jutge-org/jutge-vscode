@@ -164,7 +164,7 @@
         "@types/vscode-webview": "^1.57.5",
         "@typescript-eslint/eslint-plugin": "^7.18.0",
         "@typescript-eslint/parser": "^7.18.0",
-        "@vscode/vsce": "^3.6.1",
+        "@vscode/vsce": "^3.6.2",
         "esbuild": "^0.25.10",
         "eslint": "^8.57.1",
         "husky": "^9.1.7",
