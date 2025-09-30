@@ -130,8 +130,16 @@ export class ProblemHandler extends Logger {
         panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
-    async runTestcaseByIndex(index: number): Promise<boolean> {
+    async runTestcaseByIndex(
+        index: number,
+        options: { saveFirst: boolean } = { saveFirst: true }
+    ): Promise<boolean> {
         try {
+            if (options?.saveFirst) {
+                // Save the current file first
+                await vscode.commands.executeCommand("workbench.action.files.save")
+            }
+
             const filePath = await this.__getEditorFilepath()
             this.log.debug(`Running testcase on file ${filePath}`)
 
@@ -157,6 +165,9 @@ export class ProblemHandler extends Logger {
 
     async runCustomTestcaseByIndex(index: number): Promise<boolean> {
         try {
+            // Save the current file first
+            await vscode.commands.executeCommand("workbench.action.files.save")
+
             const filePath = await this.__getEditorFilepath()
             this.log.debug(`Running testcase on file ${filePath}`)
 
@@ -182,6 +193,9 @@ export class ProblemHandler extends Logger {
 
     async runTestcaseAll(): Promise<boolean> {
         try {
+            // Save the current file first
+            await vscode.commands.executeCommand("workbench.action.files.save")
+
             const testcases = await this.__ensureTestcases()
             this.log.debug(
                 `Running all testcases for problem ${this.problem_.problem_id}`
@@ -189,7 +203,9 @@ export class ProblemHandler extends Logger {
 
             let allPassed = true
             for (let index = 1; index <= testcases.length; index++) {
-                allPassed = allPassed && (await this.runTestcaseByIndex(index))
+                allPassed =
+                    allPassed &&
+                    (await this.runTestcaseByIndex(index, { saveFirst: false }))
             }
 
             return allPassed
@@ -202,6 +218,9 @@ export class ProblemHandler extends Logger {
     }
 
     async submitToJudge(): Promise<void> {
+        // Save the current file first
+        await vscode.commands.executeCommand("workbench.action.files.save")
+
         let editor = await chooseFromEditorList(vscode.window.visibleTextEditors)
         if (!editor) {
             vscode.window.showErrorMessage("No text editor open.")
