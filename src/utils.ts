@@ -12,6 +12,17 @@ import {
 import { getWorkspaceFolder, getWorkspaceFolderWithErrorMessage } from "./extension"
 import { readdir } from "fs/promises"
 import { JutgeService } from "./services/jutge"
+import * as os from "os"
+
+
+/**
+ * A function that returns whether the os is Windows.
+ *
+ * @returns true/false
+ */
+export function isWindows() {
+    return os.type() === "Windows_NT"
+}
 
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
@@ -77,6 +88,9 @@ export const getWorkingDirectory = (filename: string) => {
     } else {
         workingDir = dirname(filename)
     }
+    if (isWindows() && workingDir[0] === "/") {
+        workingDir = workingDir.slice(1)
+    }
     console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
 }
@@ -89,6 +103,11 @@ export async function waitMilliseconds(time_ms: number): Promise<void> {
 
 export function sanitizeTitle(title: string): string {
     title = title.replace(/ /g, "_") // Replace spaces with underscores
+    title = title.replace(/[à,á]/g, "a") // Replace accents
+    title = title.replace(/[è,é]/g, "e") // Replace accents
+    title = title.replace(/[í,ï]/g, "i") // Replace accents
+    title = title.replace(/[ò,ó]/g, "o") // Replace accents
+    title = title.replace(/[ú,ü]/g, "u") // Replace accents
     title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
     return title
 }

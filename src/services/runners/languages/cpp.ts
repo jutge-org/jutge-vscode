@@ -15,12 +15,15 @@ export class CppRunner extends Logger implements LanguageRunner {
         const flags = ConfigService.getCppFlags()
         const workingDir = getWorkingDirectory(codePath)
 
+        let params = [codePath, "-o", binaryPath, ...flags]
+        if (command === "cl") { // VS Build tools for Windows
+            params = [codePath, "/nologo", "/Fe" + binaryPath, ...flags]
+        }
+
         // First compile via spawnSync to check for errors
-        const result = childProcess.spawnSync(
-            command,
-            [codePath, "-o", binaryPath, ...flags],
-            { cwd: workingDir }
-        )
+        const result = childProcess.spawnSync(command, params, {
+            cwd: workingDir,
+        })
 
         // Check if there are compilation errors
         const hasErrors =
@@ -51,7 +54,6 @@ export class CppRunner extends Logger implements LanguageRunner {
         // Compile first - this will show terminal if compile errors
         this.compile(codePath, binaryPath, document)
 
-        const binaryName = path.basename(binaryPath)
         const result = childProcess.spawnSync(binaryPath, [], {
             input,
             timeout: 5000,
@@ -68,7 +70,7 @@ export class CppRunner extends Logger implements LanguageRunner {
         // Only execute in terminal if there are errors
         if (hasErrors) {
             this.log.debug(`Runtime errors detected, showing in terminal`)
-            TerminalService.executeCommand(`./${binaryName}`, [], true, input)
+            TerminalService.executeCommand(binaryPath, [], true, input)
         }
 
         // Handle runtime errors for diagnostics
