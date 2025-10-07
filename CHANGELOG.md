@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.26] -
 
+### Added
+
+- Support for "graphics" problems, in which the output of a program is a PNG image instead of text. Testcases show the expected image and the output is
+  shown to the side. Comparison is not yet implemented.
+
 ### Fixed
 
 - If you search for a problem that does not exist, you receive an error message instead of a blank document.
