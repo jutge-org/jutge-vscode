@@ -94,9 +94,7 @@ const postMessageForTestcase = (command: WebviewToVSCodeCommand) =>
 
 const runTestcase = postMessageForTestcase(WebviewToVSCodeCommand.RUN_TESTCASE)
 const editTestcase = postMessageForTestcase(WebviewToVSCodeCommand.EDIT_TESTCASE)
-const runCustomTestcase = postMessageForTestcase(
-    WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE
-)
+const runCustomTestcase = postMessageForTestcase(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE)
 
 function copyToClipboard() {
     const textElement = this.nextElementSibling as HTMLDivElement
@@ -167,27 +165,39 @@ const toggleMinimizedExpanded = (type: "normal" | "custom") =>
     }
 
 function compareDiff() {
-    const testcaseId = parseInt(this.closest(".testcase")!.id.split("-")[1])
+    const testcaseElem = this.closest(".testcase")!
+    const testcaseId = parseInt(testcaseElem.id.split("-")[1])
 
-    // Get the expected and received output texts
-    const testcase = document.getElementById(`testcase-${testcaseId}`)!
-    const expected = testcase.querySelector(".expected pre")!
-    const received = testcase.querySelector(".received pre")!
+    switch (testcaseElem.dataset.type) {
+        case "std": {
+            // Get the expected and received output texts
+            const testcase = document.getElementById(`testcase-${testcaseId}`)!
+            const expected = testcase.querySelector(".expected pre")!
+            const received = testcase.querySelector(".received pre")!
 
-    // Original text (without special chars visualization)
-    const expectedText =
-        expected.getAttribute("data-original-text") || expected.textContent || ""
-    const receivedText =
-        received.getAttribute("data-original-text") || received.textContent || ""
+            // Original text (without special chars visualization)
+            const expectedText =
+                expected.getAttribute("data-original-text") || expected.textContent || ""
+            const receivedText =
+                received.getAttribute("data-original-text") || received.textContent || ""
 
-    vscode.postMessage({
-        command: WebviewToVSCodeCommand.SHOW_DIFF,
-        data: {
-            testcaseId: testcaseId,
-            expected: expectedText,
-            received: receivedText,
-        },
-    })
+            vscode.postMessage({
+                command: WebviewToVSCodeCommand.SHOW_DIFF,
+                data: {
+                    testcaseId: testcaseId,
+                    expected: expectedText,
+                    received: receivedText,
+                },
+            })
+            break
+        }
+        case "graphic": {
+            console.log("TODO: Graphic comparison!")
+            break
+        }
+        default:
+            console.error(`Unknown type of testcase: '${testcaseElem.dataset.type}'`)
+    }
 }
 
 const onClick = (fn: EventListenerOrEventListenerObject) => (element: Element) =>
@@ -242,9 +252,7 @@ function updateCustomTestcases(customTestcases: string[] /* html for testcases *
     }
     customTestcasesDiv.innerHTML = htmlCustomTestcases(customTestcases)
 
-    customTestcasesDiv
-        .querySelectorAll('[id^="edit-testcase-"]')
-        .forEach(onClick(editTestcase))
+    customTestcasesDiv.querySelectorAll('[id^="edit-testcase-"]').forEach(onClick(editTestcase))
 
     customTestcasesDiv
         .querySelectorAll('[id^="run-custom-testcase-"]')
@@ -265,17 +273,16 @@ function updateTestcaseStatus(
     testcaseIndex: number,
     status: string,
     outputText: string,
-    type: "custom" | "normal"
+    testcaseType: "custom" | "normal"
 ) {
     const testcaseId =
-        type === "normal"
+        testcaseType === "normal"
             ? `testcase-${testcaseIndex}`
             : `custom-testcase-${testcaseIndex}`
     const testcase = document.getElementById(testcaseId) as HTMLDivElement
     const content = testcase.querySelector(`.content`) as HTMLDivElement
     const running = testcase.querySelector(".running-text") as HTMLSpanElement
-    const received = testcase.querySelector(".received") as HTMLDivElement
-    const output = testcase.querySelector("#received pre") as HTMLPreElement
+    const containerReceived = testcase.querySelector(".container.received") as HTMLDivElement
 
     const setTestcaseAppearance = (text: string, color: string) => {
         running.textContent = text
@@ -283,36 +290,42 @@ function updateTestcaseStatus(
         running.style.color = color
     }
 
-    const setOutputText = (text: string) => {
-        output.setAttribute("data-original-text", text)
-        output.innerHTML = makeSpacesVisible(text)
-        received.style.display = "block"
-        content.classList.add("compare")
-    }
-
-    const hideOutputText = () => {
-        received.style.display = "none"
-        content.classList.remove("compare")
+    const setOutput = (text: string) => {
+        if (testcase.dataset.type === "graphic") {
+            const received = testcase.querySelector("#received")
+            received.textContent = "" // clear inside (fastest)
+            const img = document.createElement("img")
+            img.src = `data:image/png;base64,${outputText}`
+            received.appendChild(img)
+        } else {
+            const output = testcase.querySelector("#received pre") as HTMLPreElement
+            output.setAttribute("data-original-text", text)
+            output.innerHTML = makeSpacesVisible(text)
+        }
+        containerReceived.style.display = "block"
     }
 
     switch (status) {
         case "running":
             setTestcaseAppearance("Running...", "yellow")
-            hideOutputText()
-            break
-
-        case "passed":
-            setTestcaseAppearance(type === "normal" ? "Passed" : "Done", "green")
-            setOutputText(outputText)
-            content.style.display = type === "normal" ? "none" : "flex"
-            passedTestcases.set(testcaseId, true)
+            containerReceived.style.display = "none"
+            content.classList.remove("compare")
             break
 
         case "failed":
             setTestcaseAppearance("Failed", "red")
-            setOutputText(outputText)
+            setOutput(outputText)
             content.style.display = "flex"
+            content.classList.add("compare")
             passedTestcases.set(testcaseId, false)
+            break
+
+        case "passed":
+            setTestcaseAppearance(testcaseType === "normal" ? "Passed" : "Done", "green")
+            setOutput(outputText)
+            content.style.display = testcaseType === "normal" ? "none" : "flex"
+            content.classList.remove("compare")
+            passedTestcases.set(testcaseId, true)
             break
     }
 }

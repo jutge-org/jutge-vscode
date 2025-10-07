@@ -1,5 +1,6 @@
 import fs, { existsSync } from "fs"
 import * as vscode from "vscode"
+import childProcess from "child_process"
 
 import { getWorkspaceFolder, getWorkspaceFolderWithErrorMessage } from "@/extension"
 import { StaticLogger } from "@/loggers"
@@ -7,6 +8,7 @@ import { CustomTestcase, Problem } from "@/types"
 import {
     fileUriExists,
     findFirstAvailableNumberedFilename,
+    getWorkingDirectory,
     sanitizeTitle,
     string2Uint8Array,
 } from "@/utils"
@@ -115,6 +117,9 @@ export class FileService extends StaticLogger {
                     }
                 }
             }
+            case "graphic": {
+                return string2Uint8Array(this.makeBodyStd_(langInfo))
+            }
             default: {
                 throw new Error(`Handler '${handler}' not implemented yet`)
             }
@@ -153,9 +158,7 @@ export class FileService extends StaticLogger {
         return vscode.Uri.joinPath(workspace.uri, filename)
     }
 
-    static async createNewTestcaseFile(
-        problem: Problem
-    ): Promise<vscode.Uri | undefined> {
+    static async createNewTestcaseFile(problem: Problem): Promise<vscode.Uri | undefined> {
         const workspace = getWorkspaceFolderWithErrorMessage()
         if (!workspace) {
             return
@@ -209,10 +212,7 @@ export class FileService extends StaticLogger {
         }
 
         const langinfo = proglangInfoGet(proglang)
-        const suggestedFilename = this.makeSolutionFilename(
-            problem,
-            langinfo.extensions[0]
-        )
+        const suggestedFilename = this.makeSolutionFilename(problem, langinfo.extensions[0])
 
         const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {
@@ -223,7 +223,7 @@ export class FileService extends StaticLogger {
             workspaceFolder.uri,
             suggestedFilename
         )
-        let needsConfirmation: boolean = false
+
         if (fileUriExists(uri)) {
             //
             // NOTE(pauek): If the file already exists, we should suggest a different
@@ -288,9 +288,7 @@ export class FileService extends StaticLogger {
 
         const match3 = third.match(this._r3rd)
         if (match3) {
-            this.log.info(
-                `Third line = ${match3[1]}:${match3[2]}:${match3[3]}:${match3[4]}`
-            )
+            this.log.info(`Third line = ${match3[1]}:${match3[2]}:${match3[3]}:${match3[4]}`)
             result.problem_id = match3[1]
             result.handler = match3[2]
             result.source_modifier = match3[3]
@@ -304,5 +302,38 @@ export class FileService extends StaticLogger {
         }
 
         return result
+    }
+
+    static readonly rmseRegex = /^[0-9.]+ \(([0-9.]+)\)$/
+
+    static async compareImages(imgPath1: string, imgPath2: string): Promise<number | null> {
+        const workingDir = getWorkingDirectory(imgPath1)
+
+        const result = childProcess.spawnSync(
+            "compare",
+            ["-metric", "RMSE", imgPath1, imgPath2, "NULL:"],
+            { cwd: workingDir }
+        )
+
+        const hasErrors = result.error || result.signal
+
+        if (hasErrors) {
+            const msg = `Error launching 'compare' with images '${imgPath1}' and '${imgPath2}': ${result.stderr.toString("utf-8")}`
+            this.log.debug(msg)
+            vscode.window.showErrorMessage(msg)
+            return null
+        }
+
+        const compareResult = result.stderr.toString()
+        const match = compareResult.match(this.rmseRegex)
+        if (!match) {
+            const msg = `Could not parse 'compare' output: ${compareResult}`
+            this.log.error(msg)
+            vscode.window.showErrorMessage(`Could not compare images`)
+            return null
+        }
+
+        const rmse = Number(match[1])
+        return rmse
     }
 }

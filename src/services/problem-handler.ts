@@ -21,9 +21,11 @@ import {
     decodeTestcase,
     defaultFilenameForProblem,
     getProglangFromProblem,
+    getWorkingDirectory,
     showCodeDocument,
 } from "@/utils"
-import { basename } from "path"
+import { readFile, writeFile } from "fs/promises"
+import { basename, join } from "path"
 import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
@@ -83,9 +85,7 @@ export class ProblemHandler extends Logger {
 
     async sourceFileExists(): Promise<boolean> {
         const { filename, extension } = defaultFilenameForProblem(this.problem_)
-        const compatibleUris = await vscode.workspace.findFiles(
-            `${filename}*${extension}`
-        )
+        const compatibleUris = await vscode.workspace.findFiles(`${filename}*${extension}`)
         return compatibleUris.length > 0
     }
 
@@ -197,15 +197,12 @@ export class ProblemHandler extends Logger {
             await vscode.commands.executeCommand("workbench.action.files.save")
 
             const testcases = await this.__ensureTestcases()
-            this.log.debug(
-                `Running all testcases for problem ${this.problem_.problem_id}`
-            )
+            this.log.debug(`Running all testcases for problem ${this.problem_.problem_id}`)
 
             let allPassed = true
             for (let index = 1; index <= testcases.length; index++) {
                 allPassed =
-                    allPassed &&
-                    (await this.runTestcaseByIndex(index, { saveFirst: false }))
+                    allPassed && (await this.runTestcaseByIndex(index, { saveFirst: false }))
             }
 
             return allPassed
@@ -229,10 +226,7 @@ export class ProblemHandler extends Logger {
         return SubmissionService.submitProblem(this.problem_, editor.document.uri.fsPath)
     }
 
-    async __runExpecting(
-        testcase: InputExpected,
-        filePath: string
-    ): Promise<TestcaseRun> {
+    async __runExpecting(testcase: InputExpected, filePath: string): Promise<TestcaseRun> {
         try {
             const proglang = proglangFromFilepath(filePath)
             const runner = proglangInfoGet(proglang).runner
@@ -242,11 +236,45 @@ export class ProblemHandler extends Logger {
             const output = runner.run(filePath, testcase.input, document)
             this.log.debug(`Code execution completed`)
 
-            const passed = output !== null && output === testcase.expected
-            return {
-                status: passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED,
-                output,
+            const handler = this.problem_.handler?.handler || "<unknown>"
+            switch (handler) {
+                case "std": {
+                    const expected = testcase.expected.toString("utf-8")
+                    const passed = output !== null && output === expected
+                    return {
+                        status: passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED,
+                        output,
+                    }
+                }
+                case "graphic": {
+                    const workingDir = getWorkingDirectory(`output.png`)
+
+                    // 1. The program has produced the 'output.png' file as output.
+                    const outputPath = join(workingDir, `output.png`)
+                    const expectedPath = join(workingDir, `expected.png`)
+                    const buf = (await readFile(outputPath)).buffer
+                    const output = Buffer.from(buf)
+                    const output_b64 = output.toString("base64")
+
+                    // 2. Save the expected output to 'expected.png'
+                    await writeFile(expectedPath, testcase.expected)
+
+                    // 3. Compare the two files using ImageMagick 'compare'
+                    const rmse = await FileService.compareImages(outputPath, expectedPath)
+
+                    const THRESHOLD = 0.05
+                    const failed = rmse === null || rmse > THRESHOLD
+                    return {
+                        status: failed ? TestcaseStatus.FAILED : TestcaseStatus.PASSED,
+                        output: output_b64,
+                    }
+                }
+                default:
+                    const msg = `Error running testcase: handler '${handler}' not supported`
+                    this.log.error(msg)
+                    throw new Error(msg)
             }
+
             //
         } catch (err) {
             this.log.error(`Error running testcase: ${err}`)
@@ -289,11 +317,11 @@ export class ProblemHandler extends Logger {
         status: TestcaseStatus,
         output: string | null = ""
     ) {
-        this.__sendMessage(
-            VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS,
-            problemNm,
-            { testcaseId, status, output }
-        )
+        this.__sendMessage(VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS, problemNm, {
+            testcaseId,
+            status,
+            output,
+        })
     }
 
     async __getEditorFilepath(): Promise<string> {
@@ -315,7 +343,7 @@ export class ProblemHandler extends Logger {
         return testcases
     }
 
-    async __getTestcase(index: number): Promise<{ input: string; expected: string }> {
+    async __getTestcase(index: number): Promise<InputExpected> {
         const testcases = await this.__ensureTestcases()
         const k = index - 1 // Testcases are 1-indexed to be consistent with the UI.
         if (k < 0 || k >= testcases.length) {
@@ -331,9 +359,7 @@ export class ProblemHandler extends Logger {
         }
         const k = index - 1
         if (k < 0 || k >= customTestcases.length) {
-            throw new Error(
-                `Internal error: custom testcase index ${index} does not exist!`
-            )
+            throw new Error(`Internal error: custom testcase index ${index} does not exist!`)
         }
         return customTestcases[k].input
     }

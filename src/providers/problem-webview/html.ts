@@ -33,7 +33,7 @@ export function htmlTestcaseMetadata(title: string, index: number, children: str
     `
 }
 
-function htmlTestcaseIOContainer(
+function htmlTestcaseRawTextContainer(
     title: string,
     { actual, displayed }: ActualAndDisplayed,
     options: { copyToClipboard?: boolean; cssClass?: string }
@@ -60,7 +60,7 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     const output = actualAndDisplayed(testcase.correct_b64)
 
     return /*html*/ `
-        <div class="testcase normal" id="testcase-${index + 1}">
+        <div class="testcase normal" id="testcase-${index + 1}" data-type="std">
             ${htmlTestcaseMetadata(
                 "Testcase",
                 index + 1,
@@ -70,9 +70,9 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
                 </div>`
             )}
             <div class="content">
-                ${htmlTestcaseIOContainer("Input", input, { copyToClipboard: true })}
+                ${htmlTestcaseRawTextContainer("Input", input, { copyToClipboard: true })}
                 <div class="two-column">
-                    ${htmlTestcaseIOContainer("Expected Output", output, {
+                    ${htmlTestcaseRawTextContainer("Expected Output", output, {
                         copyToClipboard: true,
                         cssClass: "expected",
                     })}
@@ -87,6 +87,49 @@ export function htmlForTestcase(testcase: Testcase, index: number): string {
     `
 }
 
+function htmlTestcaseGraphicContainer(
+    type: "input" | "output" | "received",
+    title: string,
+    image_b64: string,
+    cssClasses?: string,
+    compare: boolean = false
+) {
+    return `
+        <div class="container ${cssClasses}">
+            <div class="title">${title}</div>
+            ${compare ? `<div class="compare-diff" title="Compare with expected">Compare</div>` : ``}
+            <div id="${type}" class="imagearea">
+                ${image_b64 ? `<img src="data:image/png;base64,${image_b64}" />` : ``}
+            </div>
+        </div>
+    `
+}
+
+export function htmlForGraphicTestcase(testcase: Testcase, index: number): string {
+    const input = actualAndDisplayed(testcase.input_b64)
+    const output_b64 = testcase.correct_b64
+
+    return /*html*/ `
+        <div class="testcase normal" id="testcase-${index + 1}" data-type="graphic">
+            ${htmlTestcaseMetadata(
+                "Testcase",
+                index + 1,
+                `<div id="run-testcase-${index + 1}" class="small-button" title="Run this testcase only">
+                    <div class="icon">${icons["run"]()}</div>
+                    <span>Run</span>
+                </div>`
+            )}
+            <div class="content">
+                ${htmlTestcaseRawTextContainer("Input", input, { copyToClipboard: true })}
+                <div class="two-column">
+                    ${htmlTestcaseGraphicContainer("output", "Expected Output", output_b64, "expected")}
+                    ${htmlTestcaseGraphicContainer("received", "Received Output", "", "received", true)}
+                </div>
+            </div>
+        </div>
+    `
+}
+
 export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
     const { index, input: text } = customTestcase
     const input = {
@@ -95,7 +138,7 @@ export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
     }
 
     return /*html*/ `
-        <div class="testcase custom" id="custom-testcase-${index}">
+        <div class="testcase custom" id="custom-testcase-${index}" data-type="custom-std">
             ${htmlTestcaseMetadata(
                 "Testcase",
                 index,
@@ -110,7 +153,7 @@ export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
             )}
             <div class="content">
                 <div class="two-column">
-                    ${htmlTestcaseIOContainer("Input", input, { copyToClipboard: true })}
+                    ${htmlTestcaseRawTextContainer("Input", input, { copyToClipboard: true })}
                     <div class="container received">
                         <div class="title">Received Output:</div>
                         <div id="received" class="selectable textarea"><pre></pre></div>
@@ -153,26 +196,48 @@ export function htmlTestcases(
     problemHandler: ProblemHandler | null
 ): string {
     let handler: string = problemHandler?.handler || ""
-    if (handler !== "std") {
-        return htmlNotSupportedHandler()
+    switch (handler) {
+        case "std": {
+            return /*html*/ `
+                <vscode-divider></vscode-divider>
+                <div class="header">
+                    ${htmlTestcaseHeader("Testcases")}
+                    <div class="buttons">
+                        ${htmlButton({
+                            id: "run-all-testcases",
+                            text: "Run All",
+                            title: "Run all testscases",
+                            icon: "run-all",
+                        })}
+                    </div>
+                </div>
+                <div class="panels">
+                    ${testcases.map(htmlForTestcase).join("") || "No testcases found."}
+                </div>
+            `
+        }
+        case "graphic": {
+            return `
+                <vscode-divider></vscode-divider>
+                <div class="header">
+                    ${htmlTestcaseHeader("Testcases")}
+                    <div class="buttons">
+                        ${htmlButton({
+                            id: "run-all-testcases",
+                            text: "Run All",
+                            title: "Run all testcases",
+                            icon: "run-all",
+                        })}
+                    </div>
+                </div>
+                <div class="panels">
+                    ${testcases.map(htmlForGraphicTestcase).join("") || "No testcases found."}
+                </div>
+            `
+        }
+        default:
+            return htmlNotSupportedHandler()
     }
-    return /*html*/ `
-        <vscode-divider></vscode-divider>
-        <div class="header">
-            ${htmlTestcaseHeader("Testcases")}
-            <div class="buttons">
-                ${htmlButton({
-                    id: "run-all-testcases",
-                    text: "Run All",
-                    title: "Run all testscases",
-                    icon: "run-all",
-                })}
-            </div>
-        </div>
-        <div class="panels">
-            ${testcases.map(htmlForTestcase).join("") || "No testcases found."}
-        </div>
-    `
 }
 
 export function htmlCustomTestcases(customTestcases: CustomTestcase[]) {

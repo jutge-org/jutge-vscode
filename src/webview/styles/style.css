@@ -336,8 +336,30 @@ textarea {
                 row-gap: 0.6em;
                 padding: 0.3rem;
 
+                & .compare-diff {
+                    display: none;
+                }
+
                 &.compare {
                     flex-direction: column;
+
+                    & .compare-diff {
+                        display: block;
+                        position: absolute;
+                        top: -0.3em;
+                        right: 0;
+                        cursor: pointer;
+                        padding: 0.1em 0.3em;
+                        border-radius: 0.1em;
+                        background-color: var(--vscode-button-secondaryBackground);
+                        color: var(--vscode-button-secondaryForeground);
+                        font-size: 0.85em;
+
+                        &:hover {
+                            background-color: var(--vscode-button-secondaryHoverBackground);
+                            cursor: pointer;
+                        }
+                    }
                 }
 
                 @media (width <= 640px) {
@@ -394,21 +416,10 @@ textarea {
                         }
                     }
 
-                    & .compare-diff {
-                        position: absolute;
-                        top: -0.3em;
-                        right: 0;
-                        cursor: pointer;
-                        padding: 0.1em 0.3em;
-                        border-radius: 0.1em;
-                        background-color: var(--vscode-button-secondaryBackground);
-                        color: var(--vscode-button-secondaryForeground);
-                        font-size: 0.85em;
-
-                        &:hover {
-                            background-color: var(--vscode-button-secondaryHoverBackground);
-                            cursor: pointer;
-                        }
+                    & .imagearea {
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: center;
                     }
                 }
             }

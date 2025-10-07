@@ -2,7 +2,7 @@ import * as fs from "fs"
 import { basename, dirname, extname, join } from "path"
 import * as vscode from "vscode"
 import { Testcase } from "./jutge_api_client"
-import { Problem } from "./types"
+import { InputExpected, Problem } from "./types"
 import {
     Proglang,
     getProglangExtensions,
@@ -93,10 +93,10 @@ export function sanitizeTitle(title: string): string {
     return title
 }
 
-export function decodeTestcase(testcase: Testcase): { input: string; expected: string } {
+export function decodeTestcase(testcase: Testcase): InputExpected {
     const { input_b64, correct_b64 } = testcase
     const input = Buffer.from(input_b64, "base64").toString("utf-8")
-    const expected = Buffer.from(correct_b64, "base64").toString("utf-8")
+    const expected = Buffer.from(correct_b64, "base64")
     return { input, expected }
 }
 

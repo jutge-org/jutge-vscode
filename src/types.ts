@@ -66,7 +66,7 @@ export type Problem = {
 
 export type InputExpected = {
     input: string
-    expected: string
+    expected: Buffer
 }
 
 export type TestcaseRun = {
