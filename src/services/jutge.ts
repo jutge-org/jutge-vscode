@@ -432,6 +432,11 @@ export class JutgeService extends StaticLogger {
         )
     }
 
+    static async problemExists(problemNm: string) {
+        const result = await jutgeClient.problems.getAbstractProblems(problemNm)
+        return result[problemNm] !== undefined
+    }
+
     static getAbstractProblemsSWR(problem_nms: string[]) {
         return this.SWR<j.AbstractProblem[]>(
             `getAbstractProblems(${problem_nms.join(`,`)})`,

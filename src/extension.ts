@@ -176,6 +176,12 @@ const commandShowProblem = async (problemNm: string | undefined) => {
         }
     }
 
+    // Check that the problem really exists
+    if (!(await JutgeService.problemExists(problemNm))) {
+        vscode.window.showErrorMessage(`Problem ${problemNm} does not exist`)
+        return
+    }
+
     await whenWorkspaceFolder(async (workspace) => {
         const fileUri = await findCodeFilenameForProblem(workspace, problemNm)
         if (fileUri) {
