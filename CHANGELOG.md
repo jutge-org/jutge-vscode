@@ -5,6 +5,14 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.25]
+
+### Fixed
+
+- Refresh and logout buttons appear only when it is appropriate.
+- In exam mode, you cannot show any problem from the Command Palette.
+- In exam mode, if you close VSCode and open it again, you go back to the same exam.
+
 ## [0.0.24] - 2025-09-30
 
 ### Added

@@ -30,28 +30,24 @@ type AskPasswordParams = {
 export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
     static examMode_: boolean = false
-    static oldJutgeClientHeaders_: Record<string, string> = {}
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
         this.log.info("Initializing...")
         JutgeService.context_ = context
-
-        const token = await JutgeService.getTokenAtActivation()
-        if (token) {
-            this.log.debug("Token found during activation")
-            await JutgeService.setToken(token)
-        } else {
-            this.log.debug("No valid token found during activation")
-        }
+        await JutgeService.getStoredToken()
         this.log.info("Initialization complete")
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
-        const token = await JutgeService.context_.secrets.get("jutgeToken")
-        if (!token) {
-            return false
+        const examToken = await JutgeService.context_.secrets.get("jutgeExamToken")
+        if (examToken && (await JutgeService.isTokenValid(examToken))) {
+            return true
         }
-        return await JutgeService.isTokenValid(token)
+        const token = await JutgeService.context_.secrets.get("jutgeToken")
+        if (token && (await JutgeService.isTokenValid(token))) {
+            return true
+        }
+        return false
     }
 
     private static async isTokenValid(token: string): Promise<boolean> {
@@ -140,18 +136,20 @@ export class JutgeService extends StaticLogger {
 
     private static enterExamMode() {
         // Enter exam mode by setting headers on the client
-        this.oldJutgeClientHeaders_ = jutgeClient.headers
-        jutgeClient.headers = {
-            "jutge-host": "exam.api.jutge.org",
-        }
+        // this.oldJutgeClientHeaders_ = jutgeClient.headers
+        // jutgeClient.headers = {
+        //     "jutge-host": "exam.api.jutge.org",
+        // }
         // TODO(pauek): Switch to this
-        // JutgeApiClient.JUTGE_API_URL = "https://exam.api.jutge.org"
+        JutgeApiClient.JUTGE_API_URL =
+            process.env.JUTGE_EXAM_API_URL || "https://exam.api.jutge.org/api"
         this.examMode_ = true
         this.log.info(`Entered exam mode.`)
     }
 
     private static exitExamMode() {
-        jutgeClient.headers = this.oldJutgeClientHeaders_
+        // jutgeClient.headers = this.oldJutgeClientHeaders_
+        JutgeApiClient.JUTGE_API_URL = process.env.JUTGE_API_URL || "https://api.jutge.org/api"
         this.examMode_ = false
         this.log.info(`Exited exam mode.`)
     }
@@ -225,42 +223,63 @@ export class JutgeService extends StaticLogger {
         return fs.readFileSync(tokenFile, "utf8")
     }
 
-    public static async getTokenAtActivation(): Promise<string | undefined> {
-        const tokenSources = [
-            { id: "vscode storage", fn: JutgeService.context_.secrets.get("jutgeToken") },
-            {
-                id: "~/.config/jutge/token.txt",
-                fn: JutgeService.getTokenFromConfigFile(),
-            },
-        ]
-
-        for (const source of tokenSources) {
-            const token = await source.fn
+    public static async getStoredToken(): Promise<string | undefined> {
+        {
+            const token = await JutgeService.context_.secrets.get("jutgeExamToken")
             if (token && (await JutgeService.isTokenValid(token))) {
-                this.log.info(`Using token from ${source.id}`)
-                return token
+                this.log.info(`Using exam token from VSCode secrets storage`)
+                JutgeService.enterExamMode()
+                await JutgeService.setToken(token)
+                await vscode.commands.executeCommand(
+                    "setContext",
+                    "jutge-vscode.isSignedIn",
+                    true
+                )
+                return
             }
         }
+
+        {
+            const token = await JutgeService.context_.secrets.get("jutgeToken")
+            if (token && (await JutgeService.isTokenValid(token))) {
+                this.log.info(`Using token from VSCode secrets storage`)
+                await vscode.commands.executeCommand(
+                    "setContext",
+                    "jutge-vscode.isSignedIn",
+                    true
+                )
+                await JutgeService.setToken(token)
+                return
+            }
+        }
+
+        // {
+        //     id: "~/.config/jutge/token.txt",
+        //     fn: JutgeService.getTokenFromConfigFile(),
+        // },
+
+        this.log.debug("No valid token found during activation")
     }
 
     public static signIn(): void {
         const _signIn = async () => {
             if (await JutgeService.isUserAuthenticated()) {
-                vscode.window.showInformationMessage(
-                    "Jutge.org: You are already signed in."
-                )
+                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
                 return
             }
 
             const token = await JutgeService.getTokenFromCredentials()
-            if (token) {
-                await JutgeService.context_.secrets.store("jutgeToken", token)
-
-                vscode.commands.executeCommand("jutge-vscode.refreshTree")
-                vscode.window.showInformationMessage("Jutge.org: You have signed in")
-
-                JutgeService.getProfileSWR() // cache this for later
+            if (!token) {
+                return
             }
+
+            await JutgeService.context_.secrets.store("jutgeToken", token)
+            await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+
+            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.window.showInformationMessage("Jutge.org: You have signed in")
+
+            JutgeService.getProfileSWR() // cache this for later
         }
 
         _signIn()
@@ -269,9 +288,7 @@ export class JutgeService extends StaticLogger {
     public static signInExam(): void {
         const _signInExam = async () => {
             if (await JutgeService.isUserAuthenticated()) {
-                vscode.window.showInformationMessage(
-                    "Jutge.org: You are already signed in."
-                )
+                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
                 return
             }
 
@@ -280,27 +297,35 @@ export class JutgeService extends StaticLogger {
                 return
             }
             const { token, exam_key } = result
-            if (token) {
-                await JutgeService.context_.secrets.store("jutgeToken", token)
-
-                vscode.commands.executeCommand("jutge-vscode.refreshTree")
-                vscode.window.showInformationMessage(
-                    `Jutge.org: You have entered exam ${exam_key}`
-                )
-
-                JutgeService.getProfileSWR() // cache this for later
+            if (!token) {
+                return
             }
+            await JutgeService.context_.secrets.store("jutgeExamToken", token)
+            await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+
+            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.window.showInformationMessage(`Jutge.org: You have entered exam ${exam_key}`)
+
+            JutgeService.getProfileSWR() // cache this for later
         }
 
         _signInExam()
     }
 
     public static async signOut(): Promise<void> {
-        await JutgeService.context_.secrets.delete("jutgeToken")
-        await JutgeService.context_.secrets.delete("email")
+        if (!(await JutgeService.isUserAuthenticated())) {
+            return
+        }
+
+        const tokenName = JutgeService.isExamMode() ? "jutgeExamToken" : "jutgeToken"
+        await JutgeService.context_.secrets.delete(tokenName)
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
 
         await jutgeClient.logout()
-        JutgeService.examMode_ = false
+
+        if (JutgeService.isExamMode()) {
+            JutgeService.exitExamMode()
+        }
 
         vscode.commands.executeCommand("jutge-vscode.refreshTree")
         vscode.window.showInformationMessage("Jutge.org: You have signed out.")
@@ -368,9 +393,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static getExamSWR() {
-        return this.SWR<j.RunningExam>("getExam", async () =>
-            jutgeClient.student.exam.get()
-        )
+        return this.SWR<j.RunningExam>("getExam", async () => jutgeClient.student.exam.get())
     }
 
     static getCoursesSWR() {
@@ -418,9 +441,7 @@ export class JutgeService extends StaticLogger {
                 )
 
                 const result: j.AbstractProblem[] = []
-                for (const [problem_nm, abstractProblem] of Object.entries(
-                    abstractProblems
-                )) {
+                for (const [problem_nm, abstractProblem] of Object.entries(abstractProblems)) {
                     if (problem_nm !== null) {
                         result.push(abstractProblem)
                     }
@@ -438,10 +459,7 @@ export class JutgeService extends StaticLogger {
                     jutgeClient.student.lists.get(listKey),
                     jutgeClient.problems.getAbstractProblemsInList(listKey),
                 ])
-                if (
-                    resAbsProblems.status === "rejected" ||
-                    resList.status === "rejected"
-                ) {
+                if (resAbsProblems.status === "rejected" || resList.status === "rejected") {
                     throw new Error(
                         `[JutgeService] getAbstractProblemsInListSWR: Failed to load abs. problems or list`
                     )
@@ -482,9 +500,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static getProfileSWR() {
-        return this.SWR<j.Profile>(`getProfile`, async () =>
-            jutgeClient.student.profile.get()
-        )
+        return this.SWR<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
     }
 
     static getAbstractProblemSWR(problemNm: string) {

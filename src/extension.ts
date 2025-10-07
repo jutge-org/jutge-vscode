@@ -152,14 +152,19 @@ const commandShowProblem = async (problemNm: string | undefined) => {
     console.debug(`[commandShowProblem] Problem ${problemNm}`)
 
     if (!(await JutgeService.isUserAuthenticated())) {
-        vscode.window.showErrorMessage(
-            "You need to sign in to Jutge.org to use this feature."
-        )
+        vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
         return
     }
 
     // If the command is called from the command palette, ask for the problem number.
     if (problemNm === undefined) {
+        if (JutgeService.isExamMode()) {
+            vscode.window.showErrorMessage(
+                "In exam mode you can only see problems from the exam"
+            )
+            return
+        }
+
         problemNm = await vscode.window.showInputBox({
             title: "Jutge Problem ID",
             placeHolder: "P12345",
