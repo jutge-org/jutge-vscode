@@ -364,6 +364,7 @@ textarea {
                 & .container {
                     flex: 1;
                     overflow: visible;
+                    position: relative;
 
                     & .title {
                         display: flex;
@@ -405,9 +406,7 @@ textarea {
                         font-size: 0.85em;
 
                         &:hover {
-                            background-color: var(
-                                --vscode-button-secondaryHoverBackground
-                            );
+                            background-color: var(--vscode-button-secondaryHoverBackground);
                             cursor: pointer;
                         }
                     }
