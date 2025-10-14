@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for "graphics" problems, in which the output of a program is a PNG image instead of text. Testcases show the expected image and the output is
-  shown to the side. Comparison is not yet implemented.
+- Support for "graphics" problems, in which the output of a program is a PNG image instead of text. Testcases show the expected image and the output is shown to the side. Comparison is not yet implemented.
 
 ### Fixed
 
 - If you search for a problem that does not exist, you receive an error message instead of a blank document.
+
+- The "compare" button was lost due to bad CSS positioning. Now it appears again where it was, with its functionality intact.
 
 ## [0.0.25] - 2025-10-07
 
