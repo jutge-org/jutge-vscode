@@ -116,10 +116,16 @@ export class JutgeService extends StaticLogger {
         try {
             const credentials = await jutgeClient.login({ email, password })
             return credentials.token
-        } catch (error) {
-            vscode.window.showErrorMessage(`Jutge.org: error signing in. ${error}.`)
-            this.log.error(`Error signing in: ${error}`)
-            return
+        } catch (err) {
+            let message = String(err)
+            if (err instanceof Error) {
+                message = err.message
+                if (err.cause instanceof Error) {
+                    message = err.cause.message
+                }
+            }
+            this.log.error(`Error signing in`, message, err)
+            vscode.window.showErrorMessage(`Jutge.org: Error signing in: ${message}`)
         }
     }
 

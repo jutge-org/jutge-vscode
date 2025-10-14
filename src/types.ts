@@ -19,6 +19,7 @@ export enum IconStatus {
     PRESENTATION_ERROR = "presentation_error",
     REJECTED = "rejected",
     NONE = "none",
+    FAILED = "failed",
 }
 
 export const status2IconStatus: Record<SubmissionStatus, IconStatus> = {
@@ -30,6 +31,7 @@ export const status2IconStatus: Record<SubmissionStatus, IconStatus> = {
     EE: IconStatus.REJECTED,
     TLE: IconStatus.REJECTED,
     Pending: IconStatus.NONE,
+    Failed: IconStatus.FAILED,
 }
 
 export enum SubmissionStatus {
@@ -41,6 +43,7 @@ export enum SubmissionStatus {
     EE = "EE",
     TLE = "TLE",
     PENDING = "Pending",
+    FAILED = "Failed",
 }
 
 export type ProblemHandler = {
