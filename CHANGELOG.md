@@ -5,17 +5,21 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.26] -
+## [0.0.26] - 2025-10-14
 
 ### Added
 
-- Support for "graphics" problems, in which the output of a program is a PNG image instead of text. Testcases show the expected image and the output is shown to the side. Comparison is not yet implemented.
+- Support for "graphics" problems, in which the output of a program is a PNG image instead of text. Testcases show the expected image and the output is shown to the side. (Diffing between expected and result images is not yet implemented.)
 
 ### Fixed
 
 - If you search for a problem that does not exist, you receive an error message instead of a blank document.
 
 - The "compare" button was lost due to bad CSS positioning. Now it appears again where it was, with its functionality intact.
+
+- The "Submit to Jutge" button was disabled after each submission due to a status update missing. It is fixed now, so sending repeatedly to Jutge is possible. Sorry about that!
+
+- Exam mode: fixed submitting problems and improved many error messages, showing the root cause to the user directly.
 
 ## [0.0.25] - 2025-10-07
 
