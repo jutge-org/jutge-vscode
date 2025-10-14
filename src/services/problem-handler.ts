@@ -233,7 +233,7 @@ export class ProblemHandler extends Logger {
             const document = await this.__getDocument(filePath)
 
             this.log.debug(`Executing code with ${runner.constructor.name}`)
-            const output = runner.run(filePath, testcase.input, document)
+            const output = runner.run(filePath, testcase.input, document).replaceAll(/\r\n/g, "\n")
             this.log.debug(`Code execution completed`)
 
             const handler = this.problem_.handler?.handler || "<unknown>"
@@ -288,7 +288,7 @@ export class ProblemHandler extends Logger {
         const document = await this.__getDocument(filePath)
 
         this.log.debug(`Executing code with ${runner.constructor.name}`)
-        const output = runner.run(filePath, input, document)
+        const output = runner.run(filePath, input, document).replaceAll(/\r\n/g, "\n")
         this.log.debug(`Code execution completed`)
 
         return output
