@@ -91,8 +91,16 @@ export class SubmissionService extends StaticLogger {
 
                     return { submission_id, verdict }
                 } catch (err) {
-                    this.log.error(`Error submitting to Jutge: ${err}`)
-                    vscode.window.showErrorMessage("Error submitting to Jutge: " + err)
+                    let message = String(err)
+                    if (err instanceof Error) {
+                        message = err.message
+                        if (err.cause instanceof Error) {
+                            message = err.cause.message
+                        }
+                    }
+                    this.log.error(`Error submitting to Jutge: `, message)
+                    vscode.window.showErrorMessage(`Error submitting to Jutge: ${message}`)
+                    this._sendStatusUpdate(problem_nm, SubmissionStatus.FAILED)
                 }
             }
         )
@@ -139,14 +147,16 @@ export class SubmissionService extends StaticLogger {
         verdict: string
     ) {
         const text = (verdict && this._verdictText.get(verdict)) || "❓"
+        const host = JutgeService.isExamMode() ? "https://exam.jutge.org" : "https://jutge.org"
 
         const selection = await vscode.window.showInformationMessage(text, {
             title: "View in jutge.org",
         })
         if (selection && selection.title === "View in jutge.org") {
             const path = `/${problem.problem_id}/submissions/${submission_id}`
-            vscode.env.openExternal(vscode.Uri.parse(`https://jutge.org/problems${path}`))
+            vscode.env.openExternal(vscode.Uri.parse(`${host}/problems${path}`))
         }
+        // https://exam.jutge.org/problems/P68688_ca/submissions/E007
     }
 
     private static async _sendStatusUpdate(problemNm: string, status: SubmissionStatus) {
