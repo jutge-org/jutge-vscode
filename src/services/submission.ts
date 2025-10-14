@@ -18,8 +18,7 @@ export type Veredict = {
 export class SubmissionService extends StaticLogger {
     private static MONITOR_INTERVAL_MS = 2000
 
-    private static emitter_: vscode.EventEmitter<Veredict> =
-        new vscode.EventEmitter<Veredict>()
+    private static emitter_: vscode.EventEmitter<Veredict> = new vscode.EventEmitter<Veredict>()
 
     // This member is for VSCode, so that we can signal changes in the tree
     static readonly onDidReceiveVeredict: vscode.Event<Veredict> = this.emitter_.event
@@ -44,9 +43,7 @@ export class SubmissionService extends StaticLogger {
             },
             async (progress) => {
                 const { problem_nm, problem_id } = problem
-                this.log.info(
-                    `Preparing to submit problem ${problem_id} from file ${filePath}`
-                )
+                this.log.info(`Preparing to submit problem ${problem_id} from file ${filePath}`)
 
                 const proglang = proglangFromFilepath(filePath)
                 const langInfo = proglangInfoGet(proglang)
@@ -100,11 +97,8 @@ export class SubmissionService extends StaticLogger {
             }
         )
         if (result) {
-            await this._showVerdictNotification(
-                problem,
-                result.submission_id,
-                result.verdict
-            )
+            this._sendStatusUpdate(problem.problem_nm, result.verdict)
+            await this._showVerdictNotification(problem, result.submission_id, result.verdict)
         }
     }
 
@@ -132,9 +126,7 @@ export class SubmissionService extends StaticLogger {
                 verdict = response.veredict as SubmissionStatus
             }
         } catch (error) {
-            await vscode.window.showErrorMessage(
-                "Error getting submission status: " + error
-            )
+            await vscode.window.showErrorMessage("Error getting submission status: " + error)
             verdict = SubmissionStatus.PENDING
         }
 
