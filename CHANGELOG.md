@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When trying to create a custom testcase in a problem without testcases, the extension failed without a message. Now it works.
 
+- Fixed sanitization of the title of the problem before creating the source file. Now a problem with title "àèìòùáéíóúñç" will generate a filename with "aeiouaeiounc" and not an empty one.
+
 ## [0.0.26] - 2025-10-14
 
 ### Added
