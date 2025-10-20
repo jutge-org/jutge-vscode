@@ -37,7 +37,7 @@ const __languages: Record<Proglang, LanguageInfo> = {
         extensions: [".cc", ".cpp", ".cxx", ".c++"],
         commentPrefix: "//",
         mimeType: "text/x-c",
-        compilers: ["G++"],
+        compilers: ["G++", "G++11", "G++17", "Clang++17", "P1++"],
     },
     [Proglang.GHC]: {
         proglang: Proglang.GHC,
@@ -96,9 +96,7 @@ export function proglangInfoGet(proglang: Proglang): LanguageInfo {
     throw new Error(`Language not found`)
 }
 
-export async function chooseProgrammingLanguage(
-    problemNm: string
-): Promise<Proglang | null> {
+export async function chooseProgrammingLanguage(problemNm: string): Promise<Proglang | null> {
     const fileType = await vscode.window.showQuickPick(
         Object.values(Proglang).map((lang) => ({
             label: `${lang} File`,
