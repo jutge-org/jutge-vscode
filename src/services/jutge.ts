@@ -324,19 +324,28 @@ export class JutgeService extends StaticLogger {
         }
 
         // Show confirmation dialog
-        const NO = `No, keep signed in.`
-        const YES = `Yes, sign-out.`
+        let dialogText = {
+            placeHolder: `Please confirm that you want to sign out`,
+            no: `No, keep signed in.`,
+            yes: `Yes, sign out.`,
+        }
+        if (JutgeService.isExamMode()) {
+            dialogText = {
+                placeHolder: `Please confirm that you want to finish the exam`,
+                no: `No, keep doing the exam.`,
+                yes: `Yes, finish the exam.`,
+            }
+        }
 
-        console.log(`JutgeService.examMode`, JutgeService.isExamMode())
+        const confirmation = await vscode.window.showQuickPick(
+            [dialogText.no, dialogText.yes],
+            {
+                title: "Confirmation",
+                placeHolder: dialogText.placeHolder,
+            }
+        )
 
-        const confirmation = await vscode.window.showQuickPick([NO, YES], {
-            title: "Confirmation",
-            placeHolder: JutgeService.isExamMode()
-                ? "Please: confirm that you want to finish the exam"
-                : "Please: confirm that you want to sign-out",
-        })
-
-        if (confirmation == NO) {
+        if (confirmation == dialogText.no) {
             return
         }
 
