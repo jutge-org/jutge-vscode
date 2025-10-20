@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
+import { isWindows } from "@/utils"
 
 export class TerminalService {
     private static terminal: vscode.Terminal | undefined
@@ -12,7 +13,11 @@ export class TerminalService {
      */
     public static getTerminal(): vscode.Terminal {
         if (!this.terminal || this.terminal.exitStatus !== undefined) {
-            this.terminal = vscode.window.createTerminal("Jutge Tests")
+            if (!isWindows()) {
+                this.terminal = vscode.window.createTerminal("Jutge Tests")
+            } else {
+                this.terminal = vscode.window.createTerminal("Jutge Tests", "cmd")
+            }
         }
         return this.terminal
     }

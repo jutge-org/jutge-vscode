@@ -66,6 +66,30 @@ make vsix
 
 4. Install the extension from the `.vsix` file by following the docs in [VSCode Marketplace](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
 
+### Note for Windows environments and Visual Studio Build Tools:
+
+Those using Windows, and more specifically Visual Studio Build Tools in order to compile c++ programs (AKA. using the 'cl' command), must ensure that Visual Studio Code is loaded from a developer command prompt, that includes the required environment variables (the easiest way of checking it is by executing cl in a terminal and seeing if the command is recognized). If not, my recommendation is to write a .bat file with these contents (minor changes may exist on the second line), that will load the required tools and then open VSCode in the directory in which the file is located. This file can be executed normally and will open a command window, which can be closed once VSCode is ready.
+
+```
+@echo off
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64
+code .
+```
+
+Additionally, the following must be changed on the extension's settings:
+
+- **Cpp: Command**: `cl`
+- **Cpp: Flags**:
+
+```json
+"jutge-vscode.runner.cpp.flags": [
+    "/EHsc",
+    "/std:c++20",
+    "/W4",
+    "/O2"
+],
+```
+
 ## Development
 
 Checkout the [`DEVELOPERS.md`](https://github.com/jutge-vscode/tree/main/DEVELOPERS.md) file on GitHub for instructions on how to build the extensions and how to contribute to it.
