@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Some problems reported "Language not found" that now will work fine.
 
+- When trying to create a custom testcase in a problem without testcases, the extension failed without a message. Now it works.
+
 ## [0.0.26] - 2025-10-14
 
 ### Added
