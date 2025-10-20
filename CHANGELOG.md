@@ -5,6 +5,14 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] -
+
+## Fixed
+
+- The courses now show the title instead of the course ID. By @jma25l.
+- A bug in Windows showed `\r\n` as two characters. By @jma25l.
+- Fixes related to Windows-specific things (paths, etc). By @jma25l.
+
 ## [0.1.1] - 2025-10-20
 
 ## Added
