@@ -167,15 +167,17 @@ export class FileService extends StaticLogger {
         if (!fileUri) {
             return
         }
+        this.log.info(`New testcase filename: ${fileUri.fsPath}`)
+
         let fileContent = ""
-        if (problem.testcases) {
+        if (problem.testcases && problem.testcases.length > 0) {
             const testcase = problem.testcases[0]
             fileContent = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
         }
         try {
             fs.writeFileSync(fileUri.fsPath, fileContent, { flag: "w" })
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to create file in ${fileUri.fsPath} `)
+            vscode.window.showErrorMessage(`Couldn't create file '${fileUri.fsPath}'`)
             throw error
         }
         return fileUri
