@@ -323,6 +323,24 @@ export class JutgeService extends StaticLogger {
             return
         }
 
+        // Show confirmation dialog
+        const NO = `No, keep signed in.`
+        const YES = `Yes, sign-out.`
+
+        console.log(`JutgeService.examMode`, JutgeService.isExamMode())
+
+        const confirmation = await vscode.window.showQuickPick([NO, YES], {
+            title: "Confirmation",
+            placeHolder: JutgeService.isExamMode()
+                ? "Please: confirm that you want to finish the exam"
+                : "Please: confirm that you want to sign-out",
+        })
+
+        if (confirmation == NO) {
+            return
+        }
+
+        // Sign-out
         const tokenName = JutgeService.isExamMode() ? "jutgeExamToken" : "jutgeToken"
         await JutgeService.context_.secrets.delete(tokenName)
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
