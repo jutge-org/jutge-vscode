@@ -34,7 +34,7 @@ type HeaderInfo = {
 }
 
 export class FileService extends StaticLogger {
-    static makeHeader(comment: string, problem: Problem) {
+    static makeHeader(langInfo: LanguageInfo, problem: Problem) {
         const { data: profile } = JutgeService.getProfileSWR()
 
         const handler = problem.handler?.handler || ""
@@ -42,12 +42,15 @@ export class FileService extends StaticLogger {
         const compilers = problem.handler?.compilers
 
         let compiler_id = ""
-        if (Array.isArray(compilers)) {
-            compiler_id = compilers[0]
-        } else if (typeof compilers === "string") {
+        if (typeof compilers === "string") {
             compiler_id = compilers
+        } else if (Array.isArray(compilers)) {
+            compiler_id = compilers[0]
+        } else {
+            compiler_id = langInfo.compilers[0]
         }
 
+        const comment = langInfo.commentPrefix
         return [
             `${comment} ${problem.title}\n`,
             `${comment} https://jutge.org/problems/${problem.problem_id}\n`,
@@ -253,9 +256,7 @@ export class FileService extends StaticLogger {
         }
 
         try {
-            const fileHeader = string2Uint8Array(
-                this.makeHeader(langinfo.commentPrefix, problem)
-            )
+            const fileHeader = string2Uint8Array(this.makeHeader(langinfo, problem))
             const fileBody = await this.makeBody(langinfo, problem)
             const fileContent = new Uint8Array([...fileHeader, ...fileBody])
 
