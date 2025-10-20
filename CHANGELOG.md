@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1] - 2025-10-20
 
+## Added
+
+- A confirmation dialog was added when signing out.
+
 ## Fixed
 
 - The "Copy" button which copied a textcase input to the clipboard was not working due to a change in the HTML. Now works again.
+
+- Some problems reported "Language not found" that now will work fine.
 
 ## [0.0.26] - 2025-10-14
 
