@@ -88,6 +88,21 @@ export async function waitMilliseconds(time_ms: number): Promise<void> {
 }
 
 export function sanitizeTitle(title: string): string {
+    // Replacements for accented characters
+    const replacements = [
+        ["àá", "a"],
+        ["èé", "e"],
+        ["ìí", "i"],
+        ["òó", "o"],
+        ["ùú", "u"],
+        ["ñ", "n"],
+        ["ç", "c"],
+    ]
+    for (const [chars, repl] of replacements) {
+        for (const c of [...chars]) {
+            title = title.replace(c, repl)
+        }
+    }
     title = title.replace(/ /g, "_") // Replace spaces with underscores
     title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
     return title
