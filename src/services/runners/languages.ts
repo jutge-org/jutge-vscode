@@ -37,7 +37,7 @@ const __languages: Record<Proglang, LanguageInfo> = {
         extensions: [".cc", ".cpp", ".cxx", ".c++"],
         commentPrefix: "//",
         mimeType: "text/x-c",
-        compilers: ["G++", "G++11", "G++17", "Clang++17", "P1++"],
+        compilers: ["G++17", "G++11", "G++", "Clang++17", "P1++"],
     },
     [Proglang.GHC]: {
         proglang: Proglang.GHC,
