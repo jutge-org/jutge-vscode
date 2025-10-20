@@ -27,6 +27,9 @@ if (previousState) {
 window.addEventListener("load", onLoad)
 window.addEventListener("message", onEvent)
 
+// Recover data WebviewHTMLData from the head
+const data = JSON.parse(document.getElementById("webview-html-data").textContent)
+
 // Keep the ids of the passed tests to know when all have passed
 const passedTestcases: Map<string, boolean> = new Map()
 document.querySelectorAll(`.testcase`).forEach((elem) => {
@@ -79,7 +82,7 @@ function postMessage(command: WebviewToVSCodeCommand, data: any = "") {
 function getButton(id: string): HTMLButtonElement | null {
     const button = document.getElementById(id)
     if (!button) {
-        console.error(`Button with id ${id} not found`)
+        console.warn(`Button with id ${id} not found`)
         return null
     }
     return button as HTMLButtonElement
@@ -97,7 +100,7 @@ const editTestcase = postMessageForTestcase(WebviewToVSCodeCommand.EDIT_TESTCASE
 const runCustomTestcase = postMessageForTestcase(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE)
 
 function copyToClipboard() {
-    const textElement = this.nextElementSibling as HTMLDivElement
+    const textElement = this.parentElement.nextElementSibling as HTMLDivElement
     const preElement = textElement.querySelector("pre")
     assertNotNull(preElement, `Pre element not found!`)
 
@@ -212,8 +215,10 @@ function addOnClicks(id2command: [string, WebviewToVSCodeCommand][]) {
 }
 
 function addEventListeners() {
+    if (data.fileExists) {
+        addOnClicks([["open-file", WebviewToVSCodeCommand.OPEN_FILE]])
+    }
     addOnClicks([
-        ["open-file", WebviewToVSCodeCommand.OPEN_FILE],
         ["new-file", WebviewToVSCodeCommand.NEW_FILE],
         ["submit-to-jutge", WebviewToVSCodeCommand.SUBMIT_TO_JUTGE],
         ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],

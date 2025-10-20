@@ -293,7 +293,8 @@ function htmlExistingFileButton(data: WebviewHTMLData) {
     })
 }
 
-function htmlHead({ cspSource, nonce, styleUri }: WebviewHTMLData) {
+function htmlHead(data: WebviewHTMLData) {
+    const { cspSource, nonce, styleUri } = data
     return `
         <head>
             <meta charset="UTF-8">
@@ -307,6 +308,7 @@ function htmlHead({ cspSource, nonce, styleUri }: WebviewHTMLData) {
                     font-src ${cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
                 ">
             <link rel="stylesheet" href="${styleUri}" />
+            <script id="webview-html-data" type="application/json">${JSON.stringify(data)}</script> 
             <style>body { font-size: 0.9rem; }</style>
         </head>`
 }
