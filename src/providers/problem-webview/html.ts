@@ -314,8 +314,10 @@ function htmlHead(data: WebviewHTMLData) {
 }
 
 export type WebviewHTMLData = {
+    problemUrl: string
     problemId: string
     problemNm: string
+    caption?: string
     problemTitle: string
     statementHtml: string
     testcases: Testcase[]
@@ -330,6 +332,8 @@ export type WebviewHTMLData = {
 export function htmlWebview(data: WebviewHTMLData) {
     const {
         handler,
+        caption,
+        problemUrl,
         problemNm,
         problemId,
         problemTitle,
@@ -346,7 +350,7 @@ export function htmlWebview(data: WebviewHTMLData) {
                 <div id="data" data-problem-nm="${problemNm}" data-title="${problemTitle}" />
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="font-normal text-md flex-grow-1">
-                        <a href="https://jutge.org/problems/${problemId}">${problemId}</a>
+                        <a href="${problemUrl}">${caption ? `${caption}:` : ``}${problemId}</a>
                         &ndash; ${handler?.handler || "?"} 
                         &ndash; ${handler?.source_modifier || "?"} 
                         &ndash; ${handler?.compilers || "?"}

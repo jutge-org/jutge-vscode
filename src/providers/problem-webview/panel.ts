@@ -32,10 +32,7 @@ export class ProblemWebviewPanel extends Logger {
     public problemHandler: ProblemHandler | null = null
     public customTestcases: CustomTestcase[] | null = null
 
-    public constructor(
-        panel: vscode.WebviewPanel,
-        { problemNm, title }: ProblemWebviewState
-    ) {
+    public constructor(panel: vscode.WebviewPanel, { problemNm, title }: ProblemWebviewState) {
         super()
 
         const context = getContext()
@@ -46,11 +43,7 @@ export class ProblemWebviewPanel extends Logger {
 
         context.subscriptions.push(
             panel.onDidDispose(() => this.dispose(), null, context.subscriptions),
-            panel.webview.onDidReceiveMessage(
-                this._handleMessage,
-                this,
-                context.subscriptions
-            )
+            panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
         )
 
         this.problem = {
@@ -121,9 +114,7 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.debug(
-            `[ProblemWebviewPanel] Received message from webview: ${message.command}`
-        )
+        console.debug(`[ProblemWebviewPanel] Received message from webview: ${message.command}`)
 
         const { command, data } = message
         switch (command) {
@@ -165,7 +156,12 @@ export class ProblemWebviewPanel extends Logger {
         const updateWebview = async () => {
             this.log.info(`Updating HTML for ${this.problem.problem_nm}`)
 
+            const problemUrl = JutgeService.isExamMode()
+                ? `https://exam.jutge.org/problems/${this.problem.problem_id}`
+                : `https://jutge.org/problems/${this.problem.problem_id}`
+
             this.panel.webview.html = htmlWebview({
+                problemUrl,
                 problemId: this.problem.problem_id,
                 problemNm: this.problem.problem_nm,
                 problemTitle: this.problem.title,
@@ -292,11 +288,7 @@ export class ProblemWebviewPanel extends Logger {
         return this.panel.webview.asWebviewUri(uri)
     }
 
-    private async _showDiff(data: {
-        testcaseId: number
-        expected: string
-        received: string
-    }) {
+    private async _showDiff(data: { testcaseId: number; expected: string; received: string }) {
         const { testcaseId, expected, received } = data
 
         // Create a more specific diff display name

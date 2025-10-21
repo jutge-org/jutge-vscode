@@ -39,14 +39,41 @@ export class JutgeService extends StaticLogger {
     }
 
     public static async isUserAuthenticated(): Promise<boolean> {
-        const examToken = await JutgeService.context_.secrets.get("jutgeExamToken")
-        if (examToken && (await JutgeService.isTokenValid(examToken))) {
+        const examToken = JutgeService.context_.workspaceState.get<string>("jutgeExamToken")
+        if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
             return true
         }
-        const token = await JutgeService.context_.secrets.get("jutgeToken")
+        const token = JutgeService.context_.workspaceState.get<string>("jutgeToken")
         if (token && (await JutgeService.isTokenValid(token))) {
             return true
         }
+        return false
+    }
+
+    private static async isExamTokenValid(examToken: string): Promise<boolean> {
+        /*
+
+        NOTE(pauek): In exam mode, we should call the API at a different address,
+        since any other host will be firewalled. So we set the token and the
+        JUTGE_API_URL temporarily for that call (student.profile.get)
+
+        */
+        const originalMeta = jutgeClient.meta
+        const originalUrl = JutgeApiClient.JUTGE_API_URL
+
+        try {
+            JutgeApiClient.JUTGE_API_URL =
+                process.env.JUTGE_EXAM_API_URL || "https://exam.api.jutge.org/api"
+            jutgeClient.meta = { token: examToken }
+            await jutgeClient.student.profile.get()
+            return true
+        } catch (error) {
+            this.log.error(`Error checking if the exam token is valid: ${error}`)
+        } finally {
+            jutgeClient.meta = originalMeta
+            JutgeApiClient.JUTGE_API_URL = originalUrl
+        }
+
         return false
     }
 
@@ -67,7 +94,7 @@ export class JutgeService extends StaticLogger {
     }
 
     private static async askEmail(): Promise<string | undefined> {
-        const initial_email = (await JutgeService.context_.secrets.get("email")) || ""
+        const initial_email = JutgeService.context_.workspaceState.get<string>("email") || ""
         const email = await vscode.window.showInputBox({
             title: "Jutge Sign-In",
             placeHolder: "your email",
@@ -75,7 +102,7 @@ export class JutgeService extends StaticLogger {
             value: initial_email,
         })
         if (email) {
-            await JutgeService.context_.secrets.store("email", email)
+            await JutgeService.context_.workspaceState.update("email", email)
         }
         return email
     }
@@ -230,12 +257,16 @@ export class JutgeService extends StaticLogger {
     }
 
     public static async getStoredToken(): Promise<string | undefined> {
+        this.log.info(
+            `Keys in storage: ${JutgeService.context_.workspaceState.keys().join(", ")}`
+        )
         {
-            const token = await JutgeService.context_.secrets.get("jutgeExamToken")
-            if (token && (await JutgeService.isTokenValid(token))) {
-                this.log.info(`Using exam token from VSCode secrets storage`)
+            const examToken = JutgeService.context_.workspaceState.get<string>("jutgeExamToken")
+            this.log.info(`jutgeExamToken is ${examToken}`)
+            if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
+                this.log.info(`Using exam token from VSCode workspaceState storage`)
                 JutgeService.enterExamMode()
-                await JutgeService.setToken(token)
+                await JutgeService.setToken(examToken)
                 await vscode.commands.executeCommand(
                     "setContext",
                     "jutge-vscode.isSignedIn",
@@ -246,9 +277,9 @@ export class JutgeService extends StaticLogger {
         }
 
         {
-            const token = await JutgeService.context_.secrets.get("jutgeToken")
+            const token = JutgeService.context_.workspaceState.get<string>("jutgeToken")
             if (token && (await JutgeService.isTokenValid(token))) {
-                this.log.info(`Using token from VSCode secrets storage`)
+                this.log.info(`Using token from VSCode workspaceState storage`)
                 await vscode.commands.executeCommand(
                     "setContext",
                     "jutge-vscode.isSignedIn",
@@ -258,11 +289,6 @@ export class JutgeService extends StaticLogger {
                 return
             }
         }
-
-        // {
-        //     id: "~/.config/jutge/token.txt",
-        //     fn: JutgeService.getTokenFromConfigFile(),
-        // },
 
         this.log.debug("No valid token found during activation")
     }
@@ -279,7 +305,7 @@ export class JutgeService extends StaticLogger {
                 return
             }
 
-            await JutgeService.context_.secrets.store("jutgeToken", token)
+            await JutgeService.context_.workspaceState.update("jutgeToken", token)
             await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
@@ -306,7 +332,7 @@ export class JutgeService extends StaticLogger {
             if (!token) {
                 return
             }
-            await JutgeService.context_.secrets.store("jutgeExamToken", token)
+            await JutgeService.context_.workspaceState.update("jutgeExamToken", token)
             await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
@@ -351,7 +377,7 @@ export class JutgeService extends StaticLogger {
 
         // Sign-out
         const tokenName = JutgeService.isExamMode() ? "jutgeExamToken" : "jutgeToken"
-        await JutgeService.context_.secrets.delete(tokenName)
+        await JutgeService.context_.workspaceState.update(tokenName, null)
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
 
         await jutgeClient.logout()
@@ -366,7 +392,7 @@ export class JutgeService extends StaticLogger {
 
     static async setToken(token: string): Promise<void> {
         jutgeClient.meta = { token }
-        await JutgeService.context_.secrets.store("jutgeToken", token)
+        await JutgeService.context_.workspaceState.update("jutgeToken", token)
     }
 
     // ---
