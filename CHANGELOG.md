@@ -5,13 +5,16 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.2] -
+## [0.1.2] - 2025-10-21
 
 ## Fixed
 
 - The courses now show the title instead of the course ID. By @jma25l.
 - A bug in Windows showed `\r\n` as two characters. By @jma25l.
 - Fixes related to Windows-specific things (paths, etc). By @jma25l.
+- Changed the storage system for internal metadata to avoid errors on KDE in Linux systems.
+- Fixed bug where the exam token was not checked against the exam URL version of the API.
+- In exam mode, changed the URL of the problem to point to the URL in the exam, not the URL in the normal Jutge.org.
 
 ## [0.1.1] - 2025-10-20
 
