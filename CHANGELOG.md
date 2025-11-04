@@ -5,6 +5,13 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2025-11-..
+
+## Fixed
+
+- Credentials and email are now stored in a global storage space in VSCode so that when changing the workspace, logged-in state is not lost.
+-
+
 ## [0.1.2] - 2025-10-21
 
 ## Fixed
