@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.3] - 2025-11-..
 
+## Added
+
+- Lists with separators in them now show separators as items in the list.
+
 ## Fixed
 
 - Credentials and email are now stored in a global storage space in VSCode so that when changing the workspace, sign-in state is not lost. This also works in exam mode.
