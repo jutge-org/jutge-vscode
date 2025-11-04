@@ -35,6 +35,7 @@ export class CourseTreeItem extends vscode.TreeItem {
                 dark: getIconUri("dark", `${icon}.svg`),
             }
         } else if (element.type === "separator") {
+            this.label = "-"
             this.description = element.label
         }
     }
