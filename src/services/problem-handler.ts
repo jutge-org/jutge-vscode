@@ -1,4 +1,4 @@
-import { getWorkspaceFolderWithErrorMessage } from "@/extension"
+import { getWorkspaceFolderOrPickOne } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ProblemWebviewPanel } from "@/providers/problem-webview/panel"
@@ -68,7 +68,7 @@ export class ProblemHandler extends Logger {
         filename: string,
         extension: string
     ): Promise<vscode.Uri | undefined> {
-        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
+        const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
             return undefined
         }
@@ -87,9 +87,11 @@ export class ProblemHandler extends Logger {
     }
 
     async openExistingFile(panel: vscode.WebviewPanel) {
-        if (!getWorkspaceFolderWithErrorMessage()) {
+        const workspace = await getWorkspaceFolderOrPickOne()
+        if (!workspace) {
             return
         }
+
         const { filename, extension } = defaultFilenameForProblem(this.problem_, this.order_)
         const fileUri = await this.chooseSourceFile(filename, extension)
         if (!fileUri) {
@@ -114,7 +116,7 @@ export class ProblemHandler extends Logger {
     }
 
     async createNewFile(panel: vscode.WebviewPanel): Promise<void> {
-        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
+        const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
             return
         }

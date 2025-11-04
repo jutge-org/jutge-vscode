@@ -1,8 +1,8 @@
+import childProcess from "child_process"
 import fs, { existsSync } from "fs"
 import * as vscode from "vscode"
-import childProcess from "child_process"
 
-import { getWorkspaceFolder, getWorkspaceFolderWithErrorMessage } from "@/extension"
+import { getWorkspaceFolder, getWorkspaceFolderOrPickOne } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { CustomTestcase, Problem } from "@/types"
 import {
@@ -143,8 +143,8 @@ export class FileService extends StaticLogger {
         return `${problem_id}_${sanitizeTitle(title)}.test-${index}.inp`
     }
 
-    static findFirstUnusedCustomTestcase(problem: Problem): vscode.Uri | null {
-        const workspace = getWorkspaceFolderWithErrorMessage()
+    static async findFirstUnusedCustomTestcase(problem: Problem): Promise<vscode.Uri | null> {
+        const workspace = await getWorkspaceFolderOrPickOne()
         if (!workspace) {
             return null
         }
@@ -168,11 +168,7 @@ export class FileService extends StaticLogger {
     }
 
     static async createNewTestcaseFile(problem: Problem): Promise<vscode.Uri | undefined> {
-        const workspace = getWorkspaceFolderWithErrorMessage()
-        if (!workspace) {
-            return
-        }
-        let fileUri = this.findFirstUnusedCustomTestcase(problem)
+        let fileUri = await this.findFirstUnusedCustomTestcase(problem)
         if (!fileUri) {
             return
         }
@@ -232,7 +228,7 @@ export class FileService extends StaticLogger {
             langinfo.extensions[0]
         )
 
-        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
+        const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
             return
         }

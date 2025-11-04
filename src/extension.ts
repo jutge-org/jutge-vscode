@@ -71,13 +71,23 @@ export function getWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
     return vscode.workspace.workspaceFolders?.[0]
 }
 
-export function getWorkspaceFolderWithErrorMessage(): vscode.WorkspaceFolder | undefined {
+export async function getWorkspaceFolderOrPickOne(): Promise<
+    vscode.WorkspaceFolder | undefined
+> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-    if (!workspaceFolder) {
-        // FIXME: Show a dialog to open a workspace instead??'
-        vscode.window.showErrorMessage("Please open a folder to store the problem files.")
+    if (workspaceFolder) {
+        return workspaceFolder
     }
-    return workspaceFolder
+    const selection = await vscode.window.showInformationMessage(
+        "You need to have an open folder to create source files.",
+        { title: "Open Folder" }
+    )
+    if (selection && selection.title === "Open Folder") {
+        console.log(`[Extension]: User chose to open folder`)
+        vscode.commands.executeCommand("vscode.openFolder")
+    }
+
+    return undefined
 }
 
 export const getIconUri = (theme: "dark" | "light", filename: string) =>

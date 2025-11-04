@@ -1,4 +1,4 @@
-import { getContext, getWorkspaceFolderWithErrorMessage } from "@/extension"
+import { getContext, getWorkspaceFolderOrPickOne } from "@/extension"
 import { AbstractProblem } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
@@ -99,7 +99,7 @@ export class ProblemWebviewPanel extends Logger {
     async addNewTestcase() {
         this.log.info(`Adding new test case`)
 
-        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
+        const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
             return
         }
@@ -115,7 +115,7 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     async editTestcaseByIndex(index: number) {
-        const workspaceFolder = getWorkspaceFolderWithErrorMessage()
+        const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
             return
         }

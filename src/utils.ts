@@ -1,18 +1,16 @@
 import * as fs from "fs"
+import { readdir } from "fs/promises"
+import * as os from "os"
 import { basename, dirname, extname, join } from "path"
 import * as vscode from "vscode"
 import { Testcase } from "./jutge_api_client"
-import { InputExpected, Problem } from "./types"
 import {
     Proglang,
     getProglangExtensions,
     proglangFromCompiler,
     proglangInfoGet,
 } from "./services/runners/languages"
-import { getWorkspaceFolder, getWorkspaceFolderWithErrorMessage } from "./extension"
-import { readdir } from "fs/promises"
-import { JutgeService } from "./services/jutge"
-import * as os from "os"
+import { InputExpected, Problem } from "./types"
 
 /**
  * A function that returns whether the os is Windows.
