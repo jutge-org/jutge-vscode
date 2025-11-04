@@ -282,14 +282,12 @@ function htmlSubmitButton() {
     `
 }
 
-function htmlExistingFileButton(data: WebviewHTMLData) {
-    if (!data.fileExists) {
-        return ""
-    }
+function htmlOpenExistingFileButton(data: WebviewHTMLData) {
     return htmlButton({
         text: "Open Existing File",
         id: "open-existing-file",
         title: "Open an existing file",
+        disabled: !data.fileExists,
     })
 }
 
@@ -308,7 +306,6 @@ function htmlHead(data: WebviewHTMLData) {
                     font-src ${cspSource} https://cdn.jsdelivr.net/npm/mathjax@3/;
                 ">
             <link rel="stylesheet" href="${styleUri}" />
-            <script id="webview-html-data" type="application/json">${JSON.stringify(data)}</script> 
             <style>body { font-size: 0.9rem; }</style>
         </head>`
 }
@@ -347,7 +344,11 @@ export function htmlWebview(data: WebviewHTMLData) {
         <html lang="en">
             ${htmlHead(data)}
             <body>
-                <div id="data" data-problem-nm="${problemNm}" data-title="${problemTitle}" />
+                <div id="data" 
+                    data-problem-nm="${problemNm}" 
+                    data-title="${problemTitle}" 
+                    data-file-exists="${data.fileExists ? "true" : "false"}"
+                    />
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="font-normal text-md flex-grow-1">
                         <a href="${problemUrl}">${caption ? `${caption}:` : ``}${problemId}</a>
@@ -355,7 +356,7 @@ export function htmlWebview(data: WebviewHTMLData) {
                         &ndash; ${handler?.source_modifier || "?"} 
                         &ndash; ${handler?.compilers || "?"}
                     </h2>
-                    ${htmlExistingFileButton(data)}
+                    ${htmlOpenExistingFileButton(data)}
                     ${htmlButton({
                         text: "New File",
                         id: "new-file",

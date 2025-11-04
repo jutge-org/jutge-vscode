@@ -65,23 +65,23 @@ export class WebviewPanelRegistry extends StaticLogger {
     }
 
     static updatePanelsOnChangedFiles(files: readonly vscode.Uri[]) {
-        const problemNms = files.map((uri) =>
-            getProblemIdFromFilename(basename(uri.fsPath))
-        )
+        this.log.info(`changed files: ${files.map((f) => f.path).join(", ")}`)
+        const problemNms = files.map((uri) => getProblemIdFromFilename(basename(uri.fsPath)))
+        this.log.info(`problem_nms: ${problemNms.join(", ")}`)
         for (const problemNm of problemNms) {
             if (problemNm) {
-                WebviewPanelRegistry.updateCustomTestcases(problemNm)
+                WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
             }
         }
     }
 
-    static updateCustomTestcases(problemNm: string) {
+    static notifyProblemFilesChanges(problemNm: string) {
         const panel = this.get(problemNm)
         if (!panel) {
-            this.log.info(`updateCustomTestcases: Problem ${problemNm} not found`)
+            this.log.info(`notifyProblemFilesChanges: Problem ${problemNm} not found`)
             return
         }
-        panel.updateCustomTestcases()
+        panel.notifyProblemFilesChanges()
     }
 
     static register(problemNm: string, panel: ProblemWebviewPanel) {

@@ -65,12 +65,20 @@ export class ProblemWebviewPanel extends Logger {
         this.panel.dispose()
     }
 
-    public async updateCustomTestcases() {
+    public async notifyProblemFilesChanges() {
+        const fileExists = await this.problemHandler?.sourceFileExists()
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
         await this.panel.webview.postMessage({
-            command: VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES,
-            data: { customTestcases: this.customTestcases },
+            command: VSCodeToWebviewCommand.UPDATE_PROBLEM_FILES,
+            data: {
+                fileExists,
+                customTestcases: this.customTestcases,
+            },
         })
+        this.log.info(
+            `Post message: update_open_existing_file_button` +
+                ` (${this.customTestcases.length} custom testcases)`
+        )
     }
 
     get handler(): ProblemHandler {
@@ -94,7 +102,7 @@ export class ProblemWebviewPanel extends Logger {
         const document = await vscode.workspace.openTextDocument(fileUri)
         await showCodeDocument(document)
 
-        await this.updateCustomTestcases()
+        await this.notifyProblemFilesChanges()
         this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 

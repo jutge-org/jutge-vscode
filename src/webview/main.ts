@@ -27,9 +27,6 @@ if (previousState) {
 window.addEventListener("load", onLoad)
 window.addEventListener("message", onEvent)
 
-// Recover data WebviewHTMLData from the head
-const data = JSON.parse(document.getElementById("webview-html-data").textContent)
-
 // Keep the ids of the passed tests to know when all have passed
 const passedTestcases: Map<string, boolean> = new Map()
 document.querySelectorAll(`.testcase`).forEach((elem) => {
@@ -49,8 +46,9 @@ function onEvent(event: MessageEvent<any>) {
 
     // Save state whenever we receive updates
     switch (command) {
-        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASES:
+        case VSCodeToWebviewCommand.UPDATE_PROBLEM_FILES:
             updateCustomTestcases(data.customTestcases)
+            updateOpenExistingFileButton(data.fileExists)
             updateCollapseButton("custom")
             break
         case VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS:
@@ -215,14 +213,13 @@ function addOnClicks(id2command: [string, WebviewToVSCodeCommand][]) {
 }
 
 function addEventListeners() {
-    if (data.fileExists) {
-        addOnClicks([["open-existing-file", WebviewToVSCodeCommand.OPEN_EXISTING_FILE]])
-    }
     addOnClicks([
         ["new-file", WebviewToVSCodeCommand.NEW_FILE],
         ["submit-to-jutge", WebviewToVSCodeCommand.SUBMIT_TO_JUTGE],
         ["run-all-testcases", WebviewToVSCodeCommand.RUN_ALL_TESTCASES],
         ["add-new-testcase", WebviewToVSCodeCommand.ADD_NEW_TESTCASE],
+        // This one might not be there
+        ["open-existing-file", WebviewToVSCodeCommand.OPEN_EXISTING_FILE],
     ])
 
     document.querySelectorAll('[id^="run-testcase-"]').forEach(onClick(runTestcase))
@@ -337,4 +334,8 @@ function updateTestcaseStatus(
 
 function updateSubmissionStatus(status: SubmissionStatus) {
     getButton("submit-to-jutge").disabled = status === SubmissionStatus.PENDING
+}
+
+function updateOpenExistingFileButton(fileExists: boolean) {
+    getButton("open-existing-file").disabled = !fileExists
 }
