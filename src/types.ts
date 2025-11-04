@@ -96,7 +96,7 @@ export type WebviewToVSCodeMessage = {
 
 export enum WebviewToVSCodeCommand {
     NEW_FILE = "new-file",
-    OPEN_FILE = "open-file",
+    OPEN_EXISTING_FILE = "open-existing-file",
     SUBMIT_TO_JUTGE = "submit-to-jutge",
     RUN_ALL_TESTCASES = "run-all-testcases",
     RUN_TESTCASE = "run-testcase",

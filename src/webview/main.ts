@@ -216,7 +216,7 @@ function addOnClicks(id2command: [string, WebviewToVSCodeCommand][]) {
 
 function addEventListeners() {
     if (data.fileExists) {
-        addOnClicks([["open-file", WebviewToVSCodeCommand.OPEN_FILE]])
+        addOnClicks([["open-existing-file", WebviewToVSCodeCommand.OPEN_EXISTING_FILE]])
     }
     addOnClicks([
         ["new-file", WebviewToVSCodeCommand.NEW_FILE],

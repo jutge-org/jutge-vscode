@@ -118,7 +118,7 @@ export class ProblemWebviewPanel extends Logger {
 
         const { command, data } = message
         switch (command) {
-            case WebviewToVSCodeCommand.OPEN_FILE:
+            case WebviewToVSCodeCommand.OPEN_EXISTING_FILE:
                 return this.handler.openExistingFile(this.panel)
 
             case WebviewToVSCodeCommand.NEW_FILE:

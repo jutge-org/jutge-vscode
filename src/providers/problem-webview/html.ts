@@ -288,7 +288,7 @@ function htmlExistingFileButton(data: WebviewHTMLData) {
     }
     return htmlButton({
         text: "Open Existing File",
-        id: "open-file",
+        id: "open-existing-file",
         title: "Open an existing file",
     })
 }
