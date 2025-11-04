@@ -6,13 +6,12 @@
 */
 
 import * as j from "@/jutge_api_client"
-import { JutgeApiClient } from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import deepEqual from "deep-equal"
 import * as fs from "fs"
 import * as vscode from "vscode"
 
-const jutgeClient = new j.JutgeApiClient()
+export const jutgeClient = new j.JutgeApiClient()
 jutgeClient.useCache = false
 
 type SwrResult<T> = {
@@ -96,10 +95,10 @@ export class JutgeService extends StaticLogger {
 
         */
         const originalMeta = jutgeClient.meta
-        const originalUrl = JutgeApiClient.JUTGE_API_URL
+        const originalUrl = jutgeClient.JUTGE_API_URL
 
         try {
-            JutgeApiClient.JUTGE_API_URL =
+            jutgeClient.JUTGE_API_URL =
                 process.env.JUTGE_EXAM_API_URL || "https://exam.api.jutge.org/api"
             jutgeClient.meta = { token: examToken }
             await jutgeClient.student.profile.get()
@@ -108,7 +107,7 @@ export class JutgeService extends StaticLogger {
             this.log.error(`Error checking if the exam token is valid: ${error}`)
         } finally {
             jutgeClient.meta = originalMeta
-            JutgeApiClient.JUTGE_API_URL = originalUrl
+            jutgeClient.JUTGE_API_URL = originalUrl
         }
 
         return false
@@ -211,7 +210,7 @@ export class JutgeService extends StaticLogger {
         //     "jutge-host": "exam.api.jutge.org",
         // }
         // TODO(pauek): Switch to this
-        JutgeApiClient.JUTGE_API_URL =
+        jutgeClient.JUTGE_API_URL =
             process.env.JUTGE_EXAM_API_URL || "https://exam.api.jutge.org/api"
         JutgeService.examMode_ = true
         this.log.info(`Entered exam mode.`)
@@ -219,7 +218,7 @@ export class JutgeService extends StaticLogger {
 
     private static exitExamMode() {
         // jutgeClient.headers = JutgeService.oldJutgeClientHeaders_
-        JutgeApiClient.JUTGE_API_URL = process.env.JUTGE_API_URL || "https://api.jutge.org/api"
+        jutgeClient.JUTGE_API_URL = process.env.JUTGE_API_URL || "https://api.jutge.org/api"
         JutgeService.examMode_ = false
         this.log.info(`Exited exam mode.`)
     }
