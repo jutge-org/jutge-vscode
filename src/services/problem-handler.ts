@@ -61,6 +61,10 @@ export class ProblemHandler extends Logger {
         return this.langInfo_
     }
 
+    private async findPossibleFiles(filename: string, extension: string) {
+        return await vscode.workspace.findFiles(`*${filename}*${extension}`)
+    }
+
     async chooseSourceFile(
         filename: string,
         extension: string
@@ -71,7 +75,7 @@ export class ProblemHandler extends Logger {
         }
 
         // Compile all files that start with `filename` and have `extension`
-        const possibleUris = await vscode.workspace.findFiles(`${filename}*${extension}`)
+        const possibleUris = await this.findPossibleFiles(filename, extension)
         const filenames = possibleUris.map((uri) => basename(uri.fsPath))
         let chosen: string | undefined = filenames[0]
         if (filenames.length > 1) {
@@ -85,7 +89,7 @@ export class ProblemHandler extends Logger {
 
     async sourceFileExists(): Promise<boolean> {
         const { filename, extension } = defaultFilenameForProblem(this.problem_)
-        const compatibleUris = await vscode.workspace.findFiles(`${filename}*${extension}`)
+        const compatibleUris = await this.findPossibleFiles(filename, extension)
         return compatibleUris.length > 0
     }
 
@@ -233,7 +237,9 @@ export class ProblemHandler extends Logger {
             const document = await this.__getDocument(filePath)
 
             this.log.debug(`Executing code with ${runner.constructor.name}`)
-            const output = runner.run(filePath, testcase.input, document).replaceAll(/\r\n/g, "\n")
+            const output = runner
+                .run(filePath, testcase.input, document)
+                .replaceAll(/\r\n/g, "\n")
             this.log.debug(`Code execution completed`)
 
             const handler = this.problem_.handler?.handler || "<unknown>"
