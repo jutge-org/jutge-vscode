@@ -557,7 +557,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static getAbstractProblemsInListSWR(listKey: string) {
-        return JutgeService.SWR<j.AbstractProblem[]>(
+        return JutgeService.SWR<(j.AbstractProblem | string)[]>(
             `getAbstractProblemsInList(${listKey})`,
             async () => {
                 const [resList, resAbsProblems] = await Promise.allSettled([
@@ -573,10 +573,12 @@ export class JutgeService extends StaticLogger {
                 const listItems = resList.value.items
 
                 // Put abstract problems in the order in which they appear in the list
-                const result: j.AbstractProblem[] = []
-                for (const { problem_nm } of listItems) {
-                    if (problem_nm !== null && problem_nm in problems) {
-                        result.push(problems[problem_nm])
+                const result: (j.AbstractProblem | string)[] = []
+                for (const { problem_nm, description } of listItems) {
+                    if (problem_nm === null && description !== null) {
+                        result.push(description) // a separator
+                    } else if (problem_nm !== null && problem_nm in problems) {
+                        result.push(problems[problem_nm]) // a problem
                     }
                 }
 

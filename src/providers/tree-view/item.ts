@@ -2,18 +2,18 @@ import { getIconUri, globalStateGet } from "@/extension"
 import * as vscode from "vscode"
 import { CourseItemType, CourseTreeElement, TreeItemCollapseState } from "./element"
 
-const stateToTreeState_: Record<TreeItemCollapseState, vscode.TreeItemCollapsibleState> =
-    {
-        collapsed: vscode.TreeItemCollapsibleState.Collapsed,
-        expanded: vscode.TreeItemCollapsibleState.Expanded,
-        none: vscode.TreeItemCollapsibleState.None,
-    }
+const stateToTreeState_: Record<TreeItemCollapseState, vscode.TreeItemCollapsibleState> = {
+    collapsed: vscode.TreeItemCollapsibleState.Collapsed,
+    expanded: vscode.TreeItemCollapsibleState.Expanded,
+    none: vscode.TreeItemCollapsibleState.None,
+}
 
 const defaultStateFor_: Record<CourseItemType, vscode.TreeItemCollapsibleState> = {
     course: vscode.TreeItemCollapsibleState.Collapsed,
-    exam: vscode.TreeItemCollapsibleState.Expanded,
     list: vscode.TreeItemCollapsibleState.Collapsed,
     problem: vscode.TreeItemCollapsibleState.None,
+    separator: vscode.TreeItemCollapsibleState.None,
+    exam: vscode.TreeItemCollapsibleState.Expanded,
 }
 
 export class CourseTreeItem extends vscode.TreeItem {
@@ -34,6 +34,8 @@ export class CourseTreeItem extends vscode.TreeItem {
                 light: getIconUri("light", `${icon}.svg`),
                 dark: getIconUri("dark", `${icon}.svg`),
             }
+        } else if (element.type === "separator") {
+            this.description = element.label
         }
     }
 }

@@ -3,7 +3,7 @@ import { CourseTreeItem } from "./item"
 import { IconStatus, status2IconStatus, SubmissionStatus } from "@/types"
 
 export type TreeItemCollapseState = "collapsed" | "expanded" | "none"
-export type CourseItemType = "course" | "exam" | "list" | "problem"
+export type CourseItemType = "course" | "exam" | "list" | "problem" | "separator"
 
 export const ELEMENT_ID_SEPARATOR = "/"
 
@@ -28,9 +28,7 @@ export class CourseTreeElement {
 
     getId(): string {
         const prefix = this.parentPrefix()
-        return prefix
-            ? `${this.parentPrefix()}${ELEMENT_ID_SEPARATOR}${this.key}`
-            : this.key
+        return prefix ? `${this.parentPrefix()}${ELEMENT_ID_SEPARATOR}${this.key}` : this.key
     }
 
     updateIconStatus(status: SubmissionStatus) {
@@ -63,12 +61,7 @@ export class CourseTreeElement {
         }
     }
 
-    constructor(
-        type: CourseItemType,
-        key: string,
-        label: string,
-        iconStatus: IconStatus
-    ) {
+    constructor(type: CourseItemType, key: string, label: string, iconStatus: IconStatus) {
         this.type = type
         this.key = key
         this.label = label

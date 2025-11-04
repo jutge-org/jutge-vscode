@@ -17,9 +17,8 @@ export class JutgeCourseTreeProvider
         new vscode.EventEmitter<CourseTreeElement | undefined | null | void>()
 
     // This member is for VSCode, so that we can signal changes in the tree
-    readonly onDidChangeTreeData: vscode.Event<
-        CourseTreeElement | undefined | null | void
-    > = this.emitter_.event
+    readonly onDidChangeTreeData: vscode.Event<CourseTreeElement | undefined | null | void> =
+        this.emitter_.event
 
     // FIXME: Is there any better way to do this? I'm storing all references to
     // problemNms because I want to know the correspondence from problemNms to items... :\
@@ -46,9 +45,7 @@ export class JutgeCourseTreeProvider
         if (!(await JutgeService.isUserAuthenticated())) {
             return []
         } else if (!parent) {
-            return JutgeService.isExamMode()
-                ? this.getExam_()
-                : this.getEnrolledCourseList_()
+            return JutgeService.isExamMode() ? this.getExam_() : this.getEnrolledCourseList_()
         } else if (parent.type === "exam") {
             return this.getExamProblems_(parent)
         } else if (parent.type === "course") {
@@ -122,10 +119,7 @@ export class JutgeCourseTreeProvider
 
             const items: CourseTreeElement[] = []
             for (const abstractProblem of abstractProblems) {
-                const problemItem = this.abstractProblemToElement_(
-                    abstractProblem,
-                    allStatuses
-                )
+                const problemItem = this.abstractProblemToElement_(abstractProblem, allStatuses)
                 problemItem.parent = examElement
                 items.push(problemItem)
             }
@@ -201,11 +195,13 @@ export class JutgeCourseTreeProvider
             //
         } catch (error) {
             console.error(error)
-            vscode.window.showErrorMessage(
-                `Failed to get lists from course: ${courseElem.key}`
-            )
+            vscode.window.showErrorMessage(`Failed to get lists from course: ${courseElem.key}`)
             return []
         }
+    }
+
+    private separatorToElement_(key: string, description: string): CourseTreeElement {
+        return this.makeTreeElement("separator", key, description, IconStatus.NONE)
     }
 
     private abstractProblemToElement_(
@@ -225,12 +221,7 @@ export class JutgeCourseTreeProvider
 
         // Get status for this problem
         const iconStatus = (allStatuses[problem_nm]?.status || "none") as IconStatus
-        const element = this.makeTreeElement(
-            "problem",
-            problem_nm,
-            problem.title,
-            iconStatus
-        )
+        const element = this.makeTreeElement("problem", problem_nm, problem.title, iconStatus)
 
         return element
     }
@@ -239,9 +230,7 @@ export class JutgeCourseTreeProvider
         listElem: CourseTreeElement
     ): Promise<CourseTreeElement[]> {
         try {
-            console.debug(
-                `[TreeViewProvider] Getting Problems for list '${listElem.key}'`
-            )
+            console.debug(`[TreeViewProvider] Getting Problems for list '${listElem.key}'`)
 
             const swrProblems = JutgeService.getAbstractProblemsInListSWR(listElem.key)
             swrProblems.onUpdate = () => this.refresh_(listElem)
@@ -256,9 +245,18 @@ export class JutgeCourseTreeProvider
             const problems = swrProblems.data
             const allStatuses = swrStatus.data
 
+            let separatorId = 1
             const items: CourseTreeElement[] = []
-            for (const abstractProblem of problems) {
-                const item = this.abstractProblemToElement_(abstractProblem, allStatuses)
+            for (const problemOrSeparator of problems) {
+                let item: CourseTreeElement
+                if (typeof problemOrSeparator === "string") {
+                    const separator = problemOrSeparator
+                    item = this.separatorToElement_(`${listElem.key}:${separatorId}`, separator)
+                    separatorId++
+                } else {
+                    const problem_nm = problemOrSeparator
+                    item = this.abstractProblemToElement_(problem_nm, allStatuses)
+                }
                 item.parent = listElem
                 items.push(item)
             }
