@@ -48,9 +48,26 @@ export class SubmissionService extends StaticLogger {
                 const proglang = proglangFromFilepath(filePath)
                 const langInfo = proglangInfoGet(proglang)
 
-                const header = await FileService.parseFileHeader(filePath)
-                let compiler_id = header.compiler_id || langInfo.compilers[0]
+                // Get the compiler from the problem itself (not the header of the file as before!)
+                let compiler_id = ""
+                if (problem.handler) {
+                    // NOTE(pauek): the format of the compilers field in the database is not specified anywhere ;)
+                    // - It is a space separated list of IDs.
+                    //
+                    const compiler_id_list = problem.handler?.compilers.split(" ")
+                    this.log.debug(
+                        `Compiler IDs specified by the problem: [${compiler_id_list.join(", ")}]`
+                    )
+
+                    // NOTE(pauek): We take the first one for now
+                    if (compiler_id_list.length > 0) {
+                        compiler_id = compiler_id_list[0]
+                    }
+                }
+                compiler_id = compiler_id || langInfo.compilers[0]
                 this.log.debug(`Using compiler ID: ${compiler_id}`)
+
+                //
 
                 progress.report({ message: "Submitting..." })
                 this._sendStatusUpdate(problem_nm, SubmissionStatus.PENDING)
