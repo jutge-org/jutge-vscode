@@ -14,7 +14,6 @@ import { readdir } from "fs/promises"
 import { JutgeService } from "./services/jutge"
 import * as os from "os"
 
-
 /**
  * A function that returns whether the os is Windows.
  *
@@ -176,7 +175,7 @@ export function getProglangFromProblem(problem: Problem): Proglang | null {
     }
 }
 
-export function defaultFilenameForProblem(problem: Problem) {
+export function defaultFilenameForProblem(problem: Problem, order: number) {
     const { problem_id, title } = problem
     const proglang = getProglangFromProblem(problem) || Proglang.CPP
     const langInfo = proglangInfoGet(proglang)
@@ -185,6 +184,16 @@ export function defaultFilenameForProblem(problem: Problem) {
         filename: `${problem_id}_${sanitizeTitle(title)}`,
         extension: defaultExtension,
     }
+}
+
+export async function findPossibleFiles(filename: string, extension: string) {
+    return await vscode.workspace.findFiles(`*${filename}*${extension}`)
+}
+
+export async function sourceFileExists(problem: Problem, order: number): Promise<boolean> {
+    const { filename, extension } = defaultFilenameForProblem(problem, order)
+    const compatibleUris = await findPossibleFiles(filename, extension)
+    return compatibleUris.length > 0
 }
 
 export async function findCodeFilenameForProblem(

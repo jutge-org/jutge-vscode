@@ -20,6 +20,7 @@ import {
     chooseFromEditorList,
     decodeTestcase,
     defaultFilenameForProblem,
+    findPossibleFiles,
     getProglangFromProblem,
     getWorkingDirectory,
     showCodeDocument,
@@ -34,14 +35,16 @@ import { SubmissionService } from "./submission"
 export class ProblemHandler extends Logger {
     panel_: ProblemWebviewPanel
     problem_: Problem
+    order_: number
     proglang_: Proglang | undefined
     langInfo_: LanguageInfo | undefined
 
-    constructor(panel: ProblemWebviewPanel, problem: Problem) {
+    constructor(panel: ProblemWebviewPanel, problem: Problem, order: number) {
         super()
 
         this.panel_ = panel
         this.problem_ = problem
+        this.order_ = order
 
         // Launch loading of testcases already
         if (!this.problem_.testcases) {
@@ -61,10 +64,6 @@ export class ProblemHandler extends Logger {
         return this.langInfo_
     }
 
-    private async findPossibleFiles(filename: string, extension: string) {
-        return await vscode.workspace.findFiles(`*${filename}*${extension}`)
-    }
-
     async chooseSourceFile(
         filename: string,
         extension: string
@@ -75,7 +74,7 @@ export class ProblemHandler extends Logger {
         }
 
         // Compile all files that start with `filename` and have `extension`
-        const possibleUris = await this.findPossibleFiles(filename, extension)
+        const possibleUris = await findPossibleFiles(filename, extension)
         const filenames = possibleUris.map((uri) => basename(uri.fsPath))
         let chosen: string | undefined = filenames[0]
         if (filenames.length > 1) {
@@ -87,17 +86,11 @@ export class ProblemHandler extends Logger {
         return vscode.Uri.joinPath(workspaceFolder.uri, chosen)
     }
 
-    async sourceFileExists(): Promise<boolean> {
-        const { filename, extension } = defaultFilenameForProblem(this.problem_)
-        const compatibleUris = await this.findPossibleFiles(filename, extension)
-        return compatibleUris.length > 0
-    }
-
     async openExistingFile(panel: vscode.WebviewPanel) {
         if (!getWorkspaceFolderWithErrorMessage()) {
             return
         }
-        const { filename, extension } = defaultFilenameForProblem(this.problem_)
+        const { filename, extension } = defaultFilenameForProblem(this.problem_, this.order_)
         const fileUri = await this.chooseSourceFile(filename, extension)
         if (!fileUri) {
             throw new Error(`File '${filename}${extension}' does not exist in workspace!`)
@@ -116,7 +109,8 @@ export class ProblemHandler extends Logger {
         showCodeDocument(document)
 
         const { problem_nm } = this.problem_
-        WebviewPanelRegistry.createOrReveal(problem_nm)
+        await WebviewPanelRegistry.createOrReveal(problem_nm)
+        await WebviewPanelRegistry.notifyProblemFilesChanges(problem_nm)
     }
 
     async createNewFile(panel: vscode.WebviewPanel): Promise<void> {
@@ -124,7 +118,7 @@ export class ProblemHandler extends Logger {
         if (!workspaceFolder) {
             return
         }
-        const fileUri = await FileService.createNewFileFor(this.problem_)
+        const fileUri = await FileService.createNewFileFor(this.problem_, this.order_)
         if (!fileUri) {
             return
         }

@@ -287,7 +287,7 @@ function htmlOpenExistingFileButton(data: WebviewHTMLData) {
         text: "Open Existing File",
         id: "open-existing-file",
         title: "Open an existing file",
-        disabled: !data.fileExists,
+        disabled: true,
     })
 }
 
@@ -314,13 +314,14 @@ export type WebviewHTMLData = {
     problemUrl: string
     problemId: string
     problemNm: string
+    order: number
     caption?: string
     problemTitle: string
+    fileExists: boolean
     statementHtml: string
     testcases: Testcase[]
     customTestcases: CustomTestcase[]
     handler: ProblemHandler | null
-    fileExists: boolean
     nonce: string
     styleUri: Uri
     scriptUri: Uri
@@ -332,8 +333,10 @@ export function htmlWebview(data: WebviewHTMLData) {
         caption,
         problemUrl,
         problemNm,
+        order,
         problemId,
         problemTitle,
+        fileExists,
         testcases,
         customTestcases,
         statementHtml,
@@ -347,8 +350,9 @@ export function htmlWebview(data: WebviewHTMLData) {
                 <div id="data" 
                     data-problem-nm="${problemNm}" 
                     data-title="${problemTitle}" 
-                    data-file-exists="${data.fileExists ? "true" : "false"}"
-                    />
+                    data-order="${order}"
+                    data-file-exists="${fileExists ? "true" : "false"}"
+                />
                 <section id="header" class="component-container">
                     <h2 id="problem-nm" class="font-normal text-md flex-grow-1">
                         <a href="${problemUrl}">${caption ? `${caption}:` : ``}${problemId}</a>

@@ -4,7 +4,7 @@ import { getContext, getWebviewOptions } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { JutgeService } from "@/services/jutge"
 import { VSCodeToWebviewMessage } from "@/types"
-import { getProblemIdFromFilename } from "@/utils"
+import { getProblemIdFromFilename, sourceFileExists } from "@/utils"
 import { basename } from "path"
 import { ProblemWebviewPanel } from "./panel"
 
@@ -30,7 +30,10 @@ export class WebviewPanelRegistry extends StaticLogger {
      * @param context The context of the extension.
      * @param problemNm The problem number.
      */
-    static async createOrReveal(problemNm: string): Promise<ProblemWebviewPanel | null> {
+    static async createOrReveal(
+        problemNm: string,
+        order: number = -1
+    ): Promise<ProblemWebviewPanel | null> {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
 
         const context = getContext()
@@ -59,8 +62,10 @@ export class WebviewPanelRegistry extends StaticLogger {
             { viewColumn, preserveFocus: true },
             getWebviewOptions(context.extensionUri)
         )
-        const panel = new ProblemWebviewPanel(webviewPanel, { problemNm })
+
+        const panel = new ProblemWebviewPanel(webviewPanel, { problemNm, order })
         this.createdPanels_.set(problemNm, panel)
+
         return panel
     }
 
@@ -75,13 +80,13 @@ export class WebviewPanelRegistry extends StaticLogger {
         }
     }
 
-    static notifyProblemFilesChanges(problemNm: string) {
+    static async notifyProblemFilesChanges(problemNm: string) {
         const panel = this.get(problemNm)
         if (!panel) {
             this.log.info(`notifyProblemFilesChanges: Problem ${problemNm} not found`)
             return
         }
-        panel.notifyProblemFilesChanges()
+        await panel.notifyProblemFilesChanges()
     }
 
     static register(problemNm: string, panel: ProblemWebviewPanel) {

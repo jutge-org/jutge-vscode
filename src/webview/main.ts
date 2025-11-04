@@ -37,33 +37,43 @@ function onLoad() {
     addEventListeners()
     const data = document.getElementById("data")!.dataset
     vscode.setState(data)
+    updateOpenExistingFileButton(data.fileExists === "true")
+}
+
+function updateState(mergeData: any) {
+    const data = vscode.getState() as any
+    vscode.setState({ ...data, ...mergeData })
 }
 
 function onEvent(event: MessageEvent<any>) {
     const message = event.data as VSCodeToWebviewMessage
-    const { command, data } = message
-    console.log("Received message from extension", command, data)
+    console.log("Received message from extension", message.command, message.data)
 
     // Save state whenever we receive updates
-    switch (command) {
+    switch (message.command) {
         case VSCodeToWebviewCommand.UPDATE_PROBLEM_FILES:
-            updateCustomTestcases(data.customTestcases)
-            updateOpenExistingFileButton(data.fileExists)
+            updateCustomTestcases(message.data.customTestcases)
+            updateOpenExistingFileButton(message.data.fileExists)
             updateCollapseButton("custom")
+            updateState({ fileExists: message.data.fileExists })
             break
-        case VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS:
-            updateTestcaseStatus(data.testcaseId, data.status, data.output, "normal")
+        case VSCodeToWebviewCommand.UPDATE_TESTCASE_STATUS: {
+            const { testcaseId, status, output } = message.data
+            updateTestcaseStatus(testcaseId, status, output, "normal")
             updateCollapseButton("normal")
             break
-        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS:
-            updateTestcaseStatus(data.testcaseId, data.status, data.output, "custom")
+        }
+        case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS: {
+            const { testcaseId, status, output } = message.data
+            updateTestcaseStatus(testcaseId, status, output, "custom")
             updateCollapseButton("custom")
             break
+        }
         case VSCodeToWebviewCommand.UPDATE_SUBMISSION_STATUS:
-            updateSubmissionStatus(data.status)
+            updateSubmissionStatus(message.data.status)
             break
         default:
-            console.log("Unknown command", command)
+            console.log("Unknown command", message.command)
     }
 }
 

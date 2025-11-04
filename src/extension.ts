@@ -189,7 +189,9 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
         }
     })
 
-    await WebviewPanelRegistry.createOrReveal(problemNm)
+    await WebviewPanelRegistry.createOrReveal(problemNm, order)
+    // Force update on "Open Existing File" button + custom testcases
+    await WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
 }
 
 /**

@@ -129,8 +129,14 @@ export class FileService extends StaticLogger {
         }
     }
 
-    static makeSolutionFilename(problem: Problem, defaultExtension: string) {
-        return `${problem.problem_id}_${sanitizeTitle(problem.title)}${defaultExtension}`
+    static makeSolutionFilename(problem: Problem, order: number, defaultExtension: string) {
+        //
+        // TODO(pauek): Make the ordering configurable, i.e. the user can choose if
+        //   she/he wants to suffix every filename with its order in the list.
+        //
+        const prefix = order >= 0 ? `${String(order).padStart(2, "0")}_` : ``
+
+        return `${prefix}${problem.problem_id}_${sanitizeTitle(problem.title)}${defaultExtension}`
     }
 
     static makeTestcaseFilename({ problem_id, title }: Problem, index: number = 1) {
@@ -210,14 +216,21 @@ export class FileService extends StaticLogger {
         return customTestcases
     }
 
-    static async createNewFileFor(problem: Problem): Promise<vscode.Uri | undefined> {
+    static async createNewFileFor(
+        problem: Problem,
+        order: number
+    ): Promise<vscode.Uri | undefined> {
         const proglang = await chooseProgrammingLanguage(problem.problem_nm)
         if (!proglang) {
             return
         }
 
         const langinfo = proglangInfoGet(proglang)
-        const suggestedFilename = this.makeSolutionFilename(problem, langinfo.extensions[0])
+        const suggestedFilename = this.makeSolutionFilename(
+            problem,
+            order,
+            langinfo.extensions[0]
+        )
 
         const workspaceFolder = getWorkspaceFolderWithErrorMessage()
         if (!workspaceFolder) {

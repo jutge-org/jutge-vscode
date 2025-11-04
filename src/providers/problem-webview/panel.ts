@@ -17,11 +17,13 @@ import { existsSync } from "node:fs"
 import * as vscode from "vscode"
 import { htmlWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
-import { showCodeDocument } from "@/utils"
+import { showCodeDocument, sourceFileExists } from "@/utils"
 
 type ProblemWebviewState = {
     problemNm: string
+    order: number
     title?: string
+    fileExists?: boolean
 }
 
 export class ProblemWebviewPanel extends Logger {
@@ -29,22 +31,16 @@ export class ProblemWebviewPanel extends Logger {
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
+    public order: number
+    public fileExists: boolean
     public problemHandler: ProblemHandler | null = null
     public customTestcases: CustomTestcase[] | null = null
 
-    public constructor(panel: vscode.WebviewPanel, { problemNm, title }: ProblemWebviewState) {
+    public constructor(
+        panel: vscode.WebviewPanel,
+        { problemNm, title, order, fileExists }: ProblemWebviewState
+    ) {
         super()
-
-        const context = getContext()
-
-        this.log.info(`New panel for problem ${problemNm} (${context.extensionUri})`)
-
-        this.panel = panel
-
-        context.subscriptions.push(
-            panel.onDidDispose(() => this.dispose(), null, context.subscriptions),
-            panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
-        )
 
         this.problem = {
             problem_id: utils.getDefaultProblemId(problemNm),
@@ -55,6 +51,18 @@ export class ProblemWebviewPanel extends Logger {
             statementHtml: null,
             testcases: null,
         }
+        this.order = order
+        this.fileExists = fileExists || false
+
+        this.panel = panel
+
+        const context = getContext()
+        context.subscriptions.push(
+            panel.onDidDispose(() => this.dispose(), null, context.subscriptions),
+            panel.webview.onDidReceiveMessage(this._handleMessage, this, context.subscriptions)
+        )
+
+        this.log.info(`New panel for problem ${problemNm} (${context.extensionUri})`)
 
         // Initialize problem info and update webview
         this._loadProblem()
@@ -66,7 +74,7 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     public async notifyProblemFilesChanges() {
-        const fileExists = await this.problemHandler?.sourceFileExists()
+        const fileExists = await sourceFileExists(this.problem, this.order)
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
         await this.panel.webview.postMessage({
             command: VSCodeToWebviewCommand.UPDATE_PROBLEM_FILES,
@@ -76,8 +84,8 @@ export class ProblemWebviewPanel extends Logger {
             },
         })
         this.log.info(
-            `Post message: update_open_existing_file_button` +
-                ` (${this.customTestcases.length} custom testcases)`
+            `Post message: NOTIFY_PROBLEM_FILES_CHANGES` +
+                ` (${this.customTestcases.length} custom testcases, fileExists = ${fileExists})`
         )
     }
 
@@ -102,8 +110,8 @@ export class ProblemWebviewPanel extends Logger {
         const document = await vscode.workspace.openTextDocument(fileUri)
         await showCodeDocument(document)
 
-        await this.notifyProblemFilesChanges()
         this.panel.reveal(vscode.ViewColumn.Beside, true)
+        await this.notifyProblemFilesChanges()
     }
 
     async editTestcaseByIndex(index: number) {
@@ -130,7 +138,8 @@ export class ProblemWebviewPanel extends Logger {
                 return this.handler.openExistingFile(this.panel)
 
             case WebviewToVSCodeCommand.NEW_FILE:
-                return this.handler.createNewFile(this.panel)
+                await this.handler.createNewFile(this.panel)
+                return this.notifyProblemFilesChanges()
 
             case WebviewToVSCodeCommand.ADD_NEW_TESTCASE:
                 return this.addNewTestcase()
@@ -161,6 +170,9 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     private async _loadProblem() {
+        // Could not do this at the constructor
+        this.fileExists = await sourceFileExists(this.problem, this.order)
+
         const updateWebview = async () => {
             this.log.info(`Updating HTML for ${this.problem.problem_nm}`)
 
@@ -172,12 +184,13 @@ export class ProblemWebviewPanel extends Logger {
                 problemUrl,
                 problemId: this.problem.problem_id,
                 problemNm: this.problem.problem_nm,
+                order: this.order,
                 problemTitle: this.problem.title,
+                fileExists: this.fileExists,
                 statementHtml: this.problem.statementHtml || "",
                 testcases: this.problem.testcases || [],
                 customTestcases: this.customTestcases || [],
                 handler: this.problem.handler || null,
-                fileExists: await this.handler.sourceFileExists(),
 
                 nonce: utils.getNonce(),
                 styleUri: this._getUri("dist", "webview", "main.css"),
@@ -253,7 +266,7 @@ export class ProblemWebviewPanel extends Logger {
 
                     // Once everything is loaded, we create a problem handler
                     // which will take care of all operations
-                    this.problemHandler = new ProblemHandler(this, this.problem)
+                    this.problemHandler = new ProblemHandler(this, this.problem, this.order)
                     //
                 } catch (e) {
                     console.error(e)
