@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Added
 
-- The "Oopen Existing File" button, to open a program file from the problem, is now always present, and its state (disabled or not), changes when a file is created or removed, just as custom testcases do.
+- The "Oopen Existing File" button, to open a program file from the problem, is now always present, and its state (disabled or not), changes when a file is created or removed, just as custom testcases do. This works even when the VSCode is restarted.
 
 ## Fixed
 
