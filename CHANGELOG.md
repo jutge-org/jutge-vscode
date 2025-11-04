@@ -5,6 +5,16 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2025-11-??
+
+## Added
+
+- The "Oopen Existing File" button, to open a program file from the problem, is now always present, and its state (disabled or not), changes when a file is created or removed, just as custom testcases do.
+
+## Fixed
+
+- Removed a potential bug where the htmlStatement of the problem appeared in source code form at the top of the problem, since some data was embedded in the head of the HTML page which represents the webview, and the JSON probably contained HTML that made the parser go crazy. Even if I only saw this bug two or three times, I think I've removed its source.
+
 ## [0.1.3] - 2025-11-04
 
 ## Added
