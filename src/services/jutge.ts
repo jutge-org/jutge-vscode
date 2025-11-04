@@ -48,7 +48,7 @@ export class JutgeService extends StaticLogger {
         return JutgeService.context_.globalState.get<string>("jutgeToken")
     }
 
-    public static async updateToken(token: string | undefined) {
+    public static async storeToken(token: string | undefined) {
         await JutgeService.context_.globalState.update("jutgeToken", token)
     }
 
@@ -56,15 +56,15 @@ export class JutgeService extends StaticLogger {
         return JutgeService.context_.globalState.get<string>("jutgeExamToken")
     }
 
-    public static async updateExamToken(examToken: string | undefined) {
-        await JutgeService.context_.globalState.update("jutgeToken", examToken)
+    public static async storeExamToken(examToken: string | undefined) {
+        await JutgeService.context_.globalState.update("jutgeExamToken", examToken)
     }
 
     public static getEmail() {
         return JutgeService.context_.globalState.get<string>("email")
     }
 
-    public static async updateEmail(email: string) {
+    public static async storeEmail(email: string) {
         await JutgeService.context_.globalState.update("email", email)
     }
 
@@ -139,7 +139,7 @@ export class JutgeService extends StaticLogger {
             value: initial_email,
         })
         if (email) {
-            await JutgeService.updateEmail(email)
+            await JutgeService.storeEmail(email)
         }
         return email
     }
@@ -302,7 +302,7 @@ export class JutgeService extends StaticLogger {
             if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
                 this.log.info(`Using exam token from VSCode workspaceState storage`)
                 JutgeService.enterExamMode()
-                await JutgeService.setToken(examToken)
+                await JutgeService.setExamToken(examToken)
                 await vscode.commands.executeCommand(
                     "setContext",
                     "jutge-vscode.isSignedIn",
@@ -340,7 +340,7 @@ export class JutgeService extends StaticLogger {
             if (!token) {
                 return
             }
-            await JutgeService.updateToken(token)
+            await JutgeService.storeToken(token)
             await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
@@ -367,7 +367,7 @@ export class JutgeService extends StaticLogger {
             if (!examToken) {
                 return
             }
-            await JutgeService.updateExamToken(examToken)
+            await JutgeService.storeExamToken(examToken)
             await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
@@ -410,13 +410,14 @@ export class JutgeService extends StaticLogger {
             return
         }
 
-        // Sign-out
         if (JutgeService.isExamMode()) {
-            JutgeService.updateExamToken(undefined)
             JutgeService.exitExamMode()
-        } else {
-            JutgeService.updateToken(undefined)
         }
+
+        // Sign-out (of everything)
+        JutgeService.storeExamToken(undefined)
+        JutgeService.storeToken(undefined)
+
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
         await jutgeClient.logout()
         vscode.commands.executeCommand("jutge-vscode.refreshTree")
@@ -425,7 +426,12 @@ export class JutgeService extends StaticLogger {
 
     static async setToken(token: string): Promise<void> {
         jutgeClient.meta = { token }
-        await JutgeService.updateToken(token)
+        await JutgeService.storeToken(token)
+    }
+
+    static async setExamToken(examToken: string): Promise<void> {
+        jutgeClient.meta = { token: examToken }
+        await JutgeService.storeExamToken(examToken)
     }
 
     // ---
