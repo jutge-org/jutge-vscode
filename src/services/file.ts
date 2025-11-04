@@ -269,7 +269,7 @@ export class FileService extends StaticLogger {
         return uri
     }
 
-    static _r3rd = /^\/\/ ([A-Z][0-9]{5}_(?:ca|en|es|fr|de)):([a-z]*):([a-z]*):(\w*)$/
+    static _r3rd = /^\/\/ ([A-Z][0-9]{5}_(?:ca|en|es|fr|de)):([a-z]*):([a-z]*):(.*)$/
     static _r4th = /^\/\/ Created on (\d{2}\/\d{2}\/\d{4}), (\d{2}:\d{2}:\d{2}) by .*$/
 
     static async parseFileHeader(filePath: string): Promise<HeaderInfo> {
