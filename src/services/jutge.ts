@@ -45,31 +45,31 @@ export class JutgeService extends StaticLogger {
     */
 
     public static getToken() {
-        return JutgeService.context_.workspaceState.get<string>("jutgeToken")
+        return JutgeService.context_.globalState.get<string>("jutgeToken")
     }
 
     public static async updateToken(token: string | undefined) {
-        await JutgeService.context_.workspaceState.update("jutgeToken", token)
+        await JutgeService.context_.globalState.update("jutgeToken", token)
     }
 
     public static getExamToken() {
-        return JutgeService.context_.workspaceState.get<string>("jutgeExamToken")
+        return JutgeService.context_.globalState.get<string>("jutgeExamToken")
     }
 
     public static async updateExamToken(examToken: string | undefined) {
-        await JutgeService.context_.workspaceState.update("jutgeToken", examToken)
+        await JutgeService.context_.globalState.update("jutgeToken", examToken)
     }
 
     public static getEmail() {
-        return JutgeService.context_.workspaceState.get<string>("email")
+        return JutgeService.context_.globalState.get<string>("email")
     }
 
     public static async updateEmail(email: string) {
-        await JutgeService.context_.workspaceState.update("email", email)
+        await JutgeService.context_.globalState.update("email", email)
     }
 
     public static logStorageKeys() {
-        const keys = JutgeService.context_.workspaceState.keys().join(", ")
+        const keys = JutgeService.context_.globalState.keys().join(", ")
         this.log.info(`Keys in storage: ${keys}`)
     }
 
@@ -315,7 +315,7 @@ export class JutgeService extends StaticLogger {
         {
             const token = JutgeService.getToken()
             if (token && (await JutgeService.isTokenValid(token))) {
-                this.log.info(`Using token from VSCode workspaceState storage`)
+                this.log.info(`Using token from VSCode storage`)
                 await vscode.commands.executeCommand(
                     "setContext",
                     "jutge-vscode.isSignedIn",
