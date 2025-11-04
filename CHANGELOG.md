@@ -5,6 +5,12 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2025-11-??
+
+## Added
+
+- Now if you try to create a file while there is not workspace open, the notification will prompt you to open a folder, instead of just giving an error message.
+
 ## [0.1.4] - 2025-11-04
 
 ## Added
