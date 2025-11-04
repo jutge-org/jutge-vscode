@@ -34,9 +34,11 @@ export class CourseTreeItem extends vscode.TreeItem {
                 light: getIconUri("light", `${icon}.svg`),
                 dark: getIconUri("dark", `${icon}.svg`),
             }
+            this.tooltip = element.key
         } else if (element.type === "separator") {
-            this.label = "-"
+            this.label = "⬩"
             this.description = element.label
+            this.tooltip = element.label
         }
     }
 }

@@ -245,14 +245,17 @@ export class JutgeCourseTreeProvider
             const problems = swrProblems.data
             const allStatuses = swrStatus.data
 
-            let separatorId = 1
+            let sepIndex = 1
             const items: CourseTreeElement[] = []
             for (const problemOrSeparator of problems) {
                 let item: CourseTreeElement
                 if (typeof problemOrSeparator === "string") {
                     const separator = problemOrSeparator
-                    item = this.separatorToElement_(`${listElem.key}:${separatorId}`, separator)
-                    separatorId++
+                    item = this.separatorToElement_(
+                        `${listElem.key}:separator${sepIndex}`,
+                        separator
+                    )
+                    sepIndex++
                 } else {
                     const problem_nm = problemOrSeparator
                     item = this.abstractProblemToElement_(problem_nm, allStatuses)
