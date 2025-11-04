@@ -30,7 +30,7 @@ export class JutgeCourseTreeProvider
             item.command = {
                 command: "jutge-vscode.showProblem",
                 title: "Open Problem",
-                arguments: [item.element.key],
+                arguments: [item.element.key, item.element.order],
             }
         }
         this.problemName2TreeItem.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
@@ -61,10 +61,15 @@ export class JutgeCourseTreeProvider
         key: string,
         label: string,
         iconStatus: IconStatus,
+        order?: number,
         parent?: CourseTreeElement
     ) {
         const newElem = new CourseTreeElement(type, key, label, iconStatus)
         if (parent) {
+            if (order === undefined || order === -1) {
+                throw new Error(`Order is wrong! (order = ${order})`)
+            }
+            newElem.order = order
             newElem.parent = parent
         }
         return newElem
@@ -118,9 +123,12 @@ export class JutgeCourseTreeProvider
             const allStatuses = swrStatus.data
 
             const items: CourseTreeElement[] = []
+            let order: number = 1
             for (const abstractProblem of abstractProblems) {
                 const problemItem = this.abstractProblemToElement_(abstractProblem, allStatuses)
                 problemItem.parent = examElement
+                problemItem.order = order
+                order++
                 items.push(problemItem)
             }
             examElement.children = items
@@ -178,12 +186,13 @@ export class JutgeCourseTreeProvider
                 return []
             }
 
-            const lists = course.lists.map(({ list_nm, title }) => {
+            const lists = course.lists.map(({ list_nm, title }, index) => {
                 let item = this.makeTreeElement(
                     "list",
                     list_nm,
                     title || list_nm,
                     IconStatus.NONE,
+                    index + 1,
                     courseElem
                 )
                 item.parent = courseElem
@@ -246,6 +255,7 @@ export class JutgeCourseTreeProvider
             const allStatuses = swrStatus.data
 
             let sepIndex = 1
+            let order = 1
             const items: CourseTreeElement[] = []
             for (const problemOrSeparator of problems) {
                 let item: CourseTreeElement
@@ -259,10 +269,13 @@ export class JutgeCourseTreeProvider
                 } else {
                     const problem_nm = problemOrSeparator
                     item = this.abstractProblemToElement_(problem_nm, allStatuses)
+                    item.order = order
+                    order++
                 }
                 item.parent = listElem
                 items.push(item)
             }
+            listElem.children = items
 
             return items
             //

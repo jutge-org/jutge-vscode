@@ -12,6 +12,7 @@ export class CourseTreeElement {
     public key: string
     public label: string
     public iconStatus: IconStatus
+    public order: number = -1
 
     public parent: CourseTreeElement | null = null
     public children: CourseTreeElement[] | null = null

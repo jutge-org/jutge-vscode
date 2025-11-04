@@ -147,8 +147,8 @@ const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
 
 //// Commands
 
-const commandShowProblem = async (problemNm: string | undefined) => {
-    console.debug(`[commandShowProblem] Problem ${problemNm}`)
+const commandShowProblem = async (problemNm: string | undefined, order: number) => {
+    console.debug(`[commandShowProblem] Problem ${problemNm} (order = ${order})`)
 
     if (!(await JutgeService.isUserAuthenticated())) {
         vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
