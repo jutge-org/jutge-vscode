@@ -74,18 +74,18 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     public async notifyProblemFilesChanges() {
-        const fileExists = await sourceFileExists(this.problem, this.order)
+        this.fileExists = await sourceFileExists(this.problem, this.order)
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
         await this.panel.webview.postMessage({
             command: VSCodeToWebviewCommand.UPDATE_PROBLEM_FILES,
             data: {
-                fileExists,
+                fileExists: this.fileExists,
                 customTestcases: this.customTestcases,
             },
         })
         this.log.info(
             `Post message: NOTIFY_PROBLEM_FILES_CHANGES` +
-                ` (${this.customTestcases.length} custom testcases, fileExists = ${fileExists})`
+                ` (${this.customTestcases.length} custom testcases, fileExists = ${this.fileExists})`
         )
     }
 
