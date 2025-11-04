@@ -293,7 +293,7 @@ export class JutgeService extends StaticLogger {
     }
 
     public static async getStoredToken(): Promise<string | undefined> {
-        this.logStorageKeys()
+        // this.logStorageKeys()
 
         {
             const examToken = JutgeService.getExamToken()
