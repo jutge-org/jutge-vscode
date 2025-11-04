@@ -9,8 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- Credentials and email are now stored in a global storage space in VSCode so that when changing the workspace, logged-in state is not lost.
--
+- Credentials and email are now stored in a global storage space in VSCode so that when changing the workspace, sign-in state is not lost. This also works in exam mode.
 
 ## [0.1.2] - 2025-10-21
 
