@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The "Oopen Existing File" button, to open a program file from the problem, is now always present, and its state (disabled or not), changes when a file is created or removed, just as custom testcases do. This works even when the VSCode is restarted.
 
+- When creating a code file, now the file has a number prefix which corresponds to the order of that problem in its list (i.e. `01_`, `02_`, etc.). This behaviour will in the future be configurable, since it is clear that some people might like it and other might not. However, when doing work on course lists, this ordering helps see which problems have code files, especially if there are more than 10.
+
 ## Fixed
 
 - Removed a potential bug where the htmlStatement of the problem appeared in source code form at the top of the problem, since some data was embedded in the head of the HTML page which represents the webview, and the JSON probably contained HTML that made the parser go crazy. Even if I only saw this bug two or three times, I think I've removed its source.
