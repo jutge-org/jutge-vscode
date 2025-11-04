@@ -5,7 +5,7 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.3] - 2025-11-..
+## [0.1.3] - 2025-11-04
 
 ## Added
 
@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Fixed
 
 - Credentials and email are now stored in a global storage space in VSCode so that when changing the workspace, sign-in state is not lost. This also works in exam mode.
+
+- Fixed a bug that set the wrong compiler when sending problems with a compiler specified in the problem itself.
 
 ## [0.1.2] - 2025-10-21
 
