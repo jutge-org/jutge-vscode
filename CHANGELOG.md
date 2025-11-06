@@ -5,7 +5,7 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.5] - 2025-11-??
+## [0.1.5] - 2025-11-06
 
 ## Fixed
 
@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   were visible in other views as well as Jutge.org's own view 😅.
 
 - Tuned icon colors for the two commands "sign-out" and "refresh", both in dark and light mode.
+
+- If the token expires with the extension open, it will change immediately to the panel with the sign in buttons again.
 
 ## Added
 
