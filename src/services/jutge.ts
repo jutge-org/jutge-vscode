@@ -435,6 +435,14 @@ export class JutgeService extends StaticLogger {
 
     // ---
 
+    //
+    // NOTE(pauek): We use a common pattern to speed up content loading: "Stale While Revalidate".
+    // This means that we will get the cached version of any content and return it right away,
+    // while revalidating if the content is new in the background. If the content is new, we
+    // refresh it on screen (and save the new version), otherwise we do nothing. This helps a lot
+    // in keeping the extension responsive for content that has already been downloaded recently
+    // and at the same time keeping up with changes.
+    //
     private static SWR<T>(funcCallId: string, getData: () => Promise<T>): SwrResult<T> {
         const dbkey = `JutgeService.${funcCallId}`
 
