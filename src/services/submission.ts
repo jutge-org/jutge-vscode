@@ -1,12 +1,12 @@
 import * as vscode from "vscode"
 
+import * as j from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename } from "path"
-import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { proglangFromFilepath, proglangInfoGet } from "./runners/languages"
 
@@ -108,6 +108,10 @@ export class SubmissionService extends StaticLogger {
 
                     return { submission_id, verdict }
                 } catch (err) {
+                    if (err instanceof j.UnauthorizedError) {
+                        // Already signed out in JutgeService if this happened
+                        return
+                    }
                     let message = String(err)
                     if (err instanceof Error) {
                         message = err.message

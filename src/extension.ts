@@ -161,7 +161,7 @@ const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
 const commandShowProblem = async (problemNm: string | undefined, order: number) => {
     console.debug(`[commandShowProblem] Problem ${problemNm} (order = ${order})`)
 
-    if (!(await JutgeService.isUserAuthenticated())) {
+    if (!JutgeService.isSignedIn()) {
         vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
         return
     }
@@ -238,12 +238,19 @@ export async function activate(context: vscode.ExtensionContext) {
     })
 
     registerCommands([
-        ["jutge-vscode.signIn", JutgeService.signIn],
-        ["jutge-vscode.signOut", JutgeService.signOut],
-        ["jutge-vscode.signInExam", JutgeService.signInExam],
+        ["jutge-vscode.signIn", JutgeService.signIn.bind(JutgeService)],
+        ["jutge-vscode.signOut", JutgeService.signOut.bind(JutgeService)],
+        ["jutge-vscode.signInExam", JutgeService.signInExam.bind(JutgeService)],
+        ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
         ["jutge-vscode.refreshTree", treeProvider.refresh],
         ["jutge-vscode.showProblem", commandShowProblem],
     ])
 
     console.info("[Extension] jutge-vscode is now active")
+
+    await vscode.commands.executeCommand(
+        "setContext",
+        "jutge-vscode.isDevMode",
+        process.env.MODE === "development"
+    )
 }

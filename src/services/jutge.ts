@@ -28,6 +28,7 @@ type AskPasswordParams = {
 
 export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
+    static signedIn_: boolean = false
     static examMode_: boolean = false
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
@@ -35,6 +36,39 @@ export class JutgeService extends StaticLogger {
         JutgeService.context_ = context
         await JutgeService.getStoredToken()
         this.log.info("Initialization complete")
+    }
+
+    /* Signed In State */
+
+    static isSignedIn() {
+        return JutgeService.signedIn_
+    }
+
+    static async setSignedIn(token: string) {
+        JutgeService.signedIn_ = true
+        await JutgeService.storeToken(token)
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+        this.log.info(`Signed in`)
+    }
+
+    static async setSignedInExam(examToken: string) {
+        JutgeService.signedIn_ = true
+        await JutgeService.storeExamToken(examToken)
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+        this.log.info(`Signed in`)
+    }
+
+    static async setSignedOut() {
+        try {
+            await jutgeClient.logout()
+        } catch (e) {
+            if (e instanceof j.UnauthorizedError) {
+                this.log.info(`Token probably expired.`)
+            }
+        }
+        JutgeService.signedIn_ = false
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
+        this.log.info(`Signed out`)
     }
 
     /*
@@ -70,6 +104,13 @@ export class JutgeService extends StaticLogger {
     public static logStorageKeys() {
         const keys = JutgeService.context_.globalState.keys().join(", ")
         this.log.info(`Keys in storage: ${keys}`)
+    }
+
+    public static invalidateToken() {
+        this.storeExamToken(undefined)
+        this.storeToken(undefined)
+        jutgeClient.meta = { token: "<invalidated!> XD" }
+        this.log.info(`Invalidated token.`)
     }
 
     //
@@ -300,13 +341,7 @@ export class JutgeService extends StaticLogger {
             this.log.info(`jutgeExamToken is ${examToken}`)
             if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
                 this.log.info(`Using exam token from VSCode workspaceState storage`)
-                JutgeService.enterExamMode()
-                await JutgeService.setExamToken(examToken)
-                await vscode.commands.executeCommand(
-                    "setContext",
-                    "jutge-vscode.isSignedIn",
-                    true
-                )
+                JutgeService.setSignedInExam(examToken)
                 return
             }
         }
@@ -315,12 +350,7 @@ export class JutgeService extends StaticLogger {
             const token = JutgeService.getToken()
             if (token && (await JutgeService.isTokenValid(token))) {
                 this.log.info(`Using token from VSCode storage`)
-                await vscode.commands.executeCommand(
-                    "setContext",
-                    "jutge-vscode.isSignedIn",
-                    true
-                )
-                await JutgeService.setToken(token)
+                JutgeService.setSignedIn(token)
                 return
             }
         }
@@ -330,17 +360,12 @@ export class JutgeService extends StaticLogger {
 
     public static signIn(): void {
         const _signIn = async () => {
-            if (await JutgeService.isUserAuthenticated()) {
-                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
-                return
-            }
-
             const token = await JutgeService.getTokenFromCredentials()
             if (!token) {
                 return
             }
-            await JutgeService.storeToken(token)
-            await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+
+            await JutgeService.setSignedIn(token)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
             vscode.window.showInformationMessage("Jutge.org: You have signed in")
@@ -348,16 +373,15 @@ export class JutgeService extends StaticLogger {
             JutgeService.getProfileSWR() // cache this for later
         }
 
-        _signIn()
+        if (!JutgeService.isSignedIn()) {
+            _signIn()
+        } else {
+            vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
+        }
     }
 
     public static signInExam(): void {
         const _signInExam = async () => {
-            if (await JutgeService.isUserAuthenticated()) {
-                vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
-                return
-            }
-
             const result = await JutgeService.getExamTokenFromCredentials()
             if (!result) {
                 return
@@ -366,24 +390,22 @@ export class JutgeService extends StaticLogger {
             if (!examToken) {
                 return
             }
-            await JutgeService.storeExamToken(examToken)
-            await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
 
+            await JutgeService.setSignedInExam(examToken)
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
             vscode.window.showInformationMessage(`Jutge.org: You have entered exam ${exam_key}`)
 
             JutgeService.getProfileSWR() // cache this for later
         }
 
-        _signInExam()
+        if (!JutgeService.isSignedIn()) {
+            _signInExam()
+        } else {
+            vscode.window.showInformationMessage("Jutge.org: You are already in an exam.")
+        }
     }
 
-    public static async signOut(): Promise<void> {
-        if (!(await JutgeService.isUserAuthenticated())) {
-            return
-        }
-
-        // Show confirmation dialog
+    public static async confirmSignOut() {
         let dialogText = {
             placeHolder: `Please confirm that you want to sign out`,
             no: `No, keep signed in.`,
@@ -404,23 +426,40 @@ export class JutgeService extends StaticLogger {
                 placeHolder: dialogText.placeHolder,
             }
         )
-
         if (confirmation == dialogText.no) {
-            return
+            return false
         }
 
+        return true
+    }
+
+    public static async signOut(
+        options: {
+            askConfirmation: boolean
+            message: string
+        } = {
+            askConfirmation: true,
+            message: "You have signed out",
+        }
+    ): Promise<void> {
+        if (options.askConfirmation) {
+            if (!(await JutgeService.confirmSignOut())) {
+                return
+            }
+        }
+
+        // Sign-out (of everything)
         if (JutgeService.isExamMode()) {
             JutgeService.exitExamMode()
         }
 
-        // Sign-out (of everything)
         JutgeService.storeExamToken(undefined)
         JutgeService.storeToken(undefined)
 
-        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
-        await jutgeClient.logout()
+        await JutgeService.setSignedOut()
+
         vscode.commands.executeCommand("jutge-vscode.refreshTree")
-        vscode.window.showInformationMessage("Jutge.org: You have signed out.")
+        vscode.window.showInformationMessage(`Jutge.org: ${options.message}`)
     }
 
     static async setToken(token: string): Promise<void> {
@@ -448,7 +487,10 @@ export class JutgeService extends StaticLogger {
 
         const result: SwrResult<T> = {
             data: undefined,
-            onUpdate: (_) => {}, // <- should be replaced later by the caller
+            onUpdate: (_) => {
+                // <- should be replaced later by the caller
+                this.log.warn(`onUpdate not replaced by the caller (${funcCallId})`)
+            },
         }
 
         const _revalidate = async () => {
@@ -464,7 +506,15 @@ export class JutgeService extends StaticLogger {
                     this.log.info(`Revalidated '${funcCallId}': no changes.`)
                 }
             } catch (e) {
-                this.log.info(`Error getting data: ${e}`)
+                if (e instanceof j.UnauthorizedError) {
+                    this.log.info(`Token might have expired (UnauthorizedError). Signing out.`)
+                    JutgeService.signOut({
+                        askConfirmation: false,
+                        message: "Token has expired",
+                    })
+                } else {
+                    this.log.info(`Error getting data: ${e}`)
+                }
                 result.onUpdate(null)
             }
         }
@@ -668,7 +718,18 @@ export class JutgeService extends StaticLogger {
             annotation: string
         }
     ): Promise<j.NewSubmissionOut> {
-        return jutgeClient.student.submissions.submitFull(data, file)
+        try {
+            const result = await jutgeClient.student.submissions.submitFull(data, file)
+            return result
+        } catch (e) {
+            if (e instanceof j.UnauthorizedError) {
+                this.signOut({
+                    askConfirmation: false,
+                    message: "Token expired.",
+                })
+            }
+            throw e
+        }
     }
 
     static async getSubmission(data: {

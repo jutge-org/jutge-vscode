@@ -47,6 +47,11 @@
         "menus": {
             "view/title": [
                 {
+                    "command": "jutge-vscode.invalidateToken",
+                    "when": "jutge-vscode.isSignedIn && view == jutgeTreeView && jutge-vscode.isDevMode",
+                    "group": "navigation"
+                },
+                {
                     "command": "jutge-vscode.refreshTree",
                     "when": "jutge-vscode.isSignedIn && view == jutgeTreeView",
                     "group": "navigation"
@@ -78,6 +83,15 @@
             {
                 "command": "jutge-vscode.showProblem",
                 "title": "Jutge.org: Show Problem"
+            },
+            {
+                "command": "jutge-vscode.invalidateToken",
+                "title": "Jutge.org: Invalidate Token",
+                "enablement": "jutge-vscode.isDevMode",
+                "icon": {
+                    "light": "resources/light/cookie.svg",
+                    "dark": "resources/dark/cookie.svg"
+                }
             },
             {
                 "command": "jutge-vscode.refreshTree",
