@@ -118,11 +118,12 @@ const showExtensionInfo = () => {
 
     console.info("=== jutge-vscode initialization ===")
     console.info(`Extension Version: ${extensionVersion}`)
-    console.info(`VS Code Version: ${vscode.version}`)
-    console.info(`Operating System: ${os.type()} ${os.release()} ${os.arch()}`)
-    console.info(`Node.js Version: ${process.version}`)
-    console.info(`Date: ${new Date().toISOString()}`)
-    console.info(`JUTGE_API_URL: '${jutgeClient.JUTGE_API_URL}'`)
+    console.info(`VS Code Version:   ${vscode.version}`)
+    console.info(`Operating System:  ${os.type()} ${os.release()} ${os.arch()}`)
+    console.info(`Node.js Version:   ${process.version}`)
+    console.info(`Date:              ${new Date().toISOString()}`)
+    console.info(`MODE:              ${process.env.MODE}`)
+    console.info(`JUTGE_API_URL:     ${jutgeClient.JUTGE_API_URL}`)
     console.info("===================================")
 }
 
