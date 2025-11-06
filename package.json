@@ -48,12 +48,12 @@
             "view/title": [
                 {
                     "command": "jutge-vscode.refreshTree",
-                    "when": "jutge-vscode.isSignedIn",
+                    "when": "jutge-vscode.isSignedIn && view == jutgeTreeView",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.signOut",
-                    "when": "jutge-vscode.isSignedIn",
+                    "when": "jutge-vscode.isSignedIn && view == jutgeTreeView",
                     "group": "navigation"
                 }
             ]
