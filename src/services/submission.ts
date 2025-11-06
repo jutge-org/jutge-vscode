@@ -50,7 +50,7 @@ export class SubmissionService extends StaticLogger {
 
                 // Get the compiler from the problem itself (not the header of the file as before!)
                 let compiler_id = ""
-                if (problem.handler) {
+                if (problem.handler && problem.handler?.compilers) {
                     // NOTE(pauek): the format of the compilers field in the database is not specified anywhere ;)
                     // - It is a space separated list of IDs.
                     //
