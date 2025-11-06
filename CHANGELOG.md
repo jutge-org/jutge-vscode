@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.5] - 2025-11-??
 
+## Fixed
+
+- Fixed a bug in which the small command buttons at the top of the problem tree
+  were visible in other views as well as Jutge.org's own view 😅.
+
+- Tuned icon colors for the two commands "sign-out" and "refresh", both in dark and light mode.
+
 ## Added
 
 - Now if you try to create a file while there is not workspace open, the notification will prompt you to open a folder, instead of just giving an error message.
