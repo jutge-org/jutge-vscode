@@ -68,7 +68,13 @@ export class JutgeCourseTreeProvider
             description?: string
         }
     ) {
-        const newElem = new CourseTreeElement(type, key, label, iconStatus)
+        const newElem = new CourseTreeElement(
+            type,
+            key,
+            label,
+            iconStatus,
+            options?.description
+        )
         if (options?.parent !== undefined) {
             if (options.order === undefined || options.order === -1) {
                 throw new Error(`Order is wrong! (order = ${options.order})`)
@@ -126,25 +132,25 @@ export class JutgeCourseTreeProvider
             const abstractProblems = swrProblems.data
             const allStatuses = swrStatus.data
 
-            const items: CourseTreeElement[] = []
+            const elems: CourseTreeElement[] = []
             let order: number = 1
             for (const abstractProblem of abstractProblems) {
-                const problemItem = this.abstractProblemToElement_(abstractProblem, allStatuses)
-                problemItem.parent = examElement
-                problemItem.order = order
+                const problemElem = this.abstractProblemToElement_(abstractProblem, allStatuses)
+                problemElem.parent = examElement
+                problemElem.order = order
 
                 // Add caption and points to each problem, taken from the exam data
                 const examProblem = exam.problems[order - 1]
                 const caption = examProblem?.caption || ""
                 const weight = examProblem?.weight || 1.0
-                problemItem.label = `${caption}: ${problemItem.label}`
-                problemItem.description = `${weight} points`
+                problemElem.label = `${caption}:\t${problemElem.label}`
+                problemElem.description = `${weight} points`
 
                 order++
-                items.push(problemItem)
+                elems.push(problemElem)
             }
-            examElement.children = items
-            return items
+            examElement.children = elems
+            return elems
             //
         } catch (error) {
             this.log.error(error)
@@ -162,7 +168,11 @@ export class JutgeCourseTreeProvider
             if (!exam) {
                 return []
             }
-            return [this.makeTreeElement("exam", "exam", exam.title, IconStatus.NONE)]
+            return [
+                this.makeTreeElement("exam", "exam", exam.title, IconStatus.NONE, {
+                    description: exam.time_start === null ? "Not started" : "Started",
+                }),
+            ]
         } catch (error) {
             this.log.error(error)
             vscode.window.showErrorMessage("Failed to get exam")
@@ -241,9 +251,7 @@ export class JutgeCourseTreeProvider
 
         // Get status for this problem
         const iconStatus = (allStatuses[problem_nm]?.status || "none") as IconStatus
-        const element = this.makeTreeElement("problem", problem_nm, problem.title, iconStatus)
-
-        return element
+        return this.makeTreeElement("problem", problem_nm, problem.title, iconStatus)
     }
 
     private async getProblemsFromListNm_(

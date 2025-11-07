@@ -23,6 +23,7 @@ export class CourseTreeItem extends vscode.TreeItem {
         super(element.label)
         this.id = element.getId()
         this.element = element
+        this.description = element.description
 
         const state = globalStateGet(`itemState:${this.id}`) as TreeItemCollapseState
         const defaultState = defaultStateFor_[this.element.type]

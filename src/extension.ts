@@ -22,6 +22,7 @@ import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel
 import { jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
+import { CourseTreeElement } from "./providers/tree-view/element"
 
 export const setJutgeApiURL = ({ examMode }: { examMode: boolean }) => {
     const dev_ = process.env.MODE === "development" ? "dev." : ""
@@ -134,10 +135,12 @@ const showExtensionInfo = () => {
     console.info("===================================")
 }
 
+export let treeView: vscode.TreeView<CourseTreeElement> | null = null
+
 const initializeTreeView = () => {
     const treeProvider = new JutgeCourseTreeProvider()
 
-    const treeView = vscode.window.createTreeView("jutgeTreeView", {
+    treeView = vscode.window.createTreeView("jutgeTreeView", {
         showCollapseAll: true,
         treeDataProvider: treeProvider,
     })
@@ -150,6 +153,13 @@ const initializeTreeView = () => {
     treeView.onDidCollapseElement(({ element }) =>
         globalStateUpdate(`itemState:${element.getId()}`, "collapsed")
     )
+    treeView.onDidChangeVisibility((event) => {
+        if (event.visible) {
+            console.log(`[Extension]: TreeView now visible.`)
+        } else {
+            console.log(`[Extension]: TreeView now hidden.`)
+        }
+    })
     SubmissionService.onDidReceiveVeredict((veredict) => {
         treeProvider.refreshProblem(veredict)
     })

@@ -34,28 +34,28 @@ export class JutgeService extends StaticLogger {
 
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
         this.log.info("Initializing...")
-        JutgeService.context_ = context
-        await JutgeService.getStoredToken()
+        this.context_ = context
+        await this.getStoredToken()
         this.log.info("Initialization complete")
     }
 
     /* Signed In State */
 
     static isSignedIn() {
-        return JutgeService.signedIn_
+        return this.signedIn_
     }
 
     static async setSignedIn(token: string) {
-        JutgeService.signedIn_ = true
-        await JutgeService.storeToken(token)
+        this.signedIn_ = true
+        await this.storeToken(token)
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
         this.setToken(token)
         this.log.info(`Signed in`)
     }
 
     static async setSignedInExam(examToken: string) {
-        JutgeService.signedIn_ = true
-        await JutgeService.storeExamToken(examToken)
+        this.signedIn_ = true
+        await this.storeExamToken(examToken)
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
         this.setExamToken(examToken)
         this.enterExamMode()
@@ -73,7 +73,7 @@ export class JutgeService extends StaticLogger {
         if (this.examMode_) {
             this.exitExamMode()
         }
-        JutgeService.signedIn_ = false
+        this.signedIn_ = false
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
         this.log.info(`Signed out`)
     }
@@ -85,31 +85,31 @@ export class JutgeService extends StaticLogger {
     */
 
     public static getToken() {
-        return JutgeService.context_.globalState.get<string>("jutgeToken")
+        return this.context_.globalState.get<string>("jutgeToken")
     }
 
     public static async storeToken(token: string | undefined) {
-        await JutgeService.context_.globalState.update("jutgeToken", token)
+        await this.context_.globalState.update("jutgeToken", token)
     }
 
     public static getExamToken() {
-        return JutgeService.context_.globalState.get<string>("jutgeExamToken")
+        return this.context_.globalState.get<string>("jutgeExamToken")
     }
 
     public static async storeExamToken(examToken: string | undefined) {
-        await JutgeService.context_.globalState.update("jutgeExamToken", examToken)
+        await this.context_.globalState.update("jutgeExamToken", examToken)
     }
 
     public static getEmail() {
-        return JutgeService.context_.globalState.get<string>("email")
+        return this.context_.globalState.get<string>("email")
     }
 
     public static async storeEmail(email: string) {
-        await JutgeService.context_.globalState.update("email", email)
+        await this.context_.globalState.update("email", email)
     }
 
     public static logStorageKeys() {
-        const keys = JutgeService.context_.globalState.keys().join(", ")
+        const keys = this.context_.globalState.keys().join(", ")
         this.log.info(`Keys in storage: ${keys}`)
     }
 
@@ -123,12 +123,12 @@ export class JutgeService extends StaticLogger {
     //
 
     public static async isUserAuthenticated(): Promise<boolean> {
-        const examToken = JutgeService.getExamToken()
-        if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
+        const examToken = this.getExamToken()
+        if (examToken && (await this.isExamTokenValid(examToken))) {
             return true
         }
-        const token = JutgeService.getToken()
-        if (token && (await JutgeService.isTokenValid(token))) {
+        const token = this.getToken()
+        if (token && (await this.isTokenValid(token))) {
             return true
         }
         return false
@@ -173,23 +173,23 @@ export class JutgeService extends StaticLogger {
     }
 
     static isExamMode() {
-        return JutgeService.examMode_
+        return this.examMode_
     }
 
     private static enterExamMode() {
         setJutgeApiURL({ examMode: true })
-        JutgeService.examMode_ = true
+        this.examMode_ = true
         this.log.info(`Entered exam mode.`)
     }
 
     private static exitExamMode() {
         setJutgeApiURL({ examMode: false })
-        JutgeService.examMode_ = false
+        this.examMode_ = false
         this.log.info(`Exited exam mode.`)
     }
 
     private static async askEmail(): Promise<string | undefined> {
-        const initial_email = JutgeService.getEmail() || ""
+        const initial_email = this.getEmail() || ""
         const email = await vscode.window.showInputBox({
             title: "Jutge Sign-In",
             placeHolder: "your email",
@@ -197,7 +197,7 @@ export class JutgeService extends StaticLogger {
             value: initial_email,
         })
         if (email) {
-            await JutgeService.storeEmail(email)
+            await this.storeEmail(email)
         }
         return email
     }
@@ -221,12 +221,12 @@ export class JutgeService extends StaticLogger {
     }
 
     private static async getTokenFromCredentials(): Promise<string | undefined> {
-        const email = await JutgeService.askEmail()
+        const email = await this.askEmail()
         if (!email) {
             return
         }
 
-        const password = await JutgeService.askPassword({
+        const password = await this.askPassword({
             title: "Jutge Sign-In",
             placeHolder: "your password",
             prompt: "Please write your password for Jutge.org.",
@@ -265,12 +265,12 @@ export class JutgeService extends StaticLogger {
     private static async getExamTokenFromCredentials(): Promise<
         { exam_key: string; token: string } | undefined
     > {
-        const email = await JutgeService.askEmail()
+        const email = await this.askEmail()
         if (!email) {
             return
         }
 
-        const password = await JutgeService.askPassword({
+        const password = await this.askPassword({
             title: "Jutge Sign-In",
             placeHolder: "your password",
             prompt: "Please write your password for Jutge.org.",
@@ -279,27 +279,27 @@ export class JutgeService extends StaticLogger {
             return
         }
 
-        JutgeService.enterExamMode()
+        this.enterExamMode()
 
         // Retrieve a list of exams for the user
-        const exams = await JutgeService.getReadyExams()
+        const exams = await this.getReadyExams()
         if (!exams) {
-            JutgeService.exitExamMode()
+            this.exitExamMode()
             return
         }
-        const chosenExam = await JutgeService.pickOneOf(exams)
+        const chosenExam = await this.pickOneOf(exams)
         if (!chosenExam) {
-            JutgeService.exitExamMode()
+            this.exitExamMode()
             return
         }
 
-        const examPassword = await JutgeService.askPassword({
+        const examPassword = await this.askPassword({
             title: "Exam Sign-In",
             placeHolder: "The exam password (provided by the teacher)",
             prompt: "Please write the exam password provided by the teacher",
         })
         if (!examPassword) {
-            JutgeService.exitExamMode()
+            this.exitExamMode()
             return
         }
 
@@ -318,7 +318,7 @@ export class JutgeService extends StaticLogger {
         } catch (error) {
             vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
             this.log.error(`JutgeService: Error signing in: ${error}`)
-            JutgeService.exitExamMode()
+            this.exitExamMode()
             return
         }
     }
@@ -335,20 +335,20 @@ export class JutgeService extends StaticLogger {
         // this.logStorageKeys()
 
         {
-            const examToken = JutgeService.getExamToken()
+            const examToken = this.getExamToken()
             this.log.info(`jutgeExamToken is ${examToken}`)
-            if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
+            if (examToken && (await this.isExamTokenValid(examToken))) {
                 this.log.info(`Using exam token from VSCode storage`)
-                await JutgeService.setSignedInExam(examToken)
+                await this.setSignedInExam(examToken)
                 return
             }
         }
 
         {
-            const token = JutgeService.getToken()
-            if (token && (await JutgeService.isTokenValid(token))) {
+            const token = this.getToken()
+            if (token && (await this.isTokenValid(token))) {
                 this.log.info(`Using token from VSCode storage`)
-                await JutgeService.setSignedIn(token)
+                await this.setSignedIn(token)
                 return
             }
         }
@@ -358,20 +358,20 @@ export class JutgeService extends StaticLogger {
 
     public static signIn(): void {
         const _signIn = async () => {
-            const token = await JutgeService.getTokenFromCredentials()
+            const token = await this.getTokenFromCredentials()
             if (!token) {
                 return
             }
 
-            await JutgeService.setSignedIn(token)
+            await this.setSignedIn(token)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
             vscode.window.showInformationMessage("Jutge.org: You have signed in")
 
-            JutgeService.getProfileSWR() // cache this for later
+            this.getProfileSWR() // cache this for later
         }
 
-        if (!JutgeService.isSignedIn()) {
+        if (!this.isSignedIn()) {
             _signIn()
         } else {
             vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
@@ -380,7 +380,7 @@ export class JutgeService extends StaticLogger {
 
     public static signInExam(): void {
         const _signInExam = async () => {
-            const result = await JutgeService.getExamTokenFromCredentials()
+            const result = await this.getExamTokenFromCredentials()
             if (!result) {
                 return
             }
@@ -389,14 +389,14 @@ export class JutgeService extends StaticLogger {
                 return
             }
 
-            await JutgeService.setSignedInExam(examToken)
+            await this.setSignedInExam(examToken)
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
             vscode.window.showInformationMessage(`Jutge.org: You have entered exam ${exam_key}`)
 
-            JutgeService.getProfileSWR() // cache this for later
+            this.getProfileSWR() // cache this for later
         }
 
-        if (!JutgeService.isSignedIn()) {
+        if (!this.isSignedIn()) {
             _signInExam()
         } else {
             vscode.window.showInformationMessage("Jutge.org: You are already in an exam.")
@@ -409,7 +409,7 @@ export class JutgeService extends StaticLogger {
             no: `No, keep signed in.`,
             yes: `Yes, sign out.`,
         }
-        if (JutgeService.isExamMode()) {
+        if (this.isExamMode()) {
             dialogText = {
                 placeHolder: `Please confirm that you want to finish the exam`,
                 no: `No, keep doing the exam.`,
@@ -424,51 +424,52 @@ export class JutgeService extends StaticLogger {
                 placeHolder: dialogText.placeHolder,
             }
         )
-        if (confirmation == dialogText.no) {
+        if (confirmation === dialogText.no) {
             return false
         }
 
         return true
     }
 
-    public static async signOut(
-        options: {
-            askConfirmation: boolean
-            message: string
-        } = {
-            askConfirmation: true,
-            message: "You have signed out",
-        }
-    ): Promise<void> {
-        this.log.info(`signOut options = ${JSON.stringify(options)}`)
-        if (options.askConfirmation) {
-            if (!(await JutgeService.confirmSignOut())) {
-                return
+    public static async signOut(options?: {
+        askConfirmation: boolean
+        message: string
+    }): Promise<void> {
+        try {
+            const askConfirmation = options?.askConfirmation || true
+            if (askConfirmation) {
+                if (!(await this.confirmSignOut())) {
+                    return
+                }
             }
+
+            // Sign-out (of everything)
+            if (this.isExamMode()) {
+                this.exitExamMode()
+            }
+
+            this.storeExamToken(undefined)
+            this.storeToken(undefined)
+
+            await this.setSignedOut()
+
+            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+
+            const message = options?.message || "You have signed out"
+            vscode.window.showInformationMessage(`Jutge.org: ${message}`)
+        } catch (e) {
+            console.error(e)
         }
-
-        // Sign-out (of everything)
-        if (JutgeService.isExamMode()) {
-            JutgeService.exitExamMode()
-        }
-
-        JutgeService.storeExamToken(undefined)
-        JutgeService.storeToken(undefined)
-
-        await JutgeService.setSignedOut()
-
-        vscode.commands.executeCommand("jutge-vscode.refreshTree")
-        vscode.window.showInformationMessage(`Jutge.org: ${options.message}`)
     }
 
     static async setToken(token: string): Promise<void> {
         jutgeClient.meta = { token }
-        await JutgeService.storeToken(token)
+        await this.storeToken(token)
     }
 
     static async setExamToken(examToken: string): Promise<void> {
         jutgeClient.meta = { token: examToken }
-        await JutgeService.storeExamToken(examToken)
+        await this.storeExamToken(examToken)
     }
 
     // ---
@@ -482,7 +483,7 @@ export class JutgeService extends StaticLogger {
     // and at the same time keeping up with changes.
     //
     private static SWR<T>(funcCallId: string, getData: () => Promise<T>): SwrResult<T> {
-        const dbkey = `JutgeService.${funcCallId}`
+        const dbkey = `this.${funcCallId}`
 
         const result: SwrResult<T> = {
             data: undefined,
@@ -499,17 +500,15 @@ export class JutgeService extends StaticLogger {
                 // Don't call update or save if data is identical
                 if (!deepEqual(result.data, newData)) {
                     this.log.info(`Revalidated '${funcCallId}': update!`)
-                    JutgeService.context_.globalState.update(dbkey, newData)
+                    this.context_.globalState.update(dbkey, newData)
                     result.onUpdate(newData)
                 } else {
-                    this.log.info(
-                        `Revalidated '${funcCallId}': no changes. [${JSON.stringify(newData)}]`
-                    )
+                    this.log.info(`Revalidated '${funcCallId}': no changes.`)
                 }
             } catch (e) {
                 if (e instanceof j.UnauthorizedError) {
                     this.log.info(`Token might have expired (UnauthorizedError). Signing out.`)
-                    JutgeService.signOut({
+                    this.signOut({
                         askConfirmation: false,
                         message: "Token has expired",
                     })
@@ -523,7 +522,7 @@ export class JutgeService extends StaticLogger {
         _revalidate() // launch revalidation
 
         // But return what we have in cache
-        result.data = JutgeService.context_.globalState.get<T>(dbkey)
+        result.data = this.context_.globalState.get<T>(dbkey)
         return result
     }
 
@@ -549,19 +548,17 @@ export class JutgeService extends StaticLogger {
     }
 
     static getExamSWR() {
-        return JutgeService.SWR<j.RunningExam>("getExam", async () =>
-            jutgeClient.student.exam.get()
-        )
+        return this.SWR<j.RunningExam>("getExam", async () => jutgeClient.student.exam.get())
     }
 
     static getCoursesSWR() {
-        return JutgeService.SWR<Record<string, j.BriefCourse>>("getCourses", async () =>
+        return this.SWR<Record<string, j.BriefCourse>>("getCourses", async () =>
             jutgeClient.student.courses.indexEnrolled()
         )
     }
 
     static getCourseSWR(courseKey: string) {
-        return JutgeService.SWR<{ course: j.Course; lists: j.BriefList[] }>(
+        return this.SWR<{ course: j.Course; lists: j.BriefList[] }>(
             `getCourse(${courseKey})`,
             async () => {
                 const [courseRes, listsRes] = await Promise.allSettled([
@@ -585,7 +582,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static getAllListsSWR() {
-        return JutgeService.SWR<Record<string, j.BriefList>>(`getAllLists()`, async () =>
+        return this.SWR<Record<string, j.BriefList>>(`getAllLists()`, async () =>
             jutgeClient.student.lists.getAll()
         )
     }
@@ -596,7 +593,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static getAbstractProblemsSWR(problem_nms: string[]) {
-        return JutgeService.SWR<j.AbstractProblem[]>(
+        return this.SWR<j.AbstractProblem[]>(
             `getAbstractProblems(${problem_nms.join(`,`)})`,
             async () => {
                 const abstractProblems = await jutgeClient.problems.getAbstractProblems(
@@ -615,7 +612,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static getAbstractProblemsInListSWR(listKey: string) {
-        return JutgeService.SWR<(j.AbstractProblem | string)[]>(
+        return this.SWR<(j.AbstractProblem | string)[]>(
             `getAbstractProblemsInList(${listKey})`,
             async () => {
                 const [resList, resAbsProblems] = await Promise.allSettled([
@@ -646,19 +643,18 @@ export class JutgeService extends StaticLogger {
     }
 
     static getAllStatusesSWR() {
-        return JutgeService.SWR<Record<string, j.AbstractStatus>>(
-            `getAllStatuses()`,
-            async () => jutgeClient.student.statuses.getAll()
+        return this.SWR<Record<string, j.AbstractStatus>>(`getAllStatuses()`, async () =>
+            jutgeClient.student.statuses.getAll()
         )
     }
 
     static getTemplateListSWR(problem_id: string) {
-        return JutgeService.SWR<string[]>(`getTemplates(${problem_id})`, async () =>
+        return this.SWR<string[]>(`getTemplates(${problem_id})`, async () =>
             jutgeClient.problems.getTemplates(problem_id)
         )
     }
     static getTemplateList(problem_id: string) {
-        return JutgeService.promisify(() => JutgeService.getTemplateListSWR(problem_id))
+        return this.promisify(() => this.getTemplateListSWR(problem_id))
     }
 
     static getTemplate(problem_id: string, template: string) {
@@ -666,49 +662,46 @@ export class JutgeService extends StaticLogger {
     }
 
     static getProfileSWR() {
-        return JutgeService.SWR<j.Profile>(`getProfile`, async () =>
-            jutgeClient.student.profile.get()
-        )
+        return this.SWR<j.Profile>(`getProfile`, async () => jutgeClient.student.profile.get())
     }
 
     static getAbstractProblemSWR(problemNm: string) {
-        return JutgeService.SWR<j.AbstractProblem>(
-            `getAbstractProblem(${problemNm})`,
-            async () => jutgeClient.problems.getAbstractProblem(problemNm)
+        return this.SWR<j.AbstractProblem>(`getAbstractProblem(${problemNm})`, async () =>
+            jutgeClient.problems.getAbstractProblem(problemNm)
         )
     }
     static async getAbstractProblem(problemNm: string): Promise<j.AbstractProblem> {
-        return JutgeService.promisify(() => JutgeService.getAbstractProblemSWR(problemNm))
+        return this.promisify(() => this.getAbstractProblemSWR(problemNm))
     }
 
     static getHtmlStatementSWR(problemId: string) {
-        return JutgeService.SWR<string>(`getHtmlStatement(${problemId})`, async () =>
+        return this.SWR<string>(`getHtmlStatement(${problemId})`, async () =>
             jutgeClient.problems.getHtmlStatement(problemId)
         )
     }
 
     static async getHtmlStatement(problemId: string) {
-        return JutgeService.promisify(() => JutgeService.getHtmlStatementSWR(problemId))
+        return this.promisify(() => this.getHtmlStatementSWR(problemId))
     }
 
     static getProblemSupplSWR(problemId: string) {
-        return JutgeService.SWR<j.ProblemSuppl>(`getProblemSuppl(${problemId})`, async () =>
+        return this.SWR<j.ProblemSuppl>(`getProblemSuppl(${problemId})`, async () =>
             jutgeClient.problems.getProblemSuppl(problemId)
         )
     }
 
     static getProblemSuppl(problemId: string) {
-        return JutgeService.promisify(() => JutgeService.getProblemSupplSWR(problemId))
+        return this.promisify(() => this.getProblemSupplSWR(problemId))
     }
 
     static getSampleTestcasesSWR(problemId: string) {
-        return JutgeService.SWR<j.Testcase[]>(`getSampleTestcases(${problemId})`, async () =>
+        return this.SWR<j.Testcase[]>(`getSampleTestcases(${problemId})`, async () =>
             jutgeClient.problems.getSampleTestcases(problemId)
         )
     }
 
     static async getSampleTestcases(problemId: string) {
-        return JutgeService.promisify(() => JutgeService.getSampleTestcasesSWR(problemId))
+        return this.promisify(() => this.getSampleTestcasesSWR(problemId))
     }
 
     static async submit(
