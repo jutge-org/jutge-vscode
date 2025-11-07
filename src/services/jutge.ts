@@ -323,14 +323,6 @@ export class JutgeService extends StaticLogger {
         }
     }
 
-    private static getTokenFromConfigFile(): string | undefined {
-        const tokenFile = `${process.env.HOME}/.config/jutge/token.txt`
-        if (!fs.existsSync(tokenFile)) {
-            return
-        }
-        return fs.readFileSync(tokenFile, "utf8")
-    }
-
     public static async getStoredToken(): Promise<string | undefined> {
         // this.logStorageKeys()
 
