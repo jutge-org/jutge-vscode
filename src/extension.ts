@@ -23,6 +23,13 @@ import { jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
 
+export const setJutgeApiURL = ({ examMode }: { examMode: boolean }) => {
+    const dev_ = process.env.MODE === "development" ? "dev." : ""
+    const exam_ = examMode ? "exam." : ""
+    jutgeClient.JUTGE_API_URL = `https://${dev_}${exam_}api.jutge.org/api`
+    console.log(`[Extension]: JUTGE_API_URL = '${jutgeClient.JUTGE_API_URL}'`)
+}
+
 /**
  * Get the webview options for the webview panel.
  *
@@ -213,6 +220,9 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
  */
 export async function activate(context: vscode.ExtensionContext) {
     setContext_(context)
+
+    // Set JUTGE_API_URL from the start
+    setJutgeApiURL({ examMode: false })
 
     showExtensionInfo()
 

@@ -11,6 +11,7 @@ export class CourseTreeElement {
     public type: CourseItemType
     public key: string
     public label: string
+    public description: string
     public iconStatus: IconStatus
     public order: number = -1
 
@@ -62,10 +63,17 @@ export class CourseTreeElement {
         }
     }
 
-    constructor(type: CourseItemType, key: string, label: string, iconStatus: IconStatus) {
+    constructor(
+        type: CourseItemType,
+        key: string,
+        label: string,
+        iconStatus: IconStatus,
+        description?: string
+    ) {
         this.type = type
         this.key = key
         this.label = label
         this.iconStatus = iconStatus
+        this.description = description || ""
     }
 }

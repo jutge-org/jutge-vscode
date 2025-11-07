@@ -5,6 +5,7 @@
     background.
 */
 
+import { setJutgeApiURL } from "@/extension"
 import * as j from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import deepEqual from "deep-equal"
@@ -48,6 +49,7 @@ export class JutgeService extends StaticLogger {
         JutgeService.signedIn_ = true
         await JutgeService.storeToken(token)
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+        this.setToken(token)
         this.log.info(`Signed in`)
     }
 
@@ -55,7 +57,9 @@ export class JutgeService extends StaticLogger {
         JutgeService.signedIn_ = true
         await JutgeService.storeExamToken(examToken)
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
-        this.log.info(`Signed in`)
+        this.setExamToken(examToken)
+        this.enterExamMode()
+        this.log.info(`Signed in (exam mode)`)
     }
 
     static async setSignedOut() {
@@ -65,6 +69,9 @@ export class JutgeService extends StaticLogger {
             if (e instanceof j.UnauthorizedError) {
                 this.log.info(`Token probably expired.`)
             }
+        }
+        if (this.examMode_) {
+            this.exitExamMode()
         }
         JutgeService.signedIn_ = false
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
@@ -139,8 +146,7 @@ export class JutgeService extends StaticLogger {
         const originalUrl = jutgeClient.JUTGE_API_URL
 
         try {
-            jutgeClient.JUTGE_API_URL =
-                process.env.JUTGE_EXAM_API_URL || "https://exam.api.jutge.org/api"
+            setJutgeApiURL({ examMode: true })
             jutgeClient.meta = { token: examToken }
             await jutgeClient.student.profile.get()
             return true
@@ -168,6 +174,18 @@ export class JutgeService extends StaticLogger {
 
     static isExamMode() {
         return JutgeService.examMode_
+    }
+
+    private static enterExamMode() {
+        setJutgeApiURL({ examMode: true })
+        JutgeService.examMode_ = true
+        this.log.info(`Entered exam mode.`)
+    }
+
+    private static exitExamMode() {
+        setJutgeApiURL({ examMode: false })
+        JutgeService.examMode_ = false
+        this.log.info(`Exited exam mode.`)
     }
 
     private static async askEmail(): Promise<string | undefined> {
@@ -242,26 +260,6 @@ export class JutgeService extends StaticLogger {
             this.log.error(`Could not get exams: ${error}`)
             return
         }
-    }
-
-    private static enterExamMode() {
-        // Enter exam mode by setting headers on the client
-        // JutgeService.oldJutgeClientHeaders_ = jutgeClient.headers
-        // jutgeClient.headers = {
-        //     "jutge-host": "exam.api.jutge.org",
-        // }
-        // TODO(pauek): Switch to this
-        jutgeClient.JUTGE_API_URL =
-            process.env.JUTGE_EXAM_API_URL || "https://exam.api.jutge.org/api"
-        JutgeService.examMode_ = true
-        this.log.info(`Entered exam mode.`)
-    }
-
-    private static exitExamMode() {
-        // jutgeClient.headers = JutgeService.oldJutgeClientHeaders_
-        jutgeClient.JUTGE_API_URL = process.env.JUTGE_API_URL || "https://api.jutge.org/api"
-        JutgeService.examMode_ = false
-        this.log.info(`Exited exam mode.`)
     }
 
     private static async getExamTokenFromCredentials(): Promise<
@@ -340,8 +338,8 @@ export class JutgeService extends StaticLogger {
             const examToken = JutgeService.getExamToken()
             this.log.info(`jutgeExamToken is ${examToken}`)
             if (examToken && (await JutgeService.isExamTokenValid(examToken))) {
-                this.log.info(`Using exam token from VSCode workspaceState storage`)
-                JutgeService.setSignedInExam(examToken)
+                this.log.info(`Using exam token from VSCode storage`)
+                await JutgeService.setSignedInExam(examToken)
                 return
             }
         }
@@ -350,7 +348,7 @@ export class JutgeService extends StaticLogger {
             const token = JutgeService.getToken()
             if (token && (await JutgeService.isTokenValid(token))) {
                 this.log.info(`Using token from VSCode storage`)
-                JutgeService.setSignedIn(token)
+                await JutgeService.setSignedIn(token)
                 return
             }
         }
@@ -442,6 +440,7 @@ export class JutgeService extends StaticLogger {
             message: "You have signed out",
         }
     ): Promise<void> {
+        this.log.info(`signOut options = ${JSON.stringify(options)}`)
         if (options.askConfirmation) {
             if (!(await JutgeService.confirmSignOut())) {
                 return
@@ -503,7 +502,9 @@ export class JutgeService extends StaticLogger {
                     JutgeService.context_.globalState.update(dbkey, newData)
                     result.onUpdate(newData)
                 } else {
-                    this.log.info(`Revalidated '${funcCallId}': no changes.`)
+                    this.log.info(
+                        `Revalidated '${funcCallId}': no changes. [${JSON.stringify(newData)}]`
+                    )
                 }
             } catch (e) {
                 if (e instanceof j.UnauthorizedError) {

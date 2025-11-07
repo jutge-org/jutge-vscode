@@ -45,6 +45,7 @@ export class JutgeCourseTreeProvider
         if (!JutgeService.isSignedIn()) {
             return []
         } else if (!parent) {
+            this.log.info(`getChildren: exam mode = ${JutgeService.isExamMode()}`)
             return JutgeService.isExamMode() ? this.getExam_() : this.getEnrolledCourseList_()
         } else if (parent.type === "exam") {
             return this.getExamProblems_(parent)
@@ -61,16 +62,19 @@ export class JutgeCourseTreeProvider
         key: string,
         label: string,
         iconStatus: IconStatus,
-        order?: number,
-        parent?: CourseTreeElement
+        options?: {
+            order?: number
+            parent?: CourseTreeElement
+            description?: string
+        }
     ) {
         const newElem = new CourseTreeElement(type, key, label, iconStatus)
-        if (parent) {
-            if (order === undefined || order === -1) {
-                throw new Error(`Order is wrong! (order = ${order})`)
+        if (options?.parent !== undefined) {
+            if (options.order === undefined || options.order === -1) {
+                throw new Error(`Order is wrong! (order = ${options.order})`)
             }
-            newElem.order = order
-            newElem.parent = parent
+            newElem.order = options.order
+            newElem.parent = options.parent
         }
         return newElem
     }
@@ -128,6 +132,14 @@ export class JutgeCourseTreeProvider
                 const problemItem = this.abstractProblemToElement_(abstractProblem, allStatuses)
                 problemItem.parent = examElement
                 problemItem.order = order
+
+                // Add caption and points to each problem, taken from the exam data
+                const examProblem = exam.problems[order - 1]
+                const caption = examProblem?.caption || ""
+                const weight = examProblem?.weight || 1.0
+                problemItem.label = `${caption}: ${problemItem.label}`
+                problemItem.description = `${weight} points`
+
                 order++
                 items.push(problemItem)
             }
@@ -192,8 +204,7 @@ export class JutgeCourseTreeProvider
                     list_nm,
                     title || list_nm,
                     IconStatus.NONE,
-                    index + 1,
-                    courseElem
+                    { order: index + 1, parent: courseElem }
                 )
                 item.parent = courseElem
                 return item
