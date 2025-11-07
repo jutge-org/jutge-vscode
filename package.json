@@ -21,8 +21,12 @@
     "contributes": {
         "viewsWelcome": [
             {
-                "view": "jutgeTreeView",
-                "contents": "You have not signed in to jutge.org yet.\n[Sign-in to jutge.org](command:jutge-vscode.signIn)\n\nIf you have an exam, use the following button:\n[Sign-in to Exam](command:jutge-vscode.signInExam)"
+                "view": "jutge-courses",
+                "contents": "You have not signed in to jutge.org yet.\n[Sign-in to Jutge.org](command:jutge-vscode.signIn)"
+            },
+            {
+                "view": "jutge-exams",
+                "contents": "If you have an exam, use the following button:\n[Sign-in to Exam](command:jutge-vscode.signInExam)"
             }
         ],
         "viewsContainers": {
@@ -37,9 +41,18 @@
         "views": {
             "jutge": [
                 {
-                    "id": "jutgeTreeView",
-                    "name": "",
-                    "icon": "resources/lightbulb-regular.svg"
+                    "id": "jutge-courses",
+                    "name": "Courses",
+                    "icon": "resources/lightbulb-regular.svg",
+                    "visibility": "visible",
+                    "contextualTitle": "Jutge.org"
+                },
+                {
+                    "id": "jutge-exams",
+                    "name": "Exams",
+                    "icon": "resources/lightbulb-regular.svg",
+                    "visibility": "visible",
+                    "contextualTitle": "Jutge.org"
                 }
             ]
         },
@@ -47,17 +60,27 @@
             "view/title": [
                 {
                     "command": "jutge-vscode.invalidateToken",
-                    "when": "jutge-vscode.isSignedIn && view == jutgeTreeView && jutge-vscode.isDevMode",
+                    "when": "(jutge-vscode.isSignedIn.Courses || jutge-vscode.isSignedIn.Exam) && (view == jutge-courses || view == jutge-exams) && jutge-vscode.isDevMode",
                     "group": "navigation"
                 },
                 {
-                    "command": "jutge-vscode.refreshTree",
-                    "when": "jutge-vscode.isSignedIn && view == jutgeTreeView",
+                    "command": "jutge-vscode.refreshCoursesTree",
+                    "when": "jutge-vscode.isSignedIn.Courses && view == jutge-courses",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.signOut",
-                    "when": "jutge-vscode.isSignedIn && view == jutgeTreeView",
+                    "when": "jutge-vscode.isSignedIn.Courses && view == jutge-courses",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.refreshExamsTree",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.signOutExam",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
                     "group": "navigation"
                 }
             ]
@@ -80,6 +103,14 @@
                 }
             },
             {
+                "command": "jutge-vscode.signOutExam",
+                "title": "Jutge.org: Sign Out from Exam",
+                "icon": {
+                    "light": "resources/light/signout.svg",
+                    "dark": "resources/dark/signout.svg"
+                }
+            },
+            {
                 "command": "jutge-vscode.showProblem",
                 "title": "Jutge.org: Show Problem"
             },
@@ -93,8 +124,16 @@
                 }
             },
             {
-                "command": "jutge-vscode.refreshTree",
-                "title": "Jutge.org: Refresh Tree",
+                "command": "jutge-vscode.refreshCoursesTree",
+                "title": "Jutge.org: Refresh Courses Tree",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.refreshExamsTree",
+                "title": "Jutge.org: Refresh Exams Tree",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"

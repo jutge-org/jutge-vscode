@@ -13,7 +13,6 @@ const defaultStateFor_: Record<CourseItemType, vscode.TreeItemCollapsibleState> 
     list: vscode.TreeItemCollapsibleState.Collapsed,
     problem: vscode.TreeItemCollapsibleState.None,
     separator: vscode.TreeItemCollapsibleState.None,
-    exam: vscode.TreeItemCollapsibleState.Expanded,
 }
 
 export class CourseTreeItem extends vscode.TreeItem {

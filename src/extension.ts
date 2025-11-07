@@ -1,28 +1,16 @@
 import * as os from "os"
 import * as vscode from "vscode"
 
-/*
-
-TODO:
-1. Review all problems with errors in statement, etc. 
-   Make a list of things that do not work.
-2. Let the user create a test-case (and store it in a file).
-
-IDEAS:
-1. Download previous submissions (so you can use Jutge as a "repo", like many people do).
-   Show previous submissions and for each one show a button which will download the code.
-
-*/
-
-import { JutgeCourseTreeProvider } from "@/providers/tree-view/provider"
+import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import { ConfigService } from "@/services/config"
+import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
 import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
 import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry"
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
+import { CourseTreeElement } from "./providers/tree-view/element"
 import { jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
-import { CourseTreeElement } from "./providers/tree-view/element"
 
 export const setJutgeApiURL = ({ examMode }: { examMode: boolean }) => {
     const dev_ = process.env.MODE === "development" ? "dev." : ""
@@ -135,29 +123,40 @@ const showExtensionInfo = () => {
     console.info("===================================")
 }
 
-export let treeView: vscode.TreeView<CourseTreeElement> | null = null
+export let coursesView: vscode.TreeView<CourseTreeElement> | null = null
 
-const initializeTreeView = () => {
-    const treeProvider = new JutgeCourseTreeProvider()
+const initCoursesTreeView = () => {
+    const courseTreeProvider = new JutgeCourseTreeProvider()
 
-    treeView = vscode.window.createTreeView("jutgeTreeView", {
+    coursesView = vscode.window.createTreeView("jutge-courses", {
         showCollapseAll: true,
-        treeDataProvider: treeProvider,
+        treeDataProvider: courseTreeProvider,
     })
 
     // Store the collapsed state of the "folders" in the tree (courses, lists and exams)
     // so that on reload, the tree looks exactly the same as the last time
-    treeView.onDidExpandElement(({ element }) =>
+    coursesView.onDidExpandElement(({ element }) =>
         globalStateUpdate(`itemState:${element.getId()}`, "expanded")
     )
-    treeView.onDidCollapseElement(({ element }) =>
+    coursesView.onDidCollapseElement(({ element }) =>
         globalStateUpdate(`itemState:${element.getId()}`, "collapsed")
     )
     SubmissionService.onDidReceiveVeredict((veredict) => {
-        treeProvider.refreshProblem(veredict)
+        courseTreeProvider.refreshProblem(veredict)
     })
 
-    return { treeProvider, treeView }
+    return { courseTreeProvider, coursesView }
+}
+
+const initExamsTreeView = () => {
+    const examsTreeProvider = new JutgeExamsTreeProvider()
+
+    const examsTreeView = vscode.window.createTreeView("jutge-exams", {
+        showCollapseAll: true,
+        treeDataProvider: examsTreeProvider,
+    })
+
+    return { examsTreeProvider }
 }
 
 const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
@@ -232,7 +231,8 @@ export async function activate(context: vscode.ExtensionContext) {
     await JutgeService.initialize(context)
     ConfigService.initialize()
 
-    const { treeProvider } = initializeTreeView()
+    const { courseTreeProvider } = initCoursesTreeView()
+    const { examsTreeProvider } = initExamsTreeView()
 
     registerWebviewPanelSerializer(
         ProblemWebviewPanel.viewType,
@@ -253,10 +253,16 @@ export async function activate(context: vscode.ExtensionContext) {
     registerCommands([
         ["jutge-vscode.signIn", JutgeService.signIn.bind(JutgeService)],
         ["jutge-vscode.signOut", JutgeService.signOut.bind(JutgeService)],
+
         ["jutge-vscode.signInExam", JutgeService.signInExam.bind(JutgeService)],
-        ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
-        ["jutge-vscode.refreshTree", treeProvider.refresh],
+        ["jutge-vscode.signOutExam", JutgeService.signOutExam.bind(JutgeService)],
+
+        ["jutge-vscode.refreshCoursesTree", courseTreeProvider.refresh],
+        ["jutge-vscode.refreshExamsTree", examsTreeProvider.refresh],
+
         ["jutge-vscode.showProblem", commandShowProblem],
+
+        ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
     ])
 
     console.info("[Extension] jutge-vscode is now active")

@@ -44,21 +44,20 @@ export class JutgeService extends StaticLogger {
         return this.signedIn_
     }
 
+    static isSignedInExam() {
+        return this.signedIn_ && this.examMode_
+    }
+
     static async setSignedIn(token: string) {
         this.signedIn_ = true
         await this.storeToken(token)
-        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isSignedIn.Courses",
+            true
+        )
         this.setToken(token)
-        this.log.info(`Signed in`)
-    }
-
-    static async setSignedInExam(examToken: string) {
-        this.signedIn_ = true
-        await this.storeExamToken(examToken)
-        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", true)
-        this.setExamToken(examToken)
-        this.enterExamMode()
-        this.log.info(`Signed in (exam mode)`)
+        this.log.info(`Signed in.`)
     }
 
     static async setSignedOut() {
@@ -69,12 +68,40 @@ export class JutgeService extends StaticLogger {
                 this.log.info(`Token probably expired.`)
             }
         }
-        if (this.examMode_) {
-            this.exitExamMode()
-        }
         this.signedIn_ = false
-        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn", false)
-        this.log.info(`Signed out`)
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isSignedIn.Courses",
+            false
+        )
+        this.log.info(`Signed out.`)
+    }
+
+    static async setSignedInExam(examToken: string) {
+        this.signedIn_ = true
+        await this.storeExamToken(examToken)
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Exam", true)
+        this.setExamToken(examToken)
+        this.enterExamMode()
+        this.log.info(`Signed in to exam.`)
+    }
+
+    static async setSignedOutExam() {
+        try {
+            await jutgeClient.logout()
+        } catch (e) {
+            if (e instanceof j.UnauthorizedError) {
+                this.log.info(`Token probably expired.`)
+            }
+        }
+        this.exitExamMode()
+        this.signedIn_ = false
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isSignedIn.Exam",
+            false
+        )
+        this.log.info(`Signed out from exam.`)
     }
 
     /*
@@ -356,7 +383,7 @@ export class JutgeService extends StaticLogger {
 
             await this.setSignedIn(token)
 
-            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
             vscode.window.showInformationMessage("Jutge.org: You have signed in.")
 
             this.getProfileSWR() // cache this for later
@@ -384,7 +411,7 @@ export class JutgeService extends StaticLogger {
 
             this.getProfileSWR() // cache this for later
 
-            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
             vscode.window.showInformationMessage(
                 `Jutge.org: You have entered exam ${exam_key}.`
             )
@@ -418,11 +445,8 @@ export class JutgeService extends StaticLogger {
                 placeHolder: dialogText.placeHolder,
             }
         )
-        if (confirmation === dialogText.no) {
-            return false
-        }
 
-        return true
+        return confirmation === dialogText.yes
     }
 
     public static async signOut(options?: {
@@ -447,7 +471,36 @@ export class JutgeService extends StaticLogger {
 
             await this.setSignedOut()
 
-            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
+
+            const message = options?.message || "You have signed out"
+            vscode.window.showInformationMessage(`Jutge.org: ${message}`)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    public static async signOutExam(options?: {
+        askConfirmation: boolean
+        message: string
+    }): Promise<void> {
+        try {
+            const askConfirmation = options?.askConfirmation || true
+            if (askConfirmation) {
+                if (!(await this.confirmSignOut())) {
+                    return
+                }
+            }
+
+            // Sign-out (of everything)
+            if (this.isExamMode()) {
+                this.exitExamMode()
+            }
+
+            this.storeExamToken(undefined)
+            await this.setSignedOut()
+
+            vscode.commands.executeCommand("jutge-vscode.refreshExamsTree")
 
             const message = options?.message || "You have signed out"
             vscode.window.showInformationMessage(`Jutge.org: ${message}`)

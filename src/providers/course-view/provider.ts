@@ -1,13 +1,13 @@
 import * as vscode from "vscode"
 
 import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_client"
+import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
-import { IconStatus, status2IconStatus } from "@/types"
+import { Veredict } from "@/services/submission"
+import { IconStatus } from "@/types"
 import { CourseItemType, CourseTreeElement } from "./element"
 import { CourseTreeItem } from "./item"
-import { Veredict } from "@/services/submission"
-import { Logger } from "@/loggers"
 
 export class JutgeCourseTreeProvider
     extends Logger
@@ -45,10 +45,7 @@ export class JutgeCourseTreeProvider
         if (!JutgeService.isSignedIn()) {
             return []
         } else if (!parent) {
-            this.log.info(`getChildren: exam mode = ${JutgeService.isExamMode()}`)
-            return JutgeService.isExamMode() ? this.getExam_() : this.getEnrolledCourseList_()
-        } else if (parent.type === "exam") {
-            return this.getExamProblems_(parent)
+            return JutgeService.isExamMode() ? [] : this.getEnrolledCourseList_()
         } else if (parent.type === "course") {
             return this.getListsFromCourseNm_(parent)
         } else if (parent.type === "list") {
@@ -155,27 +152,6 @@ export class JutgeCourseTreeProvider
         } catch (error) {
             this.log.error(error)
             vscode.window.showErrorMessage("Failed to get exam problems")
-            return []
-        }
-    }
-
-    private async getExam_(): Promise<CourseTreeElement[]> {
-        try {
-            const swrExam = JutgeService.getExamSWR()
-            swrExam.onUpdate = () => this.refresh_()
-
-            const exam = swrExam.data
-            if (!exam) {
-                return []
-            }
-            return [
-                this.makeTreeElement("exam", "exam", exam.title, IconStatus.NONE, {
-                    description: exam.time_start === null ? "Not started" : "Started",
-                }),
-            ]
-        } catch (error) {
-            this.log.error(error)
-            vscode.window.showErrorMessage("Failed to get exam")
             return []
         }
     }
