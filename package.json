@@ -38,8 +38,7 @@
             "jutge": [
                 {
                     "id": "jutgeTreeView",
-                    "contextualTitle": "Jutge.org",
-                    "name": "Courses",
+                    "name": "",
                     "icon": "resources/lightbulb-regular.svg"
                 }
             ]
