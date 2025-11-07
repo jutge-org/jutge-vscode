@@ -153,13 +153,6 @@ const initializeTreeView = () => {
     treeView.onDidCollapseElement(({ element }) =>
         globalStateUpdate(`itemState:${element.getId()}`, "collapsed")
     )
-    treeView.onDidChangeVisibility((event) => {
-        if (event.visible) {
-            console.log(`[Extension]: TreeView now visible.`)
-        } else {
-            console.log(`[Extension]: TreeView now hidden.`)
-        }
-    })
     SubmissionService.onDidReceiveVeredict((veredict) => {
         treeProvider.refreshProblem(veredict)
     })
