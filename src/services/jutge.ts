@@ -9,7 +9,6 @@ import { setJutgeApiURL } from "@/extension"
 import * as j from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import deepEqual from "deep-equal"
-import * as fs from "fs"
 import * as vscode from "vscode"
 
 export const jutgeClient = new j.JutgeApiClient()
@@ -193,7 +192,7 @@ export class JutgeService extends StaticLogger {
         const email = await vscode.window.showInputBox({
             title: "Jutge Sign-In",
             placeHolder: "your email",
-            prompt: "Please write your email for Jutge.org.",
+            prompt: "Please enter your email at Jutge.org.",
             value: initial_email,
         })
         if (email) {
@@ -316,7 +315,7 @@ export class JutgeService extends StaticLogger {
                 token: credentials.token,
             }
         } catch (error) {
-            vscode.window.showErrorMessage("Jutge.org: Invalid credentials to sign in.")
+            vscode.window.showErrorMessage("Jutge.org: Invalid credentials.")
             this.log.error(`JutgeService: Error signing in: ${error}`)
             this.exitExamMode()
             return
@@ -358,7 +357,7 @@ export class JutgeService extends StaticLogger {
             await this.setSignedIn(token)
 
             vscode.commands.executeCommand("jutge-vscode.refreshTree")
-            vscode.window.showInformationMessage("Jutge.org: You have signed in")
+            vscode.window.showInformationMessage("Jutge.org: You have signed in.")
 
             this.getProfileSWR() // cache this for later
         }
@@ -382,10 +381,13 @@ export class JutgeService extends StaticLogger {
             }
 
             await this.setSignedInExam(examToken)
-            vscode.commands.executeCommand("jutge-vscode.refreshTree")
-            vscode.window.showInformationMessage(`Jutge.org: You have entered exam ${exam_key}`)
 
             this.getProfileSWR() // cache this for later
+
+            vscode.commands.executeCommand("jutge-vscode.refreshTree")
+            vscode.window.showInformationMessage(
+                `Jutge.org: You have entered exam ${exam_key}.`
+            )
         }
 
         if (!this.isSignedIn()) {
