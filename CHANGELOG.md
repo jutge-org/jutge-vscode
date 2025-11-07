@@ -5,6 +5,12 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2025-11-XX
+
+## Added
+
+- In exam mode, problems show points and the "caption", which is extra text apart from the title (like "P1", "P2", "P3", for the exam problems). The exam itself shows if it has started or not.
+
 ## [0.1.5] - 2025-11-06
 
 ## Fixed
