@@ -20,6 +20,7 @@ export enum IconStatus {
     REJECTED = "rejected",
     NONE = "none",
     FAILED = "failed",
+    SCORED = "scored",
 }
 
 export const status2IconStatus: Record<SubmissionStatus, IconStatus> = {
@@ -30,6 +31,7 @@ export const status2IconStatus: Record<SubmissionStatus, IconStatus> = {
     CE: IconStatus.REJECTED,
     EE: IconStatus.REJECTED,
     TLE: IconStatus.REJECTED,
+    SC: IconStatus.SCORED,
     Pending: IconStatus.NONE,
     Failed: IconStatus.FAILED,
 }
@@ -42,6 +44,7 @@ export enum SubmissionStatus {
     CE = "CE",
     EE = "EE",
     TLE = "TLE",
+    SC = "SC",
     PENDING = "Pending",
     FAILED = "Failed",
 }
@@ -50,11 +53,19 @@ export type ProblemHandler = {
     handler: string
     source_modifier: string
     compilers: string
+    checker?: string
+    func_name?: string
+    separator?: string //for elastic checker
+    separator1?: string //for elastic2 checker
+    separator2?: string //for elastic2 checker
+    starting?: string //for elastic2 checker
+    ending?: string //for elastic2 checker
 }
 
 export type CustomTestcase = {
     index: number
     input: string
+    solution: string | undefined
 }
 
 export type Problem = {
@@ -101,6 +112,7 @@ export enum WebviewToVSCodeCommand {
     RUN_ALL_TESTCASES = "run-all-testcases",
     RUN_TESTCASE = "run-testcase",
     EDIT_TESTCASE = "edit-testcase",
+    EDIT_TESTCASE_SOLUTION = "edit-testcase-solution",
     RUN_CUSTOM_TESTCASE = "run-custom-testcase",
     ADD_NEW_TESTCASE = "add-new-testcase",
     SHOW_DIFF = "show-diff",

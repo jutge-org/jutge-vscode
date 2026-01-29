@@ -7,7 +7,7 @@ import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
 import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
 import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry"
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
-import { CourseTreeElement } from "./providers/tree-view/element"
+import { CourseTreeElement } from "./providers/course-view/element"
 import { jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
@@ -195,6 +195,14 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
         }
     }
 
+    // Handle non-abstract problem_nms
+    let language = ""
+    if (problemNm.includes("_")) {
+        let split = problemNm.replaceAll(" ", "").split("_")
+        problemNm = split[0]
+        language = split[1]
+    }
+
     // Check that the problem really exists
     if (!(await JutgeService.problemExists(problemNm))) {
         vscode.window.showErrorMessage(`Problem ${problemNm} does not exist`)
@@ -209,7 +217,7 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
         }
     })
 
-    await WebviewPanelRegistry.createOrReveal(problemNm, order)
+    await WebviewPanelRegistry.createOrReveal(problemNm, order, language)
     // Force update on "Open Existing File" button + custom testcases
     await WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
 }
@@ -270,6 +278,6 @@ export async function activate(context: vscode.ExtensionContext) {
     await vscode.commands.executeCommand(
         "setContext",
         "jutge-vscode.isDevMode",
-        process.env.MODE === "development"
+        ["development", "semidevelopment"].includes(process.env.MODE || "production")
     )
 }

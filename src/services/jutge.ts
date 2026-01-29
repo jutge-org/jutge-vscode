@@ -454,7 +454,9 @@ export class JutgeService extends StaticLogger {
         message: string
     }): Promise<void> {
         try {
-            const askConfirmation = options?.askConfirmation || true
+            // Note (jma25l): (!==) If options.askconfirmation is undefined it will not become true due to js/ts.
+            const askConfirmation = options?.askConfirmation !== false
+
             if (askConfirmation) {
                 if (!(await this.confirmSignOut())) {
                     return

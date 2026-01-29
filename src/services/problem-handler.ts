@@ -10,6 +10,7 @@ import {
     proglangInfoGet,
 } from "@/services/runners/languages"
 import {
+    CustomTestcase,
     InputExpected,
     Problem,
     TestcaseRun,
@@ -31,6 +32,7 @@ import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
+import { checkerInfoByName } from "./runners/checkers"
 
 export class ProblemHandler extends Logger {
     panel_: ProblemWebviewPanel
@@ -163,10 +165,16 @@ export class ProblemHandler extends Logger {
         }
     }
 
-    async runCustomTestcaseByIndex(index: number): Promise<boolean> {
+    async runCustomTestcaseByIndex(
+        index: number,
+        options: { saveFirst: boolean } = { saveFirst: true }
+    ): Promise<boolean> {
         try {
             // Save the current file first
-            await vscode.commands.executeCommand("workbench.action.files.save")
+            if (options?.saveFirst) {
+                // Save the current file first
+                await vscode.commands.executeCommand("workbench.action.files.save")
+            }
 
             const filePath = await this.__getEditorFilepath()
             this.log.debug(`Running testcase on file ${filePath}`)
@@ -177,10 +185,22 @@ export class ProblemHandler extends Logger {
             const { problem_nm } = this.problem_
             this.__sendUpdateCustom(problem_nm, index, TestcaseStatus.RUNNING)
 
-            const output = await this.__run(testcase, filePath)
-            this.__sendUpdateCustom(problem_nm, index, TestcaseStatus.PASSED, output)
-
-            return true
+            const output = await this.__run(testcase.input, filePath)
+            if (testcase.solution === undefined) {
+                this.__sendUpdateCustom(problem_nm, index, TestcaseStatus.PASSED, output)
+                return true
+            } else if (this.problem_.handler?.handler === "std") {
+                console.log("checking")
+                const checker = checkerInfoByName(this.problem_.handler?.checker)
+                const uniformed = output.replaceAll("\r\n", "\n")
+                const expected = testcase.solution
+                const passed = checker.runner.run(uniformed, expected, this.problem_.handler)
+                this.__sendUpdateCustom(problem_nm, index, passed, output, true)
+                return passed === TestcaseStatus.PASSED
+            } else {
+                this.__sendUpdateCustom(problem_nm, index, TestcaseStatus.PASSED, output)
+                return true
+            }
             //
         } catch (e: unknown) {
             this.log.error(e)
@@ -196,13 +216,27 @@ export class ProblemHandler extends Logger {
             // Save the current file first
             await vscode.commands.executeCommand("workbench.action.files.save")
 
-            const testcases = await this.__ensureTestcases()
+            const testcases = await this.__ensureTestcases(false)
+            if (
+                testcases.length === 0 &&
+                (!this.panel_.customTestcases || this.panel_.customTestcases.length === 0)
+            ) {
+                throw new Error(`No testcases found for problem ${this.problem_.problem_nm}`)
+            }
             this.log.debug(`Running all testcases for problem ${this.problem_.problem_id}`)
 
             let allPassed = true
             for (let index = 1; index <= testcases.length; index++) {
                 allPassed =
                     allPassed && (await this.runTestcaseByIndex(index, { saveFirst: false }))
+            }
+
+            if (this.panel_.customTestcases) {
+                for (let index = 1; index <= this.panel_.customTestcases.length; index++) {
+                    allPassed =
+                        allPassed &&
+                        (await this.runCustomTestcaseByIndex(index, { saveFirst: false }))
+                }
             }
 
             return allPassed
@@ -233,19 +267,19 @@ export class ProblemHandler extends Logger {
             const document = await this.__getDocument(filePath)
 
             this.log.debug(`Executing code with ${runner.constructor.name}`)
-            const output = runner
-                .run(filePath, testcase.input, document)
-                .replaceAll(/\r\n/g, "\n")
+            const output = runner.run(filePath, testcase.input, document)
             this.log.debug(`Code execution completed`)
 
             const handler = this.problem_.handler?.handler || "<unknown>"
             switch (handler) {
                 case "std": {
+                    const checker = checkerInfoByName(this.problem_.handler?.checker)
+                    const uniformed = output.replaceAll("\r\n", "\n")
                     const expected = testcase.expected.toString("utf-8")
                     const passed = output !== null && output === expected
                     return {
-                        status: passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED,
-                        output,
+                        status: checker.runner.run(uniformed, expected, this.problem_.handler),
+                        output: uniformed,
                     }
                 }
                 case "graphic": {
@@ -317,12 +351,14 @@ export class ProblemHandler extends Logger {
         problemNm: string,
         testcaseId: number,
         status: TestcaseStatus,
-        output: string | null = ""
+        output: string | null = "",
+        withSolution: boolean = false
     ) {
         this.__sendMessage(VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS, problemNm, {
             testcaseId,
             status,
             output,
+            withSolution,
         })
     }
 
@@ -334,15 +370,19 @@ export class ProblemHandler extends Logger {
         return editor.document.uri.fsPath
     }
 
-    async __ensureTestcases(): Promise<Testcase[]> {
+    async __ensureTestcases(strict: boolean = true): Promise<Testcase[]> {
         const { testcases } = this.problem_
-        if (!testcases || testcases.length === 0) {
+
+        if (testcases && testcases.length > 0) {
+            this.log.debug(
+                `Found ${testcases.length} testcases for problem ${this.problem_.problem_nm}`
+            )
+            return testcases
+        } else if (strict) {
             throw new Error(`No testcases found for problem ${this.problem_.problem_nm}`)
+        } else {
+            return []
         }
-        this.log.debug(
-            `Found ${testcases.length} testcases for problem ${this.problem_.problem_nm}`
-        )
-        return testcases
     }
 
     async __getTestcase(index: number): Promise<InputExpected> {
@@ -354,7 +394,7 @@ export class ProblemHandler extends Logger {
         return decodeTestcase(testcases[k])
     }
 
-    async __getCustomTestcase(index: number): Promise<string> {
+    async __getCustomTestcase(index: number): Promise<CustomTestcase> {
         const { customTestcases } = this.panel_
         if (customTestcases === null) {
             throw new Error(`Internal Error: there are no custom testcases!`)
@@ -363,7 +403,7 @@ export class ProblemHandler extends Logger {
         if (k < 0 || k >= customTestcases.length) {
             throw new Error(`Internal error: custom testcase index ${index} does not exist!`)
         }
-        return customTestcases[k].input
+        return customTestcases[k]
     }
 
     async __getDocument(filePath: string): Promise<vscode.TextDocument> {

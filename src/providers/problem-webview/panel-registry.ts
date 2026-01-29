@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { getContext, getWebviewOptions } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { JutgeService } from "@/services/jutge"
-import { VSCodeToWebviewMessage } from "@/types"
+import { LanguageCode, VSCodeToWebviewMessage } from "@/types"
 import { getProblemIdFromFilename, sourceFileExists } from "@/utils"
 import { basename } from "path"
 import { ProblemWebviewPanel } from "./panel"
@@ -32,7 +32,8 @@ export class WebviewPanelRegistry extends StaticLogger {
      */
     static async createOrReveal(
         problemNm: string,
-        order: number = -1
+        order: number = -1,
+        langId?: string
     ): Promise<ProblemWebviewPanel | null> {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
 
@@ -55,7 +56,7 @@ export class WebviewPanelRegistry extends StaticLogger {
             return panel
         }
 
-        this.log.debug(`Creating new panel for ${problemNm}`)
+        this.log.debug(`Creating new panel for ${problemNm} - l: ${langId}`)
         const webviewPanel = vscode.window.createWebviewPanel(
             ProblemWebviewPanel.viewType,
             problemNm,
@@ -63,7 +64,11 @@ export class WebviewPanelRegistry extends StaticLogger {
             getWebviewOptions(context.extensionUri)
         )
 
-        const panel = new ProblemWebviewPanel(webviewPanel, { problemNm, order })
+        const panel = new ProblemWebviewPanel(
+            webviewPanel,
+            { problemNm, order },
+            langId as LanguageCode
+        )
         this.createdPanels_.set(problemNm, panel)
 
         return panel

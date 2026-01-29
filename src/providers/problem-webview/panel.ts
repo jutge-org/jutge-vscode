@@ -7,6 +7,7 @@ import { JutgeService } from "@/services/jutge"
 import { ProblemHandler } from "@/services/problem-handler"
 import {
     CustomTestcase,
+    LanguageCode,
     Problem,
     VSCodeToWebviewCommand,
     WebviewToVSCodeCommand,
@@ -33,23 +34,30 @@ export class ProblemWebviewPanel extends Logger {
     public problem: Problem
     public order: number
     public fileExists: boolean
+    public langId: LanguageCode | undefined
     public problemHandler: ProblemHandler | null = null
     public customTestcases: CustomTestcase[] | null = null
 
     public constructor(
         panel: vscode.WebviewPanel,
-        { problemNm, title, order, fileExists }: ProblemWebviewState
+        { problemNm, title, order, fileExists }: ProblemWebviewState,
+        langId?: LanguageCode
     ) {
         super()
 
         this.problem = {
-            problem_id: utils.getDefaultProblemId(problemNm),
+            problem_id: langId
+                ? problemNm + "_" + langId
+                : utils.getDefaultProblemId(problemNm),
             problem_nm: problemNm,
             title: title || "",
             language_id: null,
             handler: null,
             statementHtml: null,
             testcases: null,
+        }
+        if (langId) {
+            this.langId = langId
         }
         this.order = order
         this.fileExists = fileExists || false
@@ -129,6 +137,22 @@ export class ProblemWebviewPanel extends Logger {
         this.panel.reveal(vscode.ViewColumn.Beside, true)
     }
 
+    async editTestcaseSolutionByIndex(index: number) {
+        const workspaceFolder = await getWorkspaceFolderOrPickOne()
+        if (!workspaceFolder) {
+            return
+        }
+        const filename = FileService.makeTestcaseFilename(this.problem, index, true)
+        const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, filename)
+        if (!existsSync(fileUri.fsPath)) {
+            await FileService.createNewTestcaseSolutionFile(this.problem, index, "To be added")
+        }
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        await showCodeDocument(document)
+        this.panel.reveal(vscode.ViewColumn.Beside, true)
+        await this.notifyProblemFilesChanges()
+    }
+
     private async _handleMessage(message: WebviewToVSCodeMessage) {
         console.debug(`[ProblemWebviewPanel] Received message from webview: ${message.command}`)
 
@@ -155,6 +179,9 @@ export class ProblemWebviewPanel extends Logger {
 
             case WebviewToVSCodeCommand.EDIT_TESTCASE:
                 return this.editTestcaseByIndex(data.testcaseId)
+
+            case WebviewToVSCodeCommand.EDIT_TESTCASE_SOLUTION:
+                return this.editTestcaseSolutionByIndex(data.testcaseId)
 
             case WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE:
                 return this.handler.runCustomTestcaseByIndex(data.testcaseId)
@@ -283,7 +310,10 @@ export class ProblemWebviewPanel extends Logger {
         const concreteProblems = absProb.problems
         let problem
         let id = `${problemNm}_${langId}`
-        if (concreteProblems[id]) {
+
+        if (this.langId && concreteProblems[`${problemNm}_${this.langId}`]) {
+            problem = concreteProblems[`${problemNm}_${this.langId}`]
+        } else if (concreteProblems[id]) {
             problem = concreteProblems[id]
         } else {
             console.warn(

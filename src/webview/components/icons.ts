@@ -48,14 +48,14 @@ export const editIcon = () => `
     </svg>
 `
 
-export type IconType =
-    | "add"
-    | "run"
-    | "run-all"
-    | "submit"
-    | "run-again"
-    | "edit"
-    | "none"
+export const warningCard = (msg) => `
+    <div class="warning">
+        <div>${warningIcon()}</div>
+        <span>${msg}</span>
+    </div>
+`
+
+export type IconType = "add" | "run" | "run-all" | "submit" | "run-again" | "edit" | "none"
 
 export const icons: Record<IconType, () => string> = {
     "add": addIcon,

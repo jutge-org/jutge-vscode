@@ -22,7 +22,7 @@ cd jutge-vscode
 make
 ```
 
-3. Open the project in VSCode and press `F5` or select `Run > Start Debugging`
+3. Open the project in VSCode and press `F5` or select `Run > Start Debugging`. There are two launch configurations, `Run Extension (Dev)` and `Run Extension`, both enable special debug options, but the difference is that they point to the pre-production and production environments **of the API**.
 
 ## Project Structure
 
@@ -57,6 +57,8 @@ jutge-vscode/
 - ConfigService: Manages configuration
 
 4. **Runners**: Executes code against test cases for different programming languages
+
+5. **Checkers**: Determines the correctness of a program, comparing its output to an official solution.
 
 ## Contributing
 

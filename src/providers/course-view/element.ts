@@ -10,6 +10,7 @@ export const ELEMENT_ID_SEPARATOR = "/"
 export class CourseTreeElement {
     public type: CourseItemType
     public key: string
+    public nm: string
     public label: string
     public description: string
     public iconStatus: IconStatus
@@ -54,7 +55,7 @@ export class CourseTreeElement {
                 }
                 break
             }
-            case IconStatus.PRESENTATION_ERROR: {
+            case (IconStatus.SCORED, IconStatus.PRESENTATION_ERROR): {
                 if (status === SubmissionStatus.AC) {
                     this.iconStatus = IconStatus.ACCEPTED
                 }
@@ -68,10 +69,12 @@ export class CourseTreeElement {
         key: string,
         label: string,
         iconStatus: IconStatus,
+        order: number,
         description?: string
     ) {
         this.type = type
-        this.key = key
+        this.key = type === "problem" ? order + "_" + key : key
+        this.nm = key
         this.label = label
         this.iconStatus = iconStatus
         this.description = description || ""

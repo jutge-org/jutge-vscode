@@ -95,7 +95,7 @@ export class SubmissionService extends StaticLogger {
                         message: `Submission successful (${submission_id})`,
                     })
 
-                    const verdict = await this._waitForVerdictLoop(
+                    const [verdict, submission] = await this._waitForVerdictLoop(
                         problem,
                         submission_id,
                         progress
@@ -106,7 +106,7 @@ export class SubmissionService extends StaticLogger {
                         status: verdict,
                     })
 
-                    return { submission_id, verdict }
+                    return { submission_id, verdict, submission }
                 } catch (err) {
                     if (err instanceof j.UnauthorizedError) {
                         // Already signed out in JutgeService if this happened
@@ -125,9 +125,14 @@ export class SubmissionService extends StaticLogger {
                 }
             }
         )
-        if (result) {
+        if (result && result.submission) {
             this._sendStatusUpdate(problem.problem_nm, result.verdict)
-            await this._showVerdictNotification(problem, result.submission_id, result.verdict)
+            await this._showVerdictNotification(
+                problem,
+                result.submission_id,
+                result.verdict,
+                result.submission
+            )
         }
     }
 
@@ -135,10 +140,10 @@ export class SubmissionService extends StaticLogger {
         problem: Problem,
         submission_id: string,
         progress: vscode.Progress<{ message?: string; increment?: number }>
-    ): Promise<SubmissionStatus> {
+    ): Promise<[SubmissionStatus, j.Submission?]> {
         let times = 1
         let verdict: SubmissionStatus = SubmissionStatus.PENDING
-
+        let response: j.Submission | undefined = undefined
         try {
             while (verdict === SubmissionStatus.PENDING) {
                 // NOTE(pauek): Wait first so that the last progress report
@@ -147,7 +152,7 @@ export class SubmissionService extends StaticLogger {
 
                 progress.report({ message: `Waiting (${times++}) ...` })
 
-                const response = await JutgeService.getSubmission({
+                response = await JutgeService.getSubmission({
                     problem_id: problem.problem_id,
                     submission_id,
                 })
@@ -159,15 +164,26 @@ export class SubmissionService extends StaticLogger {
             verdict = SubmissionStatus.PENDING
         }
 
-        return verdict
+        return [verdict, response]
     }
 
     private static async _showVerdictNotification(
         problem: Problem,
         submission_id: string,
-        verdict: string
+        verdict: string,
+        submission: j.Submission
     ) {
-        const text = (verdict && this._verdictText.get(verdict)) || "❓"
+        let text = (verdict && this._verdictText.get(verdict)) || "❓"
+        switch (verdict) {
+            case "SC":
+                // NOTE(jma25l): Xapussa until api includes the obtained/maximum score
+                text += ": TBA/TBA"
+                break
+            default: //Mainly for EE
+                if (submission.veredict_info) {
+                    text += ": " + submission.veredict_info
+                }
+        }
         const host = JutgeService.isExamMode() ? "https://exam.jutge.org" : "https://jutge.org"
 
         const selection = await vscode.window.showInformationMessage(text, {
@@ -193,6 +209,7 @@ export class SubmissionService extends StaticLogger {
         ["IC", "🚫 Invalid Character"],
         ["PE", "🟡 Presentation Error"],
         ["EE", "💣 Execution Error"],
+        ["SC", "🟠 Scored"],
         ["CE", "🛠 Compilation Error"],
         ["IE", "🔥 Internal Error"],
         ["Pending", "⏳ Pending..."],
