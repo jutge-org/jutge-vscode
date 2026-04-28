@@ -13,7 +13,8 @@ import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
 
 export const setJutgeApiURL = ({ examMode }: { examMode: boolean }) => {
-    const dev_ = process.env.MODE === "development" ? "dev." : ""
+    // I hardcode this because i do not know how to use the production api
+    const dev_ = "" // process.env.MODE === "development" ? "dev." : ""
     const exam_ = examMode ? "exam." : ""
     jutgeClient.JUTGE_API_URL = `https://${dev_}${exam_}api.jutge.org/api`
     console.log(`[Extension]: JUTGE_API_URL = '${jutgeClient.JUTGE_API_URL}'`)
