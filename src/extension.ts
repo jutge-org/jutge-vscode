@@ -3,6 +3,10 @@ import * as vscode from "vscode"
 
 import { AboutTreeProvider, aboutTreeViewType } from "@/providers/about-view/provider"
 import {
+    ExamDocumentsTreeProvider,
+    examDocumentsTreeViewType,
+} from "@/providers/exam-documents-view/provider"
+import {
     ExamPropertiesTreeProvider,
     examPropertiesTreeViewType,
 } from "@/providers/exam-properties-view/provider"
@@ -21,6 +25,7 @@ import { CourseTreeElement } from "./providers/course-view/element"
 import { ApiMode, jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
+import * as path from "path"
 
 export const setJutgeApiURL = ({ mode, useDevApi }: { mode: ApiMode; useDevApi: boolean }) => {
     const apiBaseByMode: Record<ApiMode, string> = {
@@ -206,6 +211,15 @@ const initExamPropertiesTreeView = () => {
     return { examPropertiesTreeProvider, examPropertiesView }
 }
 
+const initExamDocumentsTreeView = () => {
+    const examDocumentsTreeProvider = new ExamDocumentsTreeProvider()
+    const examDocumentsView = vscode.window.createTreeView(examDocumentsTreeViewType, {
+        showCollapseAll: false,
+        treeDataProvider: examDocumentsTreeProvider,
+    })
+    return { examDocumentsTreeProvider, examDocumentsView }
+}
+
 const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
     for (const [command, callback] of commands) {
         registerCommand(command, callback)
@@ -261,6 +275,45 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
     await WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
 }
 
+const commandOpenExamDocument = async (
+    documentNm: string | undefined,
+    displayTitle?: string
+) => {
+    if (!JutgeService.isSignedInExam()) {
+        vscode.window.showErrorMessage("You need to be signed in to an exam or contest.")
+        return
+    }
+
+    if (!documentNm) {
+        vscode.window.showErrorMessage("Missing document name.")
+        return
+    }
+
+    try {
+        const download = await jutgeClient.student.exam.getDocumentPdf(documentNm)
+        const baseName = download.name?.trim() || `${documentNm}.pdf`
+        const fileName =
+            path.extname(baseName).toLowerCase() === ".pdf" ? baseName : `${baseName}.pdf`
+        const tmpFilePath = path.join(os.tmpdir(), `jutge-${Date.now()}-${fileName}`)
+        const uri = vscode.Uri.file(tmpFilePath)
+
+        await vscode.workspace.fs.writeFile(uri, download.data)
+        try {
+            await vscode.commands.executeCommand("vscode.openWith", uri, "pdf.preview")
+        } catch {
+            const opened = await vscode.env.openExternal(uri)
+            if (!opened) {
+                await vscode.commands.executeCommand("vscode.open", uri)
+            }
+        }
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        vscode.window.showErrorMessage(
+            `Could not open document "${displayTitle || documentNm}": ${message}`
+        )
+    }
+}
+
 /**
  * Works as entrypoint when the extension is activated.
  * It is responsible for registering commands and other extension components.
@@ -281,10 +334,12 @@ export async function activate(context: vscode.ExtensionContext) {
     const { courseTreeProvider } = initCoursesTreeView()
     const { examsTreeProvider } = initExamsTreeView()
     const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
+    const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { homeTreeProvider, homeView } = initHomeTreeView()
     const { aboutViewProvider } = initAboutTreeView()
     context.subscriptions.push(homeView)
     context.subscriptions.push(examPropertiesView)
+    context.subscriptions.push(examDocumentsView)
     context.subscriptions.push(aboutViewProvider)
 
     context.subscriptions.push(
@@ -322,9 +377,14 @@ export async function activate(context: vscode.ExtensionContext) {
             "jutge-vscode.refreshExamPropertiesTree",
             examPropertiesTreeProvider.refresh.bind(examPropertiesTreeProvider),
         ],
+        [
+            "jutge-vscode.refreshExamDocumentsTree",
+            examDocumentsTreeProvider.refresh.bind(examDocumentsTreeProvider),
+        ],
         ["jutge-vscode.refreshHomeTree", homeTreeProvider.refresh.bind(homeTreeProvider)],
 
         ["jutge-vscode.showProblem", commandShowProblem],
+        ["jutge-vscode.openExamDocument", commandOpenExamDocument],
 
         ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
     ])

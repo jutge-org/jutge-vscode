@@ -22,7 +22,8 @@
         "onView:jutge-about",
         "onView:jutge-courses",
         "onView:jutge-exams",
-        "onView:jutge-exam-properties"
+        "onView:jutge-exam-properties",
+        "onView:jutge-exam-documents"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -79,6 +80,14 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
+                    "id": "jutge-exam-documents",
+                    "name": "Documents",
+                    "icon": "resources/lightbulb-regular.svg",
+                    "visibility": "visible",
+                    "contextualTitle": "Jutge.org",
+                    "when": "jutge-vscode.isSignedIn.Exam"
+                },
+                {
                     "id": "jutge-about",
                     "name": "About",
                     "icon": "resources/lightbulb-regular.svg",
@@ -120,6 +129,11 @@
                 {
                     "command": "jutge-vscode.refreshExamPropertiesTree",
                     "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-properties",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.refreshExamDocumentsTree",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-documents",
                     "group": "navigation"
                 },
                 {
@@ -199,6 +213,14 @@
             {
                 "command": "jutge-vscode.refreshExamPropertiesTree",
                 "title": "Jutge.org: Refresh Exam Properties View",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.refreshExamDocumentsTree",
+                "title": "Jutge.org: Refresh Exam Documents View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
@@ -301,7 +323,8 @@
     },
     "homepage": "https://marketplace.visualstudio.com/manage/publishers/jutge-org",
     "extensionDependencies": [
-        "ms-python.python"
+        "ms-python.python",
+        "tomoki1207.pdf"
     ],
     "prettier": {
         "printWidth": 96,

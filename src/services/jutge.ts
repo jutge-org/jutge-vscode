@@ -494,6 +494,8 @@ export class JutgeService extends StaticLogger {
                 })
                 await this.setSignedInExam(credentials.token, nextMode)
                 await vscode.commands.executeCommand("jutge-vscode.refreshExamsTree")
+                await vscode.commands.executeCommand("jutge-vscode.refreshExamPropertiesTree")
+                await vscode.commands.executeCommand("jutge-vscode.refreshExamDocumentsTree")
                 this.getProfileSWR()
                 return { ok: true }
             }
@@ -536,7 +538,9 @@ export class JutgeService extends StaticLogger {
 
             this.getProfileSWR() // cache this for later
 
-            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshExamsTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshExamPropertiesTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshExamDocumentsTree")
             vscode.window.showInformationMessage(
                 `Jutge.org: You have entered exam ${exam_key}.`
             )
