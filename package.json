@@ -44,7 +44,6 @@
                     "id": "jutge-sign-in",
                     "name": "Sign in",
                     "type": "webview",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
@@ -52,7 +51,6 @@
                 {
                     "id": "jutge-home",
                     "name": "Home",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "collapsed",
                     "contextualTitle": "Jutge.org",
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
@@ -60,7 +58,6 @@
                 {
                     "id": "jutge-courses",
                     "name": "Courses",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Courses"
@@ -68,7 +65,6 @@
                 {
                     "id": "jutge-exams",
                     "name": "Exams",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Exam"
@@ -76,7 +72,6 @@
                 {
                     "id": "jutge-exam-properties",
                     "name": "Exam properties",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Exam"
@@ -84,7 +79,6 @@
                 {
                     "id": "jutge-exam-documents",
                     "name": "Documents",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Exam"
@@ -93,7 +87,6 @@
                     "id": "jutge-clock",
                     "name": "Timer",
                     "type": "webview",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Exam"
@@ -101,7 +94,6 @@
                 {
                     "id": "jutge-ranking",
                     "name": "Ranking",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isContestMode"
@@ -109,7 +101,6 @@
                 {
                     "id": "jutge-about",
                     "name": "About",
-                    "icon": "resources/lightbulb-regular.svg",
                     "visibility": "collapsed",
                     "contextualTitle": "Jutge.org",
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
