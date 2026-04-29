@@ -151,6 +151,11 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "jutge-vscode.openDashboardPanel",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-properties",
+                    "group": "navigation"
+                },
+                {
                     "command": "jutge-vscode.refreshExamDocumentsTree",
                     "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-documents",
                     "group": "navigation"
@@ -250,6 +255,14 @@
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.openDashboardPanel",
+                "title": "Jutge.org: Open Dashboard Window",
+                "icon": {
+                    "light": "resources/light/dashboard.svg",
+                    "dark": "resources/dark/dashboard.svg"
                 }
             },
             {

@@ -15,6 +15,7 @@ import {
     RankingTreeProvider,
     rankingTreeViewType,
 } from "@/providers/ranking-view/provider"
+import { DashboardPanel } from "@/providers/dashboard-view/provider"
 import { ClockWebviewViewProvider, clockWebviewViewType } from "@/providers/clock-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
@@ -409,6 +410,7 @@ export async function activate(context: vscode.ExtensionContext) {
             "jutge-vscode.refreshExamPropertiesTree",
             examPropertiesTreeProvider.refresh.bind(examPropertiesTreeProvider),
         ],
+        ["jutge-vscode.openDashboardPanel", DashboardPanel.openOrReveal],
         [
             "jutge-vscode.refreshExamDocumentsTree",
             examDocumentsTreeProvider.refresh.bind(examDocumentsTreeProvider),
