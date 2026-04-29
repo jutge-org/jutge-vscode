@@ -490,6 +490,7 @@ export class JutgeService extends StaticLogger {
             await this.setSignedIn(token)
 
             vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
+            vscode.commands.executeCommand("jutge-vscode.refreshProfileTree")
             vscode.window.showInformationMessage("Jutge.org: You have signed in.")
 
             this.getProfileSWR() // cache this for later
@@ -569,6 +570,7 @@ export class JutgeService extends StaticLogger {
             await this.setSignedIn(credentials.token, nextMode)
             await this.storeSignInCredentials(trimmedEmail, password)
             await vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
+            await vscode.commands.executeCommand("jutge-vscode.refreshProfileTree")
             this.getProfileSWR()
             return { ok: true }
         } catch (err) {

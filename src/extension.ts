@@ -19,6 +19,7 @@ import { DashboardPanel } from "@/providers/dashboard-view/provider"
 import { ClockWebviewViewProvider, clockWebviewViewType } from "@/providers/clock-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
+import { ProfileTreeProvider, profileTreeViewType } from "@/providers/profile-view/provider"
 import { ConfigService } from "@/services/config"
 import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
 import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
@@ -218,6 +219,15 @@ const initExamPropertiesTreeView = () => {
     return { examPropertiesTreeProvider, examPropertiesView }
 }
 
+const initProfileTreeView = () => {
+    const profileTreeProvider = new ProfileTreeProvider()
+    const profileView = vscode.window.createTreeView(profileTreeViewType, {
+        showCollapseAll: true,
+        treeDataProvider: profileTreeProvider,
+    })
+    return { profileTreeProvider, profileView }
+}
+
 const initExamDocumentsTreeView = () => {
     const examDocumentsTreeProvider = new ExamDocumentsTreeProvider()
     const examDocumentsView = vscode.window.createTreeView(examDocumentsTreeViewType, {
@@ -356,11 +366,13 @@ export async function activate(context: vscode.ExtensionContext) {
     const { courseTreeProvider } = initCoursesTreeView()
     const { examsTreeProvider } = initExamsTreeView()
     const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
+    const { profileTreeProvider, profileView } = initProfileTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { rankingTreeProvider, rankingView } = initRankingTreeView()
     const { homeTreeProvider, homeView } = initHomeTreeView()
     const { aboutViewProvider } = initAboutTreeView()
     context.subscriptions.push(homeView)
+    context.subscriptions.push(profileView)
     context.subscriptions.push(examPropertiesView)
     context.subscriptions.push(examDocumentsView)
     context.subscriptions.push(rankingView)
@@ -412,6 +424,10 @@ export async function activate(context: vscode.ExtensionContext) {
         [
             "jutge-vscode.refreshExamPropertiesTree",
             examPropertiesTreeProvider.refresh.bind(examPropertiesTreeProvider),
+        ],
+        [
+            "jutge-vscode.refreshProfileTree",
+            profileTreeProvider.refresh.bind(profileTreeProvider),
         ],
         ["jutge-vscode.openDashboardPanel", DashboardPanel.openOrReveal],
         [

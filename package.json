@@ -21,6 +21,7 @@
         "onView:jutge-home",
         "onView:jutge-about",
         "onView:jutge-courses",
+        "onView:jutge-profile",
         "onView:jutge-exams",
         "onView:jutge-exam-properties",
         "onView:jutge-exam-documents",
@@ -58,6 +59,13 @@
                 {
                     "id": "jutge-courses",
                     "name": "Courses",
+                    "visibility": "visible",
+                    "contextualTitle": "Jutge.org",
+                    "when": "jutge-vscode.isSignedIn.Courses"
+                },
+                {
+                    "id": "jutge-profile",
+                    "name": "Profile",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Courses"
@@ -124,6 +132,11 @@
                 {
                     "command": "jutge-vscode.refreshCoursesTree",
                     "when": "jutge-vscode.isSignedIn.Courses && view == jutge-courses",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.refreshProfileTree",
+                    "when": "jutge-vscode.isSignedIn.Courses && view == jutge-profile",
                     "group": "navigation"
                 },
                 {
@@ -219,6 +232,14 @@
             {
                 "command": "jutge-vscode.refreshCoursesTree",
                 "title": "Jutge.org: Refresh Courses Tree",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.refreshProfileTree",
+                "title": "Jutge.org: Refresh Profile View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
