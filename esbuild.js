@@ -1,4 +1,4 @@
-const { build } = require("esbuild")
+const { build, context } = require("esbuild")
 
 //@ts-check
 /** @typedef {import('esbuild').BuildOptions} BuildOptions **/
@@ -35,25 +35,19 @@ const webviewConfig = {
     outfile: "./dist/webview/main.js",
 }
 
-// This watch config adheres to the conventions of the esbuild-problem-matchers
-// extension (https://github.com/connor4312/esbuild-problem-matchers#esbuild-via-js)
-/** @type BuildOptions */
-const watchConfig = {
-    watch: {
-        onRebuild(error, result) {
-            console.log("[watch] build started")
-            if (error) {
-                error.errors.forEach((error) =>
-                    console.error(
-                        `> ${error.location.file}:${error.location.line}:${error.location.column}: error: ${error.text}`
-                    )
-                )
-            } else {
-                console.log("[watch] build finished")
+const createWatchLoggerPlugin = (name) => ({
+    name: `${name}-watch-logger`,
+    setup(build) {
+        build.onStart(() => {
+            console.log(`[watch] ${name} build started`)
+        })
+        build.onEnd((result) => {
+            if (result.errors.length === 0) {
+                console.log(`[watch] ${name} build finished`)
             }
-        },
+        })
     },
-}
+})
 
 // Build script
 ;(async () => {
@@ -62,15 +56,24 @@ const watchConfig = {
         if (args.includes("--watch")) {
             // Build and watch extension and webview code
             console.log("[watch] build started")
-            await build({
+            const extensionContext = await context({
                 ...extensionConfig,
-                ...watchConfig,
+                plugins: [createWatchLoggerPlugin("extension")],
             })
-            await build({
+            const webviewContext = await context({
                 ...webviewConfig,
-                ...watchConfig,
+                plugins: [createWatchLoggerPlugin("webview")],
             })
+
+            await extensionContext.watch()
+            await webviewContext.watch()
             console.log("[watch] build finished")
+
+            process.on("SIGINT", async () => {
+                await extensionContext.dispose()
+                await webviewContext.dispose()
+                process.exit(0)
+            })
         } else {
             // Build extension and webview code
             await build(extensionConfig)
@@ -78,7 +81,7 @@ const watchConfig = {
             console.log("[watch] build complete")
         }
     } catch (err) {
-        process.stderr.write(err.stderr)
+        process.stderr.write(err?.stderr || `${err}\n`)
         process.exit(1)
     }
 })()
