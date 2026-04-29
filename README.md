@@ -93,3 +93,16 @@ Additionally, the following must be changed on the extension's settings:
 ## Development
 
 Checkout the [`DEVELOPERS.md`](https://github.com/jutge-vscode/tree/main/DEVELOPERS.md) file on GitHub for instructions on how to build the extensions and how to contribute to it.
+
+## License
+
+Apache License 2.0
+
+## Credits
+
+- [Alex Serrano](https://github.com/serteal)
+- [Pau Fernández](https://github.com/pauek)
+- [Joaquín Millán Aldaz](https://github.com/jma25l)
+- [Jordi Petit](https://github.com/jordi-petit)
+
+© Universitat Politècnica de Catalunya - BarcelonaTech (UPC), 2026.
