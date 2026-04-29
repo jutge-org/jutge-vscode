@@ -294,8 +294,14 @@ const commandOpenExamDocument = async (
         const baseName = download.name?.trim() || `${documentNm}.pdf`
         const fileName =
             path.extname(baseName).toLowerCase() === ".pdf" ? baseName : `${baseName}.pdf`
-        const tmpFilePath = path.join(os.tmpdir(), `jutge-${Date.now()}-${fileName}`)
-        const uri = vscode.Uri.file(tmpFilePath)
+        const sanitizedDocumentNm = documentNm.replace(/[^a-zA-Z0-9._-]/g, "_")
+        const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_")
+        const docsDirUri = vscode.Uri.file(path.join(os.tmpdir(), "jutge-vscode-documents"))
+        await vscode.workspace.fs.createDirectory(docsDirUri)
+        const uri = vscode.Uri.joinPath(
+            docsDirUri,
+            `${sanitizedDocumentNm}-${sanitizedFileName}`
+        )
 
         await vscode.workspace.fs.writeFile(uri, download.data)
         try {
