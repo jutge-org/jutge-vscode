@@ -10,6 +10,11 @@ import {
     ExamPropertiesTreeProvider,
     examPropertiesTreeViewType,
 } from "@/providers/exam-properties-view/provider"
+import {
+    RankingPanel,
+    RankingTreeProvider,
+    rankingTreeViewType,
+} from "@/providers/ranking-view/provider"
 import { ClockWebviewViewProvider, clockWebviewViewType } from "@/providers/clock-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
@@ -221,6 +226,15 @@ const initExamDocumentsTreeView = () => {
     return { examDocumentsTreeProvider, examDocumentsView }
 }
 
+const initRankingTreeView = () => {
+    const rankingTreeProvider = new RankingTreeProvider()
+    const rankingView = vscode.window.createTreeView(rankingTreeViewType, {
+        showCollapseAll: false,
+        treeDataProvider: rankingTreeProvider,
+    })
+    return { rankingTreeProvider, rankingView }
+}
+
 const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
     for (const [command, callback] of commands) {
         registerCommand(command, callback)
@@ -342,11 +356,14 @@ export async function activate(context: vscode.ExtensionContext) {
     const { examsTreeProvider } = initExamsTreeView()
     const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
+    const { rankingTreeProvider, rankingView } = initRankingTreeView()
     const { homeTreeProvider, homeView } = initHomeTreeView()
     const { aboutViewProvider } = initAboutTreeView()
     context.subscriptions.push(homeView)
     context.subscriptions.push(examPropertiesView)
     context.subscriptions.push(examDocumentsView)
+    context.subscriptions.push(rankingView)
+    context.subscriptions.push(rankingTreeProvider)
     context.subscriptions.push(aboutViewProvider)
 
     context.subscriptions.push(
@@ -396,6 +413,11 @@ export async function activate(context: vscode.ExtensionContext) {
             "jutge-vscode.refreshExamDocumentsTree",
             examDocumentsTreeProvider.refresh.bind(examDocumentsTreeProvider),
         ],
+        [
+            "jutge-vscode.refreshRankingTree",
+            rankingTreeProvider.refresh.bind(rankingTreeProvider),
+        ],
+        ["jutge-vscode.openRankingPanel", RankingPanel.openOrReveal],
         [
             "jutge-vscode.refreshClockView",
             clockWebviewViewProvider.forceRefresh.bind(clockWebviewViewProvider),

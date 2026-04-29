@@ -45,6 +45,14 @@ export class JutgeService extends StaticLogger {
     static apiMode_: ApiMode = "normal"
     static useDevApi_: boolean = false
 
+    private static async setContestModeContext(isContestMode: boolean): Promise<void> {
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isContestMode",
+            isContestMode
+        )
+    }
+
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
         this.log.info("Initializing...")
         this.context_ = context
@@ -66,6 +74,7 @@ export class JutgeService extends StaticLogger {
         this.setApiMode(mode, this.useDevApi_)
         this.signedIn_ = true
         await this.storeToken(token)
+        await this.storeApiMode(mode)
         await vscode.commands.executeCommand(
             "setContext",
             "jutge-vscode.isSignedIn.Courses",
@@ -76,6 +85,7 @@ export class JutgeService extends StaticLogger {
             "jutge-vscode.isSignedIn.Exam",
             false
         )
+        await this.setContestModeContext(false)
         this.setToken(token)
         this.log.info(`Signed in.`)
     }
@@ -89,6 +99,7 @@ export class JutgeService extends StaticLogger {
             }
         }
         this.signedIn_ = false
+        await this.storeApiMode("normal")
         await vscode.commands.executeCommand(
             "setContext",
             "jutge-vscode.isSignedIn.Courses",
@@ -99,18 +110,21 @@ export class JutgeService extends StaticLogger {
             "jutge-vscode.isSignedIn.Exam",
             false
         )
+        await this.setContestModeContext(false)
         this.log.info(`Signed out.`)
     }
 
     static async setSignedInExam(examToken: string, mode: "exam" | "contest" = "exam") {
         this.signedIn_ = true
         await this.storeExamToken(examToken)
+        await this.storeApiMode(mode)
         await vscode.commands.executeCommand(
             "setContext",
             "jutge-vscode.isSignedIn.Courses",
             false
         )
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Exam", true)
+        await this.setContestModeContext(mode === "contest")
         this.setExamToken(examToken)
         this.setApiMode(mode)
         this.log.info(`Signed in to ${mode}.`)
@@ -126,11 +140,13 @@ export class JutgeService extends StaticLogger {
         }
         this.setApiMode("normal")
         this.signedIn_ = false
+        await this.storeApiMode("normal")
         await vscode.commands.executeCommand(
             "setContext",
             "jutge-vscode.isSignedIn.Exam",
             false
         )
+        await this.setContestModeContext(false)
         this.log.info(`Signed out from exam.`)
     }
 
@@ -154,6 +170,15 @@ export class JutgeService extends StaticLogger {
 
     public static async storeExamToken(examToken: string | undefined) {
         await this.context_.globalState.update("jutgeExamToken", examToken)
+    }
+
+    public static getStoredApiMode(): ApiMode {
+        const storedMode = this.context_.globalState.get<string>("jutgeApiMode")
+        return this.normalizeMode(storedMode)
+    }
+
+    public static async storeApiMode(mode: ApiMode) {
+        await this.context_.globalState.update("jutgeApiMode", mode)
     }
 
     public static getEmail() {
@@ -180,7 +205,9 @@ export class JutgeService extends StaticLogger {
 
     public static async isUserAuthenticated(): Promise<boolean> {
         const examToken = this.getExamToken()
-        if (examToken && (await this.isExamTokenValid(examToken))) {
+        const storedMode = this.getStoredApiMode()
+        const examMode: "exam" | "contest" = storedMode === "contest" ? "contest" : "exam"
+        if (examToken && (await this.isExamTokenValid(examToken, examMode))) {
             return true
         }
         const token = this.getToken()
@@ -190,7 +217,10 @@ export class JutgeService extends StaticLogger {
         return false
     }
 
-    private static async isExamTokenValid(examToken: string): Promise<boolean> {
+    private static async isExamTokenValid(
+        examToken: string,
+        mode: "exam" | "contest" = "exam"
+    ): Promise<boolean> {
         /*
 
         NOTE(pauek): In exam mode, we should call the API at a different address,
@@ -202,7 +232,7 @@ export class JutgeService extends StaticLogger {
         const originalUrl = jutgeClient.JUTGE_API_URL
 
         try {
-            setJutgeApiURL({ mode: "exam", useDevApi: this.useDevApi_ })
+            setJutgeApiURL({ mode, useDevApi: this.useDevApi_ })
             jutgeClient.meta = { token: examToken }
             await jutgeClient.student.profile.get()
             return true
@@ -402,9 +432,11 @@ export class JutgeService extends StaticLogger {
         {
             const examToken = this.getExamToken()
             this.log.info(`jutgeExamToken is ${examToken}`)
-            if (examToken && (await this.isExamTokenValid(examToken))) {
+            const storedMode = this.getStoredApiMode()
+            const examMode: "exam" | "contest" = storedMode === "contest" ? "contest" : "exam"
+            if (examToken && (await this.isExamTokenValid(examToken, examMode))) {
                 this.log.info(`Using exam token from VSCode storage`)
-                await this.setSignedInExam(examToken)
+                await this.setSignedInExam(examToken, examMode)
                 return
             }
         }
@@ -472,6 +504,9 @@ export class JutgeService extends StaticLogger {
                 const selectedKey = nextMode === "exam" ? examKey : contestKey
                 const selectedPassword = nextMode === "exam" ? examPassword : contestPassword
                 const itemLabel = nextMode === "exam" ? "exam" : "contest"
+                console.log("selectedKey", selectedKey)
+                console.log("selectedPassword", selectedPassword)
+                console.log("itemLabel", itemLabel)
 
                 if (!selectedKey) {
                     return {
@@ -496,6 +531,9 @@ export class JutgeService extends StaticLogger {
                 await vscode.commands.executeCommand("jutge-vscode.refreshExamsTree")
                 await vscode.commands.executeCommand("jutge-vscode.refreshExamPropertiesTree")
                 await vscode.commands.executeCommand("jutge-vscode.refreshExamDocumentsTree")
+                if (nextMode === "contest") {
+                    await vscode.commands.executeCommand("jutge-vscode.refreshRankingTree")
+                }
                 this.getProfileSWR()
                 return { ok: true }
             }

@@ -470,9 +470,11 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                     const result = await JutgeService.signInWithCredentials({
                         email,
                         password,
-                        mode: "exam",
+                        mode: "contest",
                         examKey: "Jutge:ProvesJordi",
                         examPassword: "PEZATIWU",
+                        contestKey: "Jutge:ProvesJordi",
+                        contestPassword: "PEZATIWU",
                         useDevApi: Boolean(msg.payload?.useDevApi),
                     })
 
