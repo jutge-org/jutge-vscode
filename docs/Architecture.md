@@ -4,126 +4,172 @@ This document describes how the [Jutge.org](https://jutge.org) Visual Studio Cod
 
 ## Purpose in one sentence
 
-The extension lets you sign in to Jutge.org (or an exam), browse courses and problems in the sidebar, open a **problem webview** beside your code, run sample and custom tests locally, and **submit** solutions to the platform.
+The extension lets you sign in to Jutge.org (or an **exam** / **contest**), browse courses and problems in the sidebar, open a **problem webview** beside your code, run sample and custom tests locally, **submit** solutions, and use exam-oriented views (properties, PDF documents, timer, optional **dashboard** and **contest ranking**).
 
-## Two runtimes
+## Runtimes and UI surfaces
 
-| Runtime                       | Built from                                         | Role                                                                      |
-| ----------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
-| **Extension host** (Node.js)  | `src/extension.ts` → `dist/extension.js` (esbuild) | VS Code APIs, HTTP to Jutge, terminals, file I/O, tree views              |
-| **Webview** (browser context) | `src/webview/main.ts` → `dist/webview/main.js`     | Problem UI (statement, tests, buttons) using `@vscode/webview-ui-toolkit` |
+| Surface                        | Built from / how                                   | Role                                                                                                           |
+| ------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Extension host** (Node.js)   | `src/extension.ts` → `dist/extension.js` (esbuild) | VS Code APIs, HTTP to Jutge, terminals, file I/O, tree views, webview view providers, auxiliary webview panels |
+| **Problem webview** (browser)  | `src/webview/main.ts` → `dist/webview/main.js`     | Problem UI (statement, tests, actions) using `@vscode/webview-ui-toolkit`                                      |
+| **Sidebar webviews** (browser) | Inline HTML in providers (e.g. sign-in, clock)     | Sign-in flows, exam timer; CSP and scripts are self-contained in those modules                                 |
 
-They talk through `postMessage` / `onDidReceiveMessage` with typed commands in `src/types.ts` (`VSCodeToWebviewCommand`, `WebviewToVSCodeCommand`).
+The problem panel and extension host communicate through `postMessage` / `onDidReceiveMessage` with typed commands in `src/types.ts` (`VSCodeToWebviewCommand`, `WebviewToVSCodeCommand`). Sign-in and clock views use their own message protocols where needed.
+
+Path alias **`@/`** → `src/` is configured in `esbuild.js` and TypeScript for imports such as `@/services/jutge`.
 
 ## Entry point and lifecycle
 
-- **`package.json`** declares `main`: `./dist/extension.js`, UI contributions (activity bar **Jutge.org**, tree views **Courses** / **Exams**, commands, settings), and depends on **`ms-python.python`** for interpreter resolution when running Python.
-- **`activate()`** in `src/extension.ts` is the real bootstrap: stores the `ExtensionContext`, sets the API base URL, initializes `JutgeService` and `ConfigService`, creates tree views, registers the webview panel serializer, wires workspace file events to `WebviewPanelRegistry`, and registers all commands.
+- **`package.json`** declares `main`: `./dist/extension.js`, the **Jutge.org** activity bar container, many **views** (see below), commands, settings, and **`extensionDependencies`**: **`ms-python.python`** (interpreter resolution for Python runners) and **`tomoki1207.pdf`** (PDF preview for exam documents when available).
+- **`activate()`** in `src/extension.ts` stores context, sets the default API base URL, initializes **`JutgeService`** and **`ConfigService`**, creates tree views and registers **webview views** (sign-in, clock), registers the problem **webview panel serializer**, wires workspace file events to **`WebviewPanelRegistry`**, and registers commands.
 
-Activation is declared for `onWebviewPanel:problemWebview` so the extension can restore problem panels after reload; trees and commands still become available when the user interacts with the Jutge sidebar or runs a command.
+**Activation events** include `onStartupFinished`, `onWebviewPanel:problemWebview`, and `onView:…` for each contributed view so the sidebar and restored problem panels load reliably—not only on first webview use.
+
+## API modes and base URLs
+
+**`setJutgeApiURL`** in `extension.ts` selects the REST host from **`ApiMode`**: `normal` (`api.jutge.org`), `exam` (`exam.api.jutge.org`), `contest` (`contest.api.jutge.org`), each with optional **dev** variants when using the dev API toggle during development. **`JutgeService`** switches mode on sign-in (courses vs exam vs contest) and persists tokens / mode in `globalState` (and **SecretStorage** for sign-in credentials where applicable).
 
 ## Main building blocks
 
 ### 1. Extension shell (`src/extension.ts`)
 
-- Registers **commands** (sign in/out, exam sign in/out, refresh trees, show problem, dev token invalidate).
-- **`setJutgeApiURL`**: switches between normal and **exam** API host (`api.jutge.org` vs `exam.api.jutge.org`).
-- **`getContext()` / `globalStateGet` / `globalStateUpdate`**: module-level access to `vscode.ExtensionContext` and persisted keys (tokens, tree expand/collapse).
-- **`getWebviewOptions`**: CSP / `localResourceRoots` for the problem webview.
-- **`coursesView`**: the `TreeView` instance for courses (used to persist expand/collapse and to subscribe to submission verdicts). The element type is **`CourseTreeElement`** in `src/providers/course-view/element.ts` (the type imported in `extension.ts` should match that module).
-
-Helper exports: `whenWorkspaceFolder`, `getWorkspaceFolder`, `getWorkspaceFolderOrPickOne`, `getIconUri`.
+- Registers **commands**: sign in/out (courses and exam), refresh trees/views, show problem, open exam PDF, invalidate dev token, open **dashboard** and **ranking** panels.
+- **`getWebviewOptions`**: CSP / `localResourceRoots` for the **problem** webview (`src/webview`, `dist`).
+- **`coursesView`**: `TreeView<CourseTreeElement>` for courses—expand/collapse persistence and **`SubmissionService.onDidReceiveVeredict`** → **`JutgeCourseTreeProvider.refreshProblem`**.
+- **`homeView`**: `TreeView` for the unsigned **Home** stats view.
+- Helper exports unchanged in spirit: `whenWorkspaceFolder`, `getWorkspaceFolder`, `getWorkspaceFolderOrPickOne`, `getIconUri`, `getContext`, `globalStateGet` / `globalStateUpdate`.
 
 ### 2. API layer
 
-- **`src/jutge_api_client.ts`**: large **generated** client (`JutgeApiClient`) with request types and models for the Jutge REST API.
-- **`src/services/jutge.ts`**: **`JutgeService`** — the façade used everywhere: auth (tokens in `globalState`), exam vs course mode, profile, problems, lists, submissions, and **stale-while-revalidate**-style wrappers over the client.
-- **`jutgeClient`**: a single exported **`JutgeApiClient`** instance; `JUTGE_API_URL` is assigned from `extension.setJutgeApiURL`.
+- **`src/jutge_api_client.ts`**: generated **`JutgeApiClient`** and models for the Jutge REST API.
+- **`src/services/jutge.ts`**: **`JutgeService`** — façade for auth, **`ApiMode`**, profile, problems, lists, submissions, exam/contest flows, and stale-while-revalidate-style usage of the client.
+- **`jutgeClient`**: single exported **`JutgeApiClient`** instance; **`JUTGE_API_URL`** is set from **`setJutgeApiURL`**.
 
-### 3. Sidebar — tree data providers
+### 3. Sidebar — views and providers
 
-- **`JutgeCourseTreeProvider`** (`src/providers/course-view/provider.ts`): courses → lists → problems; uses **`CourseTreeElement`** / **`CourseTreeItem`** (`course-view/element.ts`, `item.ts`). Problems run `jutge-vscode.showProblem`.
-- **`JutgeExamsTreeProvider`** (`src/providers/exam-view/provider.ts`): flat list of exam problems when signed in with exam credentials; **`ExamTreeElement`**, reuses **`CourseTreeItem`** for rendering.
+Views are declared under the **`jutge`** container in `package.json`; visibility uses **`when`** clauses on **`jutge-vscode.isSignedIn.Courses`**, **`isSignedIn.Exam`**, and **`isContestMode`**.
 
-Both providers call **`JutgeService`** for data and map submission status to icons via **`IconStatus`** (`src/types.ts`).
+| View id (concept) | Provider / implementation                                              | Notes                                                      |
+| ----------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Sign in           | **`SignInWebviewViewProvider`** (`providers/sign-in-view/provider.ts`) | Webview view; course vs exam/contest sign-in               |
+| Home              | **`HomeTreeProvider`** (`home-view/provider.ts`)                       | Public homepage stats when not signed in                   |
+| About             | **`AboutTreeProvider`** (`about-view/provider.ts`)                     | Empty tree; copy in **`viewsWelcome`**                     |
+| Courses           | **`JutgeCourseTreeProvider`** (`course-view/`)                         | Courses → lists → problems; **`jutge-vscode.showProblem`** |
+| Profile           | **`ProfileTreeProvider`** (`profile-view/provider.ts`)                 | JSON-shaped user profile from API                          |
+| Exams             | **`JutgeExamsTreeProvider`** (`exam-view/`)                            | Exam problems when in exam mode                            |
+| Exam properties   | **`ExamPropertiesTreeProvider`** (`exam-properties-view/provider.ts`)  | Running exam metadata as tree                              |
+| Documents         | **`ExamDocumentsTreeProvider`** (`exam-documents-view/provider.ts`)    | PDFs via **`jutge-vscode.openExamDocument`**               |
+| Timer             | **`ClockWebviewViewProvider`** (`clock-view/provider.ts`)              | Webview view; countdown / exam time                        |
+| Ranking           | **`RankingTreeProvider`** (`ranking-view/provider.ts`)                 | Contest ranking; opens **`RankingPanel`**                  |
 
-### 4. Problem UI — webview stack
+Course and exam trees map submission status to icons via **`IconStatus`** in **`src/types.ts`**.
 
-- **`WebviewPanelRegistry`** (`src/providers/problem-webview/panel-registry.ts`): one **`ProblemWebviewPanel`** per problem id; create, reveal, dispose, and notify when workspace files change.
-- **`ProblemWebviewPanel`** (`panel.ts`): owns `vscode.WebviewPanel`, loads problem data, builds HTML via **`htmlWebview`** (`html.ts`), dispatches webview messages to **`ProblemHandler`**.
-- **`ProblemWebviewPanelSerializer`** (`panel-serializer.ts`): restores panels after VS Code restart.
-- **`ProblemHandler`** (`src/services/problem-handler.ts`): create/open source files, run testcases locally (language runners), drive **`SubmissionService.submitProblem`**, push status updates back to the webview.
+### 4. Auxiliary panels (not the problem webview)
 
-### 5. Submission and tree updates
+- **`DashboardPanel`** (`providers/dashboard-view/provider.ts`): **`WebviewPanel`** summarizing exam progress (submissions, problems); opened from exam properties toolbar.
+- **`RankingPanel`** (same `ranking-view/provider.ts`): full **ranking table** webview for contest mode.
 
-- **`SubmissionService`** (`src/services/submission.ts`): submit file → poll verdict → emits **`onDidReceiveVeredict`** (`Veredict`: problem id + status).
-- **`extension.ts`** subscribes and calls **`JutgeCourseTreeProvider.refreshProblem`** so the course tree icons reflect the latest verdict.
+Both poll the API on an interval and render HTML inside the extension (no shared bundle with `webview/main.ts`).
 
-### 6. Files, config, runners
+### 5. Problem UI — webview stack
 
-- **`FileService`** (`src/services/file.ts`): headers for new files, custom testcase files, reading/writing helpers tied to workspace layout.
-- **`ConfigService`** (`src/services/config.ts`): reads `jutge-vscode.*` settings and the **Python extension API** for the active interpreter; compiler flags for C++/Haskell/Python runners.
-- **`src/services/runners/languages*.ts`**: **`CppRunner`**, **`PythonRunner`**, **`GHCRunner`** — local compile/run for tests (not the Jutge sandbox).
+Unchanged in spirit from earlier versions:
 
-### 7. Shared types and utilities
+- **`WebviewPanelRegistry`** (`providers/problem-webview/panel-registry.ts`)
+- **`ProblemWebviewPanel`** (`panel.ts`) + **`htmlWebview`** (`html.ts`) + **`ProblemHandler`**
+- **`ProblemWebviewPanelSerializer`** (`panel-serializer.ts`)
+- **`ProblemHandler`** (`services/problem-handler.ts`): files, local runners, **`SubmissionService.submitProblem`**, webview updates
 
-- **`src/types.ts`**: domain types (`Problem`, messages, enums), kept in sync with webview usage.
-- **`src/utils.ts`**: filenames, problem ids from paths, editor helpers, etc.
-- **`src/loggers.ts`**: **`Logger`** / **`StaticLogger`** — thin `console` wrappers with class names.
+### 6. Submission and tree updates
+
+- **`SubmissionService`** (`services/submission.ts`): submit → poll verdict → **`onDidReceiveVeredict`**
+- **`extension.ts`** wires verdicts to **`JutgeCourseTreeProvider.refreshProblem`** for course-mode icons
+
+### 7. Files, config, runners
+
+- **`FileService`** (`services/file.ts`)
+- **`ConfigService`** (`services/config.ts`): **`jutge-vscode.*`** settings and Python extension API
+- **`services/runners/languages.ts`**: registry (**`CppRunner`**, **`PythonRunner`**, **`GHCRunner`**) in `runners/languages/*.ts`; **`errors.ts`** for runner errors
+- **`services/terminal.ts`**: terminal helpers used from the runner stack
+
+### 8. Shared types and utilities
+
+- **`src/types.ts`**: domain types and problem webview message contract
+- **`src/utils.ts`**, **`src/loggers.ts`**
 
 ## Important exports and “global” state
 
-| Symbol                                            | Where               | Role                                  |
-| ------------------------------------------------- | ------------------- | ------------------------------------- |
-| `activate`                                        | `extension.ts`      | VS Code entry                         |
-| `context_` (private), `getContext`, `setContext_` | `extension.ts`      | Global extension context              |
-| `coursesView`                                     | `extension.ts`      | `TreeView<CourseTreeElement> \| null` |
-| `jutgeClient`                                     | `services/jutge.ts` | Shared `JutgeApiClient`               |
-| `JutgeService` (static)                           | `services/jutge.ts` | Auth, API orchestration, exam mode    |
-| `WebviewPanelRegistry` (static map)               | `panel-registry.ts` | Open problem panels                   |
-| `SubmissionService.onDidReceiveVeredict`          | `submission.ts`     | Verdict → UI (tree + webview)         |
+| Symbol                                   | Where               | Role                                          |
+| ---------------------------------------- | ------------------- | --------------------------------------------- |
+| `activate`                               | `extension.ts`      | VS Code entry                                 |
+| `getContext`, `setContext_`              | `extension.ts`      | Extension context                             |
+| `coursesView`, `homeView`                | `extension.ts`      | Tree views                                    |
+| `jutgeClient`                            | `services/jutge.ts` | Shared HTTP client                            |
+| `JutgeService`                           | `services/jutge.ts` | Session, API mode, caching                    |
+| `WebviewPanelRegistry`                   | `panel-registry.ts` | Problem panels                                |
+| `SubmissionService.onDidReceiveVeredict` | `submission.ts`     | Verdict → course tree (+ webview via handler) |
 
-VS Code **when-clause context** keys (not TypeScript globals) are set via `vscode.commands.executeCommand('setContext', ...)`, for example `jutge-vscode.isSignedIn.Courses`, `jutge-vscode.isSignedIn.Exam`, `jutge-vscode.isDevMode`.
+VS Code **when-clause** keys set via `vscode.commands.executeCommand('setContext', …)` include **`jutge-vscode.isSignedIn.Courses`**, **`jutge-vscode.isSignedIn.Exam`**, **`jutge-vscode.isContestMode`**, **`jutge-vscode.isDevMode`**.
 
 ## Key classes (quick reference)
 
-| Class                           | File                                            | Responsibility                   |
-| ------------------------------- | ----------------------------------------------- | -------------------------------- |
-| `JutgeApiClient`                | `jutge_api_client.ts`                           | HTTP API (generated)             |
-| `JutgeService`                  | `services/jutge.ts`                             | Session, caching, high-level API |
-| `JutgeCourseTreeProvider`       | `providers/course-view/provider.ts`             | Courses tree                     |
-| `JutgeExamsTreeProvider`        | `providers/exam-view/provider.ts`               | Exams tree                       |
-| `ProblemWebviewPanel`           | `providers/problem-webview/panel.ts`            | One problem panel + messaging    |
-| `WebviewPanelRegistry`          | `providers/problem-webview/panel-registry.ts`   | Panel lifecycle map              |
-| `ProblemWebviewPanelSerializer` | `providers/problem-webview/panel-serializer.ts` | Restore state                    |
-| `ProblemHandler`                | `services/problem-handler.ts`                   | Run tests, submit, file flows    |
-| `SubmissionService`             | `services/submission.ts`                        | Submit + poll + events           |
-| `FileService`                   | `services/file.ts`                              | File creation / testcases        |
-| `ConfigService`                 | `services/config.ts`                            | Settings + Python env            |
+| Class                                  | File                                            | Responsibility                 |
+| -------------------------------------- | ----------------------------------------------- | ------------------------------ |
+| `JutgeApiClient`                       | `jutge_api_client.ts`                           | HTTP API (generated)           |
+| `JutgeService`                         | `services/jutge.ts`                             | Session, modes, high-level API |
+| `JutgeCourseTreeProvider`              | `providers/course-view/provider.ts`             | Courses tree                   |
+| `JutgeExamsTreeProvider`               | `providers/exam-view/provider.ts`               | Exams tree                     |
+| `HomeTreeProvider`                     | `providers/home-view/provider.ts`               | Home stats                     |
+| `ProfileTreeProvider`                  | `providers/profile-view/provider.ts`            | Profile tree                   |
+| `ExamPropertiesTreeProvider`           | `providers/exam-properties-view/provider.ts`    | Exam metadata                  |
+| `ExamDocumentsTreeProvider`            | `providers/exam-documents-view/provider.ts`     | Exam PDFs                      |
+| `RankingTreeProvider` / `RankingPanel` | `providers/ranking-view/provider.ts`            | Contest ranking                |
+| `DashboardPanel`                       | `providers/dashboard-view/provider.ts`          | Exam dashboard panel           |
+| `SignInWebviewViewProvider`            | `providers/sign-in-view/provider.ts`            | Sign-in webview                |
+| `ClockWebviewViewProvider`             | `providers/clock-view/provider.ts`              | Timer webview                  |
+| `ProblemWebviewPanel`                  | `providers/problem-webview/panel.ts`            | Problem panel + messaging      |
+| `WebviewPanelRegistry`                 | `providers/problem-webview/panel-registry.ts`   | Panel lifecycle                |
+| `ProblemWebviewPanelSerializer`        | `providers/problem-webview/panel-serializer.ts` | Restore state                  |
+| `ProblemHandler`                       | `services/problem-handler.ts`                   | Tests, submit, files           |
+| `SubmissionService`                    | `services/submission.ts`                        | Submit + poll + events         |
+| `FileService`                          | `services/file.ts`                              | Files / testcases              |
+| `ConfigService`                        | `services/config.ts`                            | Settings + Python env          |
 
 ## Repository layout (mental map)
 
 ```
 src/
-  extension.ts              # activate, commands, trees, wiring
+  extension.ts              # activate, commands, views, wiring
   jutge_api_client.ts       # generated API client
-  types.ts                  # shared enums/types/messages
+  types.ts                  # shared types / problem webview messages
   utils.ts, loggers.ts
   providers/
-    course-view/            # courses tree
-    exam-view/              # exams tree
+    about-view/
+    clock-view/
+    course-view/
+    dashboard-view/
+    exam-documents-view/
+    exam-properties-view/
+    exam-view/
+    home-view/
     problem-webview/        # panel, HTML, registry, serializer
+    profile-view/
+    ranking-view/
+    sign-in-view/
   services/
-    jutge.ts                # JutgeService + jutgeClient
+    jutge.ts
     submission.ts
     problem-handler.ts
     file.ts
     config.ts
-    terminal.ts             # (if used from runners)
-    runners/                # local language execution
-  webview/                  # separate bundle: main.ts, styles, small components
-dist/                       # esbuild output (extension + webview)
-resources/                  # icons for views and commands
+    terminal.ts
+    runners/
+      languages.ts
+      languages/cpp.ts, python.ts, ghc.ts
+      errors.ts
+  webview/                  # problem UI bundle: main.ts, components, styles
+dist/                       # esbuild output (extension.js + webview/main.js)
+resources/                  # icons (light/dark), branding
 ```
 
 ## Diagram — how the pieces relate
@@ -133,35 +179,64 @@ flowchart TB
     subgraph VSCode[VS Code]
         subgraph ExtHost[Extension host - Node]
             EXT["extension.ts\nactivate / commands"]
-            JS["JutgeService\nauth, problems, submit API"]
+            JS["JutgeService\nauth, modes, API"]
             JC["jutgeClient\nJutgeApiClient"]
             COURSE["JutgeCourseTreeProvider"]
             EXAM["JutgeExamsTreeProvider"]
+            HOME["HomeTreeProvider"]
+            PROF["ProfileTreeProvider"]
+            EXPROP["ExamPropertiesTreeProvider"]
+            EXDOC["ExamDocumentsTreeProvider"]
+            RANKT["RankingTreeProvider"]
+            DASH["DashboardPanel"]
+            RANKP["RankingPanel"]
+            SIGN["SignInWebviewViewProvider"]
+            CLK["ClockWebviewViewProvider"]
             REG["WebviewPanelRegistry"]
             PANEL["ProblemWebviewPanel"]
-            PH["ProblemHandler\nrun tests, submit"]
-            SUB["SubmissionService\npoll verdict"]
+            PH["ProblemHandler"]
+            SUB["SubmissionService"]
             FILE["FileService"]
-            CFG["ConfigService\nsettings + Python API"]
-            RUN["Language runners\nC++ / Py / Haskell"]
+            CFG["ConfigService"]
+            RUN["Language runners"]
         end
-        subgraph WebviewUI[Webview - browser]
-            WV["webview/main.ts\nUI toolkit, postMessage"]
+        subgraph WebviewProblem[Problem webview]
+            WV["webview/main.ts"]
+        end
+        subgraph WebviewSidebar[Sidebar webviews]
+            WVSIGN["Sign-in HTML"]
+            WVCLK["Clock HTML"]
         end
     end
-    API["Jutge.org REST API"]
+    API["Jutge.org REST API\n(normal / exam / contest)"]
 
     EXT --> JS
     EXT --> COURSE
     EXT --> EXAM
+    EXT --> HOME
+    EXT --> PROF
+    EXT --> EXPROP
+    EXT --> EXDOC
+    EXT --> RANKT
+    EXT --> SIGN
+    EXT --> CLK
     EXT --> REG
     JS --> JC
     JC --> API
     COURSE --> JS
     EXAM --> JS
+    HOME --> JC
+    PROF --> JC
+    EXPROP --> JC
+    EXDOC --> JC
+    RANKT --> JC
+    DASH --> JC
+    RANKP --> JC
+    CLK --> JC
+    SIGN --> JS
     REG --> PANEL
     PANEL --> PH
-    PANEL <-->|messages| WV
+    PANEL <-->|typed messages| WV
     PH --> JS
     PH --> FILE
     PH --> SUB
@@ -174,10 +249,11 @@ flowchart TB
 
 ## Practical reading order
 
-1. `src/extension.ts` — see what registers on startup.
-2. `src/services/jutge.ts` — auth and data fetching.
+1. `src/extension.ts` — registration and commands.
+2. `src/services/jutge.ts` — auth, **`ApiMode`**, and data access.
 3. `src/providers/problem-webview/panel.ts` + `src/services/problem-handler.ts` — problem workflow end-to-end.
-4. `src/types.ts` + `src/webview/main.ts` — contract between host and webview.
+4. `src/types.ts` + `src/webview/main.ts` — host ↔ problem webview contract.
+5. For exam/contest UX: `sign-in-view/provider.ts`, `exam-properties-view`, `dashboard-view`, `ranking-view`.
 
 ---
 
