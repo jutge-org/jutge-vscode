@@ -14,15 +14,23 @@ import {
     signInWebviewViewType,
 } from "./providers/sign-in-view/provider"
 import { CourseTreeElement } from "./providers/course-view/element"
-import { jutgeClient, JutgeService } from "./services/jutge"
+import { ApiMode, jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
 
-export const setJutgeApiURL = ({ examMode }: { examMode: boolean }) => {
-    // I hardcode this because i do not know how to use the production api
-    const dev_ = "" // process.env.MODE === "development" ? "dev." : ""
-    const exam_ = examMode ? "exam." : ""
-    jutgeClient.JUTGE_API_URL = `https://${dev_}${exam_}api.jutge.org/api`
+export const setJutgeApiURL = ({ mode, useDevApi }: { mode: ApiMode; useDevApi: boolean }) => {
+    const apiBaseByMode: Record<ApiMode, string> = {
+        normal: "api.jutge.org/api",
+        exam: "exam.api.jutge.org/api",
+        contest: "contest.api.jutge.org/api",
+    }
+    const devApiBaseByMode: Record<ApiMode, string> = {
+        normal: "dev.api.jutge.org/api",
+        exam: "dev.exam.api.jutge.org/api",
+        contest: "dev.contest.api.jutge.org/api",
+    }
+    const apiBase = useDevApi ? devApiBaseByMode[mode] : apiBaseByMode[mode]
+    jutgeClient.JUTGE_API_URL = `https://${apiBase}`
     console.log(`[Extension]: JUTGE_API_URL = '${jutgeClient.JUTGE_API_URL}'`)
 }
 
@@ -250,7 +258,7 @@ export async function activate(context: vscode.ExtensionContext) {
     setContext_(context)
 
     // Set JUTGE_API_URL from the start
-    setJutgeApiURL({ examMode: false })
+    setJutgeApiURL({ mode: "normal", useDevApi: false })
 
     showExtensionInfo()
 

@@ -312,19 +312,11 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                 return
             }
 
-            const mode = msg.payload?.mode
-            if (mode === "exam" || mode === "contest") {
-                webviewView.webview.postMessage({
-                    type: "signInResult",
-                    payload: { ok: false, message: "Not implemented yet" },
-                })
-                return
-            }
-
             try {
                 const result = await JutgeService.signInWithCredentials({
                     email: msg.payload?.email || "",
                     password: msg.payload?.password || "",
+                    mode: msg.payload?.mode,
                     useDevApi: Boolean(msg.payload?.useDevApi),
                 })
 
