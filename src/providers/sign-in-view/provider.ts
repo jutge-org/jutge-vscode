@@ -168,8 +168,6 @@ function getSignInHtml(): string {
             <label class="field-label" for="exam-name">Exam name</label>
             <select id="exam-name" name="exam-name">
                 <option value="">Select an exam…</option>
-                <option value="__placeholder1">(Example exam A)</option>
-                <option value="__placeholder2">(Example exam B)</option>
             </select>
         </div>
         <div class="field">
@@ -183,8 +181,6 @@ function getSignInHtml(): string {
             <label class="field-label" for="contest-name">Contest name</label>
             <select id="contest-name" name="contest-name">
                 <option value="">Select a contest…</option>
-                <option value="__placeholder1">(Example contest A)</option>
-                <option value="__placeholder2">(Example contest B)</option>
             </select>
         </div>
         <div class="field">
@@ -208,6 +204,7 @@ function getSignInHtml(): string {
         (function () {
             var vscode = acquireVsCodeApi();
             var pendingTimer = null;
+            var isLoadingOptions = false;
             function mode() {
                 var el = document.querySelector('input[name="signin-mode"]:checked');
                 return el ? el.value : "jutge";
@@ -234,17 +231,60 @@ function getSignInHtml(): string {
                     pendingTimer = null;
                 }
             }
+            function clearSelect(select, placeholder) {
+                select.innerHTML = "";
+                var placeholderOption = document.createElement("option");
+                placeholderOption.value = "";
+                placeholderOption.textContent = placeholder;
+                select.appendChild(placeholderOption);
+            }
+            function setLoadingOptions(loading) {
+                isLoadingOptions = loading;
+                var examSelect = document.getElementById("exam-name");
+                var contestSelect = document.getElementById("contest-name");
+                examSelect.disabled = loading;
+                contestSelect.disabled = loading;
+            }
+            function loadReadyItems(targetMode) {
+                if (targetMode !== "exam" && targetMode !== "contest") {
+                    return;
+                }
+                setLoadingOptions(true);
+                var select = targetMode === "exam"
+                    ? document.getElementById("exam-name")
+                    : document.getElementById("contest-name");
+                clearSelect(
+                    select,
+                    targetMode === "exam" ? "Select an exam…" : "Select a contest…"
+                );
+                var loadingOption = document.createElement("option");
+                loadingOption.value = "";
+                loadingOption.textContent = "Loading...";
+                select.appendChild(loadingOption);
+                vscode.postMessage({
+                    type: "loadReadyItemsRequested",
+                    payload: {
+                        mode: targetMode,
+                        useDevApi: document.getElementById("use-dev-api").checked
+                    }
+                });
+            }
             function refresh() {
                 var m = mode();
                 var exam = document.getElementById("exam-section");
                 var contest = document.getElementById("contest-section");
                 exam.classList.toggle("visible", m === "exam");
                 contest.classList.toggle("visible", m === "contest");
+                loadReadyItems(m);
             }
             document.querySelectorAll('input[name="signin-mode"]').forEach(function (r) {
                 r.addEventListener("change", refresh);
             });
             document.getElementById("sign-in-btn").addEventListener("click", function () {
+                if (isLoadingOptions) {
+                    setMessage("Please wait until exams/contests are loaded.", "error");
+                    return;
+                }
                 setMessage("");
                 setPending(true);
                 clearPendingTimer();
@@ -258,21 +298,60 @@ function getSignInHtml(): string {
                         email: document.getElementById("email").value,
                         password: document.getElementById("password").value,
                         mode: mode(),
+                        examKey: document.getElementById("exam-name").value,
+                        examPassword: document.getElementById("exam-password").value,
+                        contestKey: document.getElementById("contest-name").value,
+                        contestPassword: document.getElementById("contest-password").value,
                         useDevApi: document.getElementById("use-dev-api").checked
                     }
                 });
             });
+            document.getElementById("use-dev-api").addEventListener("change", function() {
+                loadReadyItems(mode());
+            });
             window.addEventListener("message", function (event) {
                 var message = event.data;
-                if (!message || message.type !== "signInResult") return;
-                clearPendingTimer();
-                setPending(false);
-                var payload = message.payload || {};
-                var text = payload.message;
-                if (!payload.ok && (!text || !String(text).trim())) {
-                    text = "Invalid credentials.";
+                if (!message) return;
+                if (message.type === "signInResult") {
+                    clearPendingTimer();
+                    setPending(false);
+                    var payload = message.payload || {};
+                    var text = payload.message;
+                    if (!payload.ok && (!text || !String(text).trim())) {
+                        text = "Invalid credentials.";
+                    }
+                    setMessage(text, payload.ok ? "success" : "error");
+                    return;
                 }
-                setMessage(text, payload.ok ? "success" : "error");
+                if (message.type === "loadReadyItemsResult") {
+                    var payload = message.payload || {};
+                    var targetMode = payload.mode;
+                    var select = targetMode === "contest"
+                        ? document.getElementById("contest-name")
+                        : document.getElementById("exam-name");
+                    clearSelect(
+                        select,
+                        targetMode === "contest" ? "Select a contest…" : "Select an exam…"
+                    );
+                    if (payload.ok && Array.isArray(payload.items) && payload.items.length > 0) {
+                        payload.items.forEach(function(item) {
+                            var option = document.createElement("option");
+                            option.value = item;
+                            option.textContent = item;
+                            select.appendChild(option);
+                        });
+                    } else if (payload.ok) {
+                        var emptyOption = document.createElement("option");
+                        emptyOption.value = "";
+                        emptyOption.textContent = targetMode === "contest"
+                            ? "No ready contests found"
+                            : "No ready exams found";
+                        select.appendChild(emptyOption);
+                    } else {
+                        setMessage(payload.error || "Could not load exams/contests.", "error");
+                    }
+                    setLoadingOptions(false);
+                }
             });
             refresh();
         })();
@@ -304,8 +383,43 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                     email?: string
                     password?: string
                     mode?: string
+                    examKey?: string
+                    examPassword?: string
+                    contestKey?: string
+                    contestPassword?: string
                     useDevApi?: boolean
                 }
+            }
+
+            if (msg.type === "loadReadyItemsRequested") {
+                const requestedMode =
+                    msg.payload?.mode === "contest" || msg.payload?.mode === "exam"
+                        ? msg.payload.mode
+                        : "exam"
+                const readyItems = await JutgeService.getReadyExamsForMode(
+                    requestedMode,
+                    Boolean(msg.payload?.useDevApi)
+                )
+                if (!readyItems) {
+                    webviewView.webview.postMessage({
+                        type: "loadReadyItemsResult",
+                        payload: {
+                            ok: false,
+                            mode: requestedMode,
+                            error: "Could not load ready exams/contests.",
+                        },
+                    })
+                    return
+                }
+                webviewView.webview.postMessage({
+                    type: "loadReadyItemsResult",
+                    payload: {
+                        ok: true,
+                        mode: requestedMode,
+                        items: readyItems,
+                    },
+                })
+                return
             }
 
             if (msg.type !== "signInRequested") {
@@ -317,6 +431,10 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                     email: msg.payload?.email || "",
                     password: msg.payload?.password || "",
                     mode: msg.payload?.mode,
+                    examKey: msg.payload?.examKey,
+                    examPassword: msg.payload?.examPassword,
+                    contestKey: msg.payload?.contestKey,
+                    contestPassword: msg.payload?.contestPassword,
                     useDevApi: Boolean(msg.payload?.useDevApi),
                 })
 

@@ -94,6 +94,11 @@ export class JutgeService extends StaticLogger {
             "jutge-vscode.isSignedIn.Courses",
             false
         )
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isSignedIn.Exam",
+            false
+        )
         this.log.info(`Signed out.`)
     }
 
@@ -880,7 +885,7 @@ export class JutgeService extends StaticLogger {
         }
     ): Promise<j.NewSubmissionOut> {
         try {
-            const result = await jutgeClient.student.submissions.submitFull(data, file)
+            const result = await jutgeClient.student.submissions.submitFull(data, [file])
             return result
         } catch (e) {
             if (e instanceof j.UnauthorizedError) {
