@@ -3,7 +3,12 @@ import { JutgeService } from "@/services/jutge"
 
 export const signInWebviewViewType = "jutge-sign-in"
 
-function getSignInHtml(): string {
+function getSignInHtml(showQuickSignIn: boolean): string {
+    const quickSignInRow = showQuickSignIn
+        ? `<div class="action-button-row">
+            <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in</button>
+        </div>`
+        : ""
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -202,9 +207,7 @@ function getSignInHtml(): string {
         <div class="action-button-row">
             <button type="button" class="sign-in-btn" id="sign-in-btn">Sign in</button>
         </div>
-        <div class="action-button-row">
-            <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in</button>
-        </div>
+        ${quickSignInRow}
         <div class="checkbox-row">
             <label for="use-dev-api">Use dev API</label>
             <input type="checkbox" id="use-dev-api" name="use-dev-api" />
@@ -235,9 +238,13 @@ function getSignInHtml(): string {
                 var button = document.getElementById("sign-in-btn");
                 var quickButton = document.getElementById("quick-sign-in-btn");
                 button.disabled = pending;
-                quickButton.disabled = pending;
+                if (quickButton) {
+                    quickButton.disabled = pending;
+                }
                 button.textContent = pending ? "Signing in..." : "Sign in";
-                quickButton.textContent = pending ? "Signing in..." : "Quick sign in";
+                if (quickButton) {
+                    quickButton.textContent = pending ? "Signing in..." : "Quick sign in";
+                }
             }
             function clearPendingTimer() {
                 if (pendingTimer !== null) {
@@ -320,21 +327,24 @@ function getSignInHtml(): string {
                     }
                 });
             });
-            document.getElementById("quick-sign-in-btn").addEventListener("click", function () {
-                setMessage("");
-                setPending(true);
-                clearPendingTimer();
-                pendingTimer = setTimeout(function () {
-                    setPending(false);
-                    setMessage("Could not sign in. Please try again.", "error");
-                }, 12000);
-                vscode.postMessage({
-                    type: "quickSignInRequested",
-                    payload: {
-                        useDevApi: document.getElementById("use-dev-api").checked
-                    }
+            var quickSignInButton = document.getElementById("quick-sign-in-btn");
+            if (quickSignInButton) {
+                quickSignInButton.addEventListener("click", function () {
+                    setMessage("");
+                    setPending(true);
+                    clearPendingTimer();
+                    pendingTimer = setTimeout(function () {
+                        setPending(false);
+                        setMessage("Could not sign in. Please try again.", "error");
+                    }, 12000);
+                    vscode.postMessage({
+                        type: "quickSignInRequested",
+                        payload: {
+                            useDevApi: document.getElementById("use-dev-api").checked
+                        }
+                    });
                 });
-            });
+            }
             document.getElementById("use-dev-api").addEventListener("change", function() {
                 loadReadyItems(mode());
             });
@@ -390,7 +400,10 @@ function getSignInHtml(): string {
 }
 
 export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
-    constructor(private readonly extensionUri: vscode.Uri) {}
+    constructor(
+        private readonly extensionUri: vscode.Uri,
+        private readonly showQuickSignIn: boolean
+    ) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
         webviewView.webview.options = {
@@ -400,7 +413,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                 vscode.Uri.joinPath(this.extensionUri, "dist"),
             ],
         }
-        webviewView.webview.html = getSignInHtml()
+        webviewView.webview.html = getSignInHtml(this.showQuickSignIn)
         webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
             if (!message || typeof message !== "object") {
                 return
@@ -452,6 +465,16 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
             }
 
             if (msg.type === "quickSignInRequested") {
+                if (!this.showQuickSignIn) {
+                    webviewView.webview.postMessage({
+                        type: "signInResult",
+                        payload: {
+                            ok: false,
+                            message: "Quick sign in is only available in development.",
+                        },
+                    })
+                    return
+                }
                 const email = process.env.JUTGE_EMAIL ?? ""
                 const password = process.env.JUTGE_PASSWORD ?? ""
                 if (!email || !password) {

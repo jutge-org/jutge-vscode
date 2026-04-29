@@ -370,7 +370,10 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             signInWebviewViewType,
-            new SignInWebviewViewProvider(context.extensionUri)
+            new SignInWebviewViewProvider(
+                context.extensionUri,
+                context.extensionMode === vscode.ExtensionMode.Development
+            )
         )
     )
     const clockWebviewViewProvider = new ClockWebviewViewProvider(context.extensionUri)
