@@ -111,7 +111,7 @@
             {
                 "visibility": "collapsed",
                 "view": "jutge-about",
-                "contents": "[Jutge.org](https://jutge.org)\n\n© Universitat Politècnica de Catalunya - BarcelonaTech (UPC), 2026."
+                "contents": "This is the Jutge.org VSCode extension.\n\n [Jutge.org](https://jutge.org)\n\n© Universitat Politècnica de Catalunya - BarcelonaTech (UPC), 2026."
             }
         ],
         "menus": {

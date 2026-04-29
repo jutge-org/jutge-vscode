@@ -3,10 +3,16 @@ import { JutgeService } from "@/services/jutge"
 
 export const signInWebviewViewType = "jutge-sign-in"
 
-function getSignInHtml(showQuickSignIn: boolean): string {
-    const quickSignInRow = showQuickSignIn
+function getSignInHtml(isDevelopmentMode: boolean): string {
+    const quickSignInRow = isDevelopmentMode
         ? `<div class="action-button-row">
-            <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in</button>
+            <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in for devs</button>
+        </div>`
+        : ""
+    const useDevApiCheckboxRow = isDevelopmentMode
+        ? `<div class="checkbox-row">
+            <label for="use-dev-api">Use dev API</label>
+            <input type="checkbox" id="use-dev-api" name="use-dev-api" />
         </div>`
         : ""
     return /* html */ `<!DOCTYPE html>
@@ -60,7 +66,7 @@ function getSignInHtml(showQuickSignIn: boolean): string {
             margin: 0 0 12px;
             padding: 8px 10px 10px;
             border: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.3));
-            border-radius: 4px;
+            border-radius: 8px;
         }
         fieldset.env-fieldset legend {
             padding: 0 4px;
@@ -85,10 +91,10 @@ function getSignInHtml(showQuickSignIn: boolean): string {
         }
         .conditional {
             display: none;
-            margin-bottom: 12px;
-            padding-left: 2px;
-            border-left: 2px solid var(--vscode-inputOption-activeBorder, var(--vscode-focusBorder));
-            padding-left: 10px;
+            nono-margin-bottom: 12px;
+            nono-padding-left: 2px;
+            nono-border-left: 2px solid var(--vscode-inputOption-activeBorder, var(--vscode-focusBorder));
+            nono-padding-left: 10px;
         }
         .conditional.visible {
             display: block;
@@ -108,7 +114,7 @@ function getSignInHtml(showQuickSignIn: boolean): string {
             color: var(--vscode-button-foreground);
             background: var(--vscode-button-background);
             border: none;
-            border-radius: 2px;
+            border-radius: 4px;
             font-family: inherit;
             font-size: inherit;
             cursor: pointer;
@@ -149,15 +155,6 @@ function getSignInHtml(showQuickSignIn: boolean): string {
     </style>
 </head>
 <body>
-    <div class="field">
-        <label class="field-label" for="email">Email</label>
-        <input type="text" id="email" name="email" autocomplete="username" />
-    </div>
-    <div class="field">
-        <label class="field-label" for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" />
-    </div>
-
     <fieldset class="env-fieldset">
         <legend>Site</legend>
         <div class="radio-row">
@@ -175,6 +172,15 @@ function getSignInHtml(showQuickSignIn: boolean): string {
             </label>
         </div>
     </fieldset>
+
+    <div class="field">
+        <label class="field-label" for="email">Email</label>
+        <input type="text" id="email" name="email" autocomplete="username" />
+    </div>
+    <div class="field">
+        <label class="field-label" for="password">Password</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" />
+    </div>
 
     <div id="exam-section" class="conditional">
         <div class="field">
@@ -208,10 +214,7 @@ function getSignInHtml(showQuickSignIn: boolean): string {
             <button type="button" class="sign-in-btn" id="sign-in-btn">Sign in</button>
         </div>
         ${quickSignInRow}
-        <div class="checkbox-row">
-            <label for="use-dev-api">Use dev API</label>
-            <input type="checkbox" id="use-dev-api" name="use-dev-api" />
-        </div>
+        ${useDevApiCheckboxRow}
     </div>
 
     <script>
@@ -219,6 +222,10 @@ function getSignInHtml(showQuickSignIn: boolean): string {
             var vscode = acquireVsCodeApi();
             var pendingTimer = null;
             var isLoadingOptions = false;
+            function isUseDevApi() {
+                var el = document.getElementById("use-dev-api");
+                return Boolean(el && el.checked);
+            }
             function mode() {
                 var el = document.querySelector('input[name="signin-mode"]:checked');
                 return el ? el.value : "jutge";
@@ -286,7 +293,7 @@ function getSignInHtml(showQuickSignIn: boolean): string {
                     type: "loadReadyItemsRequested",
                     payload: {
                         mode: targetMode,
-                        useDevApi: document.getElementById("use-dev-api").checked
+                        useDevApi: isUseDevApi()
                     }
                 });
             }
@@ -323,7 +330,7 @@ function getSignInHtml(showQuickSignIn: boolean): string {
                         examPassword: document.getElementById("exam-password").value,
                         contestKey: document.getElementById("contest-name").value,
                         contestPassword: document.getElementById("contest-password").value,
-                        useDevApi: document.getElementById("use-dev-api").checked
+                        useDevApi: isUseDevApi()
                     }
                 });
             });
@@ -340,17 +347,32 @@ function getSignInHtml(showQuickSignIn: boolean): string {
                     vscode.postMessage({
                         type: "quickSignInRequested",
                         payload: {
-                            useDevApi: document.getElementById("use-dev-api").checked
+                            useDevApi: isUseDevApi()
                         }
                     });
                 });
             }
-            document.getElementById("use-dev-api").addEventListener("change", function() {
-                loadReadyItems(mode());
-            });
+            var useDevApiEl = document.getElementById("use-dev-api");
+            if (useDevApiEl) {
+                useDevApiEl.addEventListener("change", function() {
+                    loadReadyItems(mode());
+                });
+            }
             window.addEventListener("message", function (event) {
                 var message = event.data;
                 if (!message) return;
+                if (message.type === "savedSignInDefaults") {
+                    var p = message.payload || {};
+                    var emailEl = document.getElementById("email");
+                    var passwordEl = document.getElementById("password");
+                    if (typeof p.email === "string" && emailEl) {
+                        emailEl.value = p.email;
+                    }
+                    if (typeof p.password === "string" && passwordEl) {
+                        passwordEl.value = p.password;
+                    }
+                    return;
+                }
                 if (message.type === "signInResult") {
                     clearPendingTimer();
                     setPending(false);
@@ -393,6 +415,7 @@ function getSignInHtml(showQuickSignIn: boolean): string {
                 }
             });
             refresh();
+            vscode.postMessage({ type: "signInWebviewReady" });
         })();
     </script>
 </body>
@@ -431,6 +454,21 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                     contestPassword?: string
                     useDevApi?: boolean
                 }
+            }
+
+            if (msg.type === "signInWebviewReady") {
+                const [email, password] = await Promise.all([
+                    JutgeService.getStoredSignInEmail(),
+                    JutgeService.getStoredSignInPassword(),
+                ])
+                webviewView.webview.postMessage({
+                    type: "savedSignInDefaults",
+                    payload: {
+                        email: email ?? "",
+                        password: password ?? "",
+                    },
+                })
+                return
             }
 
             if (msg.type === "loadReadyItemsRequested") {

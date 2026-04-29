@@ -24,6 +24,8 @@ type AskPasswordParams = {
     title: string
     placeHolder: string
     prompt: string
+    /** Default from last successful sign-in (masked field). */
+    value?: string
 }
 
 type SignInWithCredentialsParams = {
@@ -38,6 +40,9 @@ type SignInWithCredentialsParams = {
 }
 
 export type ApiMode = "normal" | "exam" | "contest"
+
+const SECRET_SIGN_IN_EMAIL = "jutge-vscode.signIn.email"
+const SECRET_SIGN_IN_PASSWORD = "jutge-vscode.signIn.password"
 
 export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
@@ -181,12 +186,30 @@ export class JutgeService extends StaticLogger {
         await this.context_.globalState.update("jutgeApiMode", mode)
     }
 
-    public static getEmail() {
-        return this.context_.globalState.get<string>("email")
+    /** Last successful sign-in email (SecretStorage). Migrates legacy globalState `email` on first read. */
+    public static async getStoredSignInEmail(): Promise<string | undefined> {
+        const fromSecret = await this.context_.secrets.get(SECRET_SIGN_IN_EMAIL)
+        if (fromSecret !== undefined && fromSecret !== "") {
+            return fromSecret
+        }
+        const legacy = this.context_.globalState.get<string>("email")
+        if (legacy) {
+            await this.context_.secrets.store(SECRET_SIGN_IN_EMAIL, legacy)
+            await this.context_.globalState.update("email", undefined)
+            return legacy
+        }
+        return undefined
     }
 
-    public static async storeEmail(email: string) {
-        await this.context_.globalState.update("email", email)
+    public static async getStoredSignInPassword(): Promise<string | undefined> {
+        const v = await this.context_.secrets.get(SECRET_SIGN_IN_PASSWORD)
+        return v === "" ? undefined : v
+    }
+
+    public static async storeSignInCredentials(email: string, password: string): Promise<void> {
+        await this.context_.secrets.store(SECRET_SIGN_IN_EMAIL, email)
+        await this.context_.secrets.store(SECRET_SIGN_IN_PASSWORD, password)
+        await this.context_.globalState.update("email", undefined)
     }
 
     public static logStorageKeys() {
@@ -284,16 +307,13 @@ export class JutgeService extends StaticLogger {
     }
 
     private static async askEmail(): Promise<string | undefined> {
-        const initial_email = this.getEmail() || ""
+        const initial_email = (await this.getStoredSignInEmail()) || ""
         const email = await vscode.window.showInputBox({
             title: "Jutge Sign-In",
             placeHolder: "your email",
             prompt: "Please enter your email at Jutge.org.",
             value: initial_email,
         })
-        if (email) {
-            await this.storeEmail(email)
-        }
         return email
     }
 
@@ -301,12 +321,13 @@ export class JutgeService extends StaticLogger {
         title,
         placeHolder,
         prompt,
+        value = "",
     }: AskPasswordParams): Promise<string | undefined> {
         return await vscode.window.showInputBox({
             title,
             placeHolder,
             prompt,
-            value: "",
+            value,
             password: true,
         })
     }
@@ -321,10 +342,12 @@ export class JutgeService extends StaticLogger {
             return
         }
 
+        const defaultPassword = (await this.getStoredSignInPassword()) || ""
         const password = await this.askPassword({
             title: "Jutge Sign-In",
             placeHolder: "your password",
             prompt: "Please write your password for Jutge.org.",
+            value: defaultPassword,
         })
         if (!password) {
             return
@@ -332,6 +355,7 @@ export class JutgeService extends StaticLogger {
 
         try {
             const credentials = await jutgeClient.login({ email, password })
+            await this.storeSignInCredentials(email, password)
             return credentials.token
         } catch (err) {
             let message = String(err)
@@ -373,10 +397,12 @@ export class JutgeService extends StaticLogger {
             return
         }
 
+        const defaultPassword = (await this.getStoredSignInPassword()) || ""
         const password = await this.askPassword({
             title: "Jutge Sign-In",
             placeHolder: "your password",
             prompt: "Please write your password for Jutge.org.",
+            value: defaultPassword,
         })
         if (!password) {
             return
@@ -414,6 +440,7 @@ export class JutgeService extends StaticLogger {
                 exam_password: examPassword,
             })
 
+            await this.storeSignInCredentials(email, password)
             return {
                 exam_key: chosenExam,
                 token: credentials.token,
@@ -498,7 +525,6 @@ export class JutgeService extends StaticLogger {
 
         try {
             const trimmedEmail = email.trim()
-            await this.storeEmail(trimmedEmail)
 
             if (nextMode === "exam" || nextMode === "contest") {
                 const selectedKey = nextMode === "exam" ? examKey : contestKey
@@ -534,13 +560,14 @@ export class JutgeService extends StaticLogger {
                 if (nextMode === "contest") {
                     await vscode.commands.executeCommand("jutge-vscode.refreshRankingTree")
                 }
+                await this.storeSignInCredentials(trimmedEmail, password)
                 this.getProfileSWR()
                 return { ok: true }
             }
 
             const credentials = await jutgeClient.login({ email: trimmedEmail, password })
-            await this.storeEmail(email.trim())
             await this.setSignedIn(credentials.token, nextMode)
+            await this.storeSignInCredentials(trimmedEmail, password)
             await vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
             this.getProfileSWR()
             return { ok: true }
