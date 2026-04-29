@@ -1,13 +1,19 @@
 import * as os from "os"
 import * as vscode from "vscode"
 
+import { AboutTreeProvider, aboutTreeViewType } from "@/providers/about-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
+import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
 import { ConfigService } from "@/services/config"
 import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
 import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
 import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry"
 import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
-import { CourseTreeElement } from "./providers/tree-view/element"
+import {
+    SignInWebviewViewProvider,
+    signInWebviewViewType,
+} from "./providers/sign-in-view/provider"
+import { CourseTreeElement } from "./providers/course-view/element"
 import { jutgeClient, JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
@@ -125,6 +131,7 @@ const showExtensionInfo = () => {
 }
 
 export let coursesView: vscode.TreeView<CourseTreeElement> | null = null
+export let homeView: vscode.TreeView<any> | null = null
 
 const initCoursesTreeView = () => {
     const courseTreeProvider = new JutgeCourseTreeProvider()
@@ -158,6 +165,24 @@ const initExamsTreeView = () => {
     })
 
     return { examsTreeProvider }
+}
+
+const initHomeTreeView = () => {
+    const homeTreeProvider = new HomeTreeProvider()
+    homeView = vscode.window.createTreeView(homeTreeViewType, {
+        showCollapseAll: false,
+        treeDataProvider: homeTreeProvider,
+    })
+    return { homeTreeProvider, homeView }
+}
+
+const initAboutTreeView = () => {
+    const aboutTreeProvider = new AboutTreeProvider()
+    const aboutViewProvider = vscode.window.registerTreeDataProvider(
+        aboutTreeViewType,
+        aboutTreeProvider
+    )
+    return { aboutViewProvider }
 }
 
 const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
@@ -234,7 +259,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const { courseTreeProvider } = initCoursesTreeView()
     const { examsTreeProvider } = initExamsTreeView()
+    const { homeTreeProvider, homeView } = initHomeTreeView()
+    const { aboutViewProvider } = initAboutTreeView()
+    context.subscriptions.push(homeView)
+    context.subscriptions.push(aboutViewProvider)
 
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            signInWebviewViewType,
+            new SignInWebviewViewProvider(context.extensionUri)
+        )
+    )
     registerWebviewPanelSerializer(
         ProblemWebviewPanel.viewType,
         new ProblemWebviewPanelSerializer(context)
@@ -260,6 +295,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         ["jutge-vscode.refreshCoursesTree", courseTreeProvider.refresh],
         ["jutge-vscode.refreshExamsTree", examsTreeProvider.refresh],
+        ["jutge-vscode.refreshHomeTree", homeTreeProvider.refresh.bind(homeTreeProvider)],
 
         ["jutge-vscode.showProblem", commandShowProblem],
 
