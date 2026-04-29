@@ -1,4 +1,5 @@
 import * as vscode from "vscode"
+import { JutgeService } from "@/services/jutge"
 
 export const signInWebviewViewType = "jutge-sign-in"
 
@@ -115,6 +116,7 @@ function getSignInHtml(): string {
             gap: 8px;
             user-select: none;
             margin-top: 8px;
+            justify-content: flex-end;
         }
         .checkbox-row input {
             margin: 0;
@@ -124,6 +126,12 @@ function getSignInHtml(): string {
             cursor: pointer;
             color: var(--vscode-descriptionForeground, #888888) !important;
             opacity: 0.9;
+        }
+        .message {
+            margin-top: 8px;
+            font-size: 12px;
+            min-height: 1.2em;
+            color: var(--vscode-descriptionForeground, #888888);
         }
     </style>
 </head>
@@ -186,20 +194,45 @@ function getSignInHtml(): string {
     </div>
 
     <div class="actions">
+        <div id="message" class="message"></div>
         <div class="action-button-row">
             <button type="button" class="sign-in-btn" id="sign-in-btn">Sign in</button>
         </div>
         <div class="checkbox-row">
-            <input type="checkbox" id="use-dev-api" name="use-dev-api" />
             <label for="use-dev-api">Use dev API</label>
+            <input type="checkbox" id="use-dev-api" name="use-dev-api" />
         </div>
     </div>
 
     <script>
         (function () {
+            var vscode = acquireVsCodeApi();
+            var pendingTimer = null;
             function mode() {
                 var el = document.querySelector('input[name="signin-mode"]:checked');
                 return el ? el.value : "jutge";
+            }
+            function setMessage(text, kind) {
+                var message = document.getElementById("message");
+                message.textContent = text || "";
+                if (!text) {
+                    message.style.color = "var(--vscode-descriptionForeground, #888888)";
+                    return;
+                }
+                message.style.color = kind === "success"
+                    ? "var(--vscode-testing-iconPassed)"
+                    : "var(--vscode-errorForeground, #f14c4c)";
+            }
+            function setPending(pending) {
+                var button = document.getElementById("sign-in-btn");
+                button.disabled = pending;
+                button.textContent = pending ? "Signing in..." : "Sign in";
+            }
+            function clearPendingTimer() {
+                if (pendingTimer !== null) {
+                    clearTimeout(pendingTimer);
+                    pendingTimer = null;
+                }
             }
             function refresh() {
                 var m = mode();
@@ -210,6 +243,36 @@ function getSignInHtml(): string {
             }
             document.querySelectorAll('input[name="signin-mode"]').forEach(function (r) {
                 r.addEventListener("change", refresh);
+            });
+            document.getElementById("sign-in-btn").addEventListener("click", function () {
+                setMessage("");
+                setPending(true);
+                clearPendingTimer();
+                pendingTimer = setTimeout(function () {
+                    setPending(false);
+                    setMessage("Could not sign in. Please try again.", "error");
+                }, 12000);
+                vscode.postMessage({
+                    type: "signInRequested",
+                    payload: {
+                        email: document.getElementById("email").value,
+                        password: document.getElementById("password").value,
+                        mode: mode(),
+                        useDevApi: document.getElementById("use-dev-api").checked
+                    }
+                });
+            });
+            window.addEventListener("message", function (event) {
+                var message = event.data;
+                if (!message || message.type !== "signInResult") return;
+                clearPendingTimer();
+                setPending(false);
+                var payload = message.payload || {};
+                var text = payload.message;
+                if (!payload.ok && (!text || !String(text).trim())) {
+                    text = "Invalid credentials.";
+                }
+                setMessage(text, payload.ok ? "success" : "error");
             });
             refresh();
         })();
@@ -230,5 +293,58 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
             ],
         }
         webviewView.webview.html = getSignInHtml()
+        webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
+            if (!message || typeof message !== "object") {
+                return
+            }
+
+            const msg = message as {
+                type?: string
+                payload?: {
+                    email?: string
+                    password?: string
+                    mode?: string
+                    useDevApi?: boolean
+                }
+            }
+
+            if (msg.type !== "signInRequested") {
+                return
+            }
+
+            const mode = msg.payload?.mode
+            if (mode === "exam" || mode === "contest") {
+                webviewView.webview.postMessage({
+                    type: "signInResult",
+                    payload: { ok: false, message: "Not implemented yet" },
+                })
+                return
+            }
+
+            try {
+                const result = await JutgeService.signInWithCredentials({
+                    email: msg.payload?.email || "",
+                    password: msg.payload?.password || "",
+                    useDevApi: Boolean(msg.payload?.useDevApi),
+                })
+
+                webviewView.webview.postMessage({
+                    type: "signInResult",
+                    payload: {
+                        ok: result.ok,
+                        message: result.ok ? "Signed in successfully." : result.error,
+                    },
+                })
+            } catch (error) {
+                const text =
+                    error instanceof Error && error.message
+                        ? error.message
+                        : "Could not sign in. Please try again."
+                webviewView.webview.postMessage({
+                    type: "signInResult",
+                    payload: { ok: false, message: text },
+                })
+            }
+        })
     }
 }

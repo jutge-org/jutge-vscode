@@ -26,6 +26,12 @@ type AskPasswordParams = {
     prompt: string
 }
 
+type SignInWithCredentialsParams = {
+    email: string
+    password: string
+    useDevApi?: boolean
+}
+
 export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
     static signedIn_: boolean = false
@@ -49,12 +55,20 @@ export class JutgeService extends StaticLogger {
     }
 
     static async setSignedIn(token: string) {
+        if (this.examMode_) {
+            this.exitExamMode()
+        }
         this.signedIn_ = true
         await this.storeToken(token)
         await vscode.commands.executeCommand(
             "setContext",
             "jutge-vscode.isSignedIn.Courses",
             true
+        )
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isSignedIn.Exam",
+            false
         )
         this.setToken(token)
         this.log.info(`Signed in.`)
@@ -80,6 +94,11 @@ export class JutgeService extends StaticLogger {
     static async setSignedInExam(examToken: string) {
         this.signedIn_ = true
         await this.storeExamToken(examToken)
+        await vscode.commands.executeCommand(
+            "setContext",
+            "jutge-vscode.isSignedIn.Courses",
+            false
+        )
         await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Exam", true)
         this.setExamToken(examToken)
         this.enterExamMode()
@@ -393,6 +412,44 @@ export class JutgeService extends StaticLogger {
             _signIn()
         } else {
             vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
+        }
+    }
+
+    public static async signInWithCredentials({
+        email,
+        password,
+        useDevApi,
+    }: SignInWithCredentialsParams): Promise<{ ok: true } | { ok: false; error: string }> {
+        void useDevApi // layout-only for now; keep for forward compatibility
+
+        if (!email.trim()) {
+            return { ok: false, error: "Please enter your email." }
+        }
+        if (!password) {
+            return { ok: false, error: "Please enter your password." }
+        }
+
+        try {
+            const credentials = await jutgeClient.login({ email, password })
+            await this.storeEmail(email.trim())
+            await this.setSignedIn(credentials.token)
+            await vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
+            this.getProfileSWR()
+            return { ok: true }
+        } catch (err) {
+            let message = String(err)
+            if (err instanceof Error) {
+                message = err.message
+                if (err.cause instanceof Error) {
+                    message = err.cause.message
+                }
+            }
+            if (!message || message.trim().length === 0 || message === "[object Object]") {
+                message = "Invalid credentials."
+            }
+            this.log.error(`Error signing in`, message, err)
+            vscode.window.showErrorMessage(`Jutge.org: Error signing in: ${message}`)
+            return { ok: false, error: message }
         }
     }
 

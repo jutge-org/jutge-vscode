@@ -74,12 +74,14 @@
                     "name": "About",
                     "icon": "resources/lightbulb-regular.svg",
                     "visibility": "collapsed",
-                    "contextualTitle": "Jutge.org"
+                    "contextualTitle": "Jutge.org",
+                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
                 }
             ]
         },
         "viewsWelcome": [
             {
+                "visibility": "collapsed",
                 "view": "jutge-about",
                 "contents": "[Jutge.org](https://jutge.org)\n\n© Universitat Politècnica de Catalunya - BarcelonaTech (UPC), 2026."
             }
