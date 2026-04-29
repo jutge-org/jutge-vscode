@@ -93,6 +93,7 @@ function getSignInHtml(): string {
         }
         .action-button-row {
             width: 100%;
+            margin-bottom: 8px;
         }
         button.sign-in-btn {
             display: block;
@@ -109,6 +110,13 @@ function getSignInHtml(): string {
         }
         button.sign-in-btn:hover {
             background: var(--vscode-button-hoverBackground);
+        }
+        button.quick-sign-in-btn {
+            color: var(--vscode-button-secondaryForeground);
+            background: var(--vscode-button-secondaryBackground);
+        }
+        button.quick-sign-in-btn:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
         }
         .checkbox-row {
             display: flex;
@@ -194,6 +202,9 @@ function getSignInHtml(): string {
         <div class="action-button-row">
             <button type="button" class="sign-in-btn" id="sign-in-btn">Sign in</button>
         </div>
+        <div class="action-button-row">
+            <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in</button>
+        </div>
         <div class="checkbox-row">
             <label for="use-dev-api">Use dev API</label>
             <input type="checkbox" id="use-dev-api" name="use-dev-api" />
@@ -222,8 +233,11 @@ function getSignInHtml(): string {
             }
             function setPending(pending) {
                 var button = document.getElementById("sign-in-btn");
+                var quickButton = document.getElementById("quick-sign-in-btn");
                 button.disabled = pending;
+                quickButton.disabled = pending;
                 button.textContent = pending ? "Signing in..." : "Sign in";
+                quickButton.textContent = pending ? "Signing in..." : "Quick sign in";
             }
             function clearPendingTimer() {
                 if (pendingTimer !== null) {
@@ -302,6 +316,21 @@ function getSignInHtml(): string {
                         examPassword: document.getElementById("exam-password").value,
                         contestKey: document.getElementById("contest-name").value,
                         contestPassword: document.getElementById("contest-password").value,
+                        useDevApi: document.getElementById("use-dev-api").checked
+                    }
+                });
+            });
+            document.getElementById("quick-sign-in-btn").addEventListener("click", function () {
+                setMessage("");
+                setPending(true);
+                clearPendingTimer();
+                pendingTimer = setTimeout(function () {
+                    setPending(false);
+                    setMessage("Could not sign in. Please try again.", "error");
+                }, 12000);
+                vscode.postMessage({
+                    type: "quickSignInRequested",
+                    payload: {
                         useDevApi: document.getElementById("use-dev-api").checked
                     }
                 });
@@ -419,6 +448,51 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                         items: readyItems,
                     },
                 })
+                return
+            }
+
+            if (msg.type === "quickSignInRequested") {
+                const email = process.env.JUTGE_EMAIL ?? ""
+                const password = process.env.JUTGE_PASSWORD ?? ""
+                if (!email || !password) {
+                    webviewView.webview.postMessage({
+                        type: "signInResult",
+                        payload: {
+                            ok: false,
+                            message:
+                                "Quick sign in requires JUTGE_EMAIL and JUTGE_PASSWORD env vars.",
+                        },
+                    })
+                    return
+                }
+
+                try {
+                    const result = await JutgeService.signInWithCredentials({
+                        email,
+                        password,
+                        mode: "exam",
+                        examKey: "Jutge:ProvesJordi",
+                        examPassword: "PEZATIWU",
+                        useDevApi: Boolean(msg.payload?.useDevApi),
+                    })
+
+                    webviewView.webview.postMessage({
+                        type: "signInResult",
+                        payload: {
+                            ok: result.ok,
+                            message: result.ok ? "Signed in successfully." : result.error,
+                        },
+                    })
+                } catch (error) {
+                    const text =
+                        error instanceof Error && error.message
+                            ? error.message
+                            : "Could not sign in. Please try again."
+                    webviewView.webview.postMessage({
+                        type: "signInResult",
+                        payload: { ok: false, message: text },
+                    })
+                }
                 return
             }
 

@@ -21,7 +21,8 @@
         "onView:jutge-home",
         "onView:jutge-about",
         "onView:jutge-courses",
-        "onView:jutge-exams"
+        "onView:jutge-exams",
+        "onView:jutge-exam-properties"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -70,6 +71,14 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
+                    "id": "jutge-exam-properties",
+                    "name": "Exam properties",
+                    "icon": "resources/lightbulb-regular.svg",
+                    "visibility": "visible",
+                    "contextualTitle": "Jutge.org",
+                    "when": "jutge-vscode.isSignedIn.Exam"
+                },
+                {
                     "id": "jutge-about",
                     "name": "About",
                     "icon": "resources/lightbulb-regular.svg",
@@ -106,6 +115,11 @@
                 {
                     "command": "jutge-vscode.refreshExamsTree",
                     "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.refreshExamPropertiesTree",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-properties",
                     "group": "navigation"
                 },
                 {
@@ -177,6 +191,14 @@
             {
                 "command": "jutge-vscode.refreshHomeTree",
                 "title": "Jutge.org: Refresh Home View",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.refreshExamPropertiesTree",
+                "title": "Jutge.org: Refresh Exam Properties View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"

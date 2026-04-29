@@ -2,6 +2,10 @@ import * as os from "os"
 import * as vscode from "vscode"
 
 import { AboutTreeProvider, aboutTreeViewType } from "@/providers/about-view/provider"
+import {
+    ExamPropertiesTreeProvider,
+    examPropertiesTreeViewType,
+} from "@/providers/exam-properties-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
 import { ConfigService } from "@/services/config"
@@ -193,6 +197,15 @@ const initAboutTreeView = () => {
     return { aboutViewProvider }
 }
 
+const initExamPropertiesTreeView = () => {
+    const examPropertiesTreeProvider = new ExamPropertiesTreeProvider()
+    const examPropertiesView = vscode.window.createTreeView(examPropertiesTreeViewType, {
+        showCollapseAll: true,
+        treeDataProvider: examPropertiesTreeProvider,
+    })
+    return { examPropertiesTreeProvider, examPropertiesView }
+}
+
 const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
     for (const [command, callback] of commands) {
         registerCommand(command, callback)
@@ -267,9 +280,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const { courseTreeProvider } = initCoursesTreeView()
     const { examsTreeProvider } = initExamsTreeView()
+    const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
     const { homeTreeProvider, homeView } = initHomeTreeView()
     const { aboutViewProvider } = initAboutTreeView()
     context.subscriptions.push(homeView)
+    context.subscriptions.push(examPropertiesView)
     context.subscriptions.push(aboutViewProvider)
 
     context.subscriptions.push(
@@ -303,6 +318,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
         ["jutge-vscode.refreshCoursesTree", courseTreeProvider.refresh],
         ["jutge-vscode.refreshExamsTree", examsTreeProvider.refresh],
+        [
+            "jutge-vscode.refreshExamPropertiesTree",
+            examPropertiesTreeProvider.refresh.bind(examPropertiesTreeProvider),
+        ],
         ["jutge-vscode.refreshHomeTree", homeTreeProvider.refresh.bind(homeTreeProvider)],
 
         ["jutge-vscode.showProblem", commandShowProblem],
