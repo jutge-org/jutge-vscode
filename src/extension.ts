@@ -10,6 +10,7 @@ import {
     ExamPropertiesTreeProvider,
     examPropertiesTreeViewType,
 } from "@/providers/exam-properties-view/provider"
+import { ClockWebviewViewProvider, clockWebviewViewType } from "@/providers/clock-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
 import { ConfigService } from "@/services/config"
@@ -354,6 +355,14 @@ export async function activate(context: vscode.ExtensionContext) {
             new SignInWebviewViewProvider(context.extensionUri)
         )
     )
+    const clockWebviewViewProvider = new ClockWebviewViewProvider(context.extensionUri)
+    context.subscriptions.push(clockWebviewViewProvider)
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            clockWebviewViewType,
+            clockWebviewViewProvider
+        )
+    )
     registerWebviewPanelSerializer(
         ProblemWebviewPanel.viewType,
         new ProblemWebviewPanelSerializer(context)
@@ -386,6 +395,10 @@ export async function activate(context: vscode.ExtensionContext) {
         [
             "jutge-vscode.refreshExamDocumentsTree",
             examDocumentsTreeProvider.refresh.bind(examDocumentsTreeProvider),
+        ],
+        [
+            "jutge-vscode.refreshClockView",
+            clockWebviewViewProvider.forceRefresh.bind(clockWebviewViewProvider),
         ],
         ["jutge-vscode.refreshHomeTree", homeTreeProvider.refresh.bind(homeTreeProvider)],
 

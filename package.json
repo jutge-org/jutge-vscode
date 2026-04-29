@@ -23,7 +23,8 @@
         "onView:jutge-courses",
         "onView:jutge-exams",
         "onView:jutge-exam-properties",
-        "onView:jutge-exam-documents"
+        "onView:jutge-exam-documents",
+        "onView:jutge-clock"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -88,6 +89,15 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
+                    "id": "jutge-clock",
+                    "name": "Timer",
+                    "type": "webview",
+                    "icon": "resources/lightbulb-regular.svg",
+                    "visibility": "visible",
+                    "contextualTitle": "Jutge.org",
+                    "when": "jutge-vscode.isSignedIn.Exam"
+                },
+                {
                     "id": "jutge-about",
                     "name": "About",
                     "icon": "resources/lightbulb-regular.svg",
@@ -134,6 +144,11 @@
                 {
                     "command": "jutge-vscode.refreshExamDocumentsTree",
                     "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-documents",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.refreshClockView",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-clock",
                     "group": "navigation"
                 },
                 {
@@ -221,6 +236,14 @@
             {
                 "command": "jutge-vscode.refreshExamDocumentsTree",
                 "title": "Jutge.org: Refresh Exam Documents View",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.refreshClockView",
+                "title": "Jutge.org: Refresh Clock View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
@@ -314,6 +337,7 @@
     "dependencies": {
         "@vscode/python-extension": "^1.0.6",
         "@vscode/webview-ui-toolkit": "^1.4.0",
+        "dayjs": "^1.11.20",
         "deep-equal": "^2.2.3",
         "yaml": "^2.8.1"
     },
