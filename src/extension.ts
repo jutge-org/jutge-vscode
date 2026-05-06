@@ -208,7 +208,7 @@ const initHomeTreeView = () => {
 const initApiTreeView = () => {
     const jutgeApiTreeProvider = new JutgeApiTreeProvider()
     const jutgeApiView = vscode.window.createTreeView(jutgeApiTreeViewType, {
-        showCollapseAll: false,
+        showCollapseAll: true,
         treeDataProvider: jutgeApiTreeProvider,
     })
     return { jutgeApiTreeProvider, jutgeApiView }
