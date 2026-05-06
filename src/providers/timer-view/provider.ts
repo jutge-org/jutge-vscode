@@ -5,7 +5,7 @@ import * as path from "path"
 import { RunningExam } from "@/jutge_api_client"
 import { jutgeClient } from "@/services/jutge"
 
-export const clockWebviewViewType = "jutge-clock"
+export const timerWebviewViewType = "jutge-clock"
 
 const EXAM_FETCH_INTERVAL_MS = 60_000
 
@@ -37,7 +37,7 @@ function getDayjsRuntimeScripts(): string {
     }
 }
 
-function getClockHtml(): string {
+function getTimerHtml(): string {
     const dayjsRuntimeScripts = getDayjsRuntimeScripts()
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -66,7 +66,7 @@ function getClockHtml(): string {
             font-weight: 600;
             margin-bottom: 0px;
         }
-        .clock-wrapper {
+        .timer-wrapper {
             width: 100%;
             display: flex;
             justify-content: center;
@@ -86,8 +86,8 @@ function getClockHtml(): string {
 </head>
 <body>
     <div id="remaining" class="remaining">Loading exam time...</div>
-    <div class="clock-wrapper">
-        <canvas id="clock" width="220" height="130"></canvas>
+    <div class="timer-wrapper">
+        <canvas id="timer" width="220" height="130"></canvas>
     </div>
     <div id="hint" class="hint"></div>
 
@@ -97,7 +97,7 @@ function getClockHtml(): string {
             const vscode = acquireVsCodeApi();
             const remainingEl = document.getElementById("remaining");
             const hintEl = document.getElementById("hint");
-            const canvas = document.getElementById("clock");
+            const canvas = document.getElementById("timer");
             const ctx = canvas.getContext("2d");
             if (typeof dayjs === "function" && dayjs.extend) {
                 if (typeof dayjs_plugin_duration !== "undefined") {
@@ -155,7 +155,7 @@ function getClockHtml(): string {
                 return { start, end, span: end - start };
             }
 
-            function drawClock(nowMs) {
+            function drawTimerDial(nowMs) {
                 const times = getTimes();
                 if (!times) {
                     remainingEl.textContent = "Could not read exam timing.";
@@ -167,19 +167,25 @@ function getClockHtml(): string {
                 const elapsedRatioRaw = (nowMs - times.startMs) / Math.max(1, times.totalMs);
                 const elapsedRatio = Math.max(0, Math.min(1, elapsedRatioRaw));
                 const remainingMs = Math.max(0, times.endMs - nowMs);
+                const exceededMs = Math.max(0, nowMs - times.endMs);
+                const hasEnded = elapsedRatio >= 1;
 
-                remainingEl.textContent = formatDuration(remainingMs) + " remaining";
-                hintEl.textContent = elapsedRatio >= 1 ? "Exam time ended." : "";
+                remainingEl.textContent = hasEnded
+                    ? "ended " + formatDuration(exceededMs) + " ago"
+                    : formatDuration(remainingMs) + " remaining";
+                hintEl.textContent = hasEnded ? "Time expired" : "";
 
                 const centerX = canvas.width / 2;
                 const centerY = canvas.height * 0.95;
                 const radius = 86;
                 const lineWidth = 13;
                 const theme = getComputedStyle(document.body);
-                const elapsedColor = theme.getPropertyValue("--vscode-editor-foreground").trim() || "#222222";
+                const normalElapsedColor =
+                    theme.getPropertyValue("--vscode-editor-foreground").trim() || "#222222";
                 const baseRemainingColor =
                     theme.getPropertyValue("--vscode-editorWidget-border").trim() || "#9a9a9a";
                 const dangerColor = "#7a1010";
+                const elapsedColor = hasEnded ? dangerColor : normalElapsedColor;
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.lineWidth = lineWidth;
@@ -215,7 +221,7 @@ function getClockHtml(): string {
             }
 
             function redraw() {
-                drawClock(Date.now());
+                drawTimerDial(Date.now());
             }
 
             function startLocalTicker() {
@@ -250,7 +256,7 @@ function getClockHtml(): string {
 </html>`
 }
 
-export class ClockWebviewViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class TimerWebviewViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private webviewView: vscode.WebviewView | undefined
     private refreshTimer: NodeJS.Timeout | undefined
 
@@ -265,7 +271,7 @@ export class ClockWebviewViewProvider implements vscode.WebviewViewProvider, vsc
                 vscode.Uri.joinPath(this.extensionUri, "dist"),
             ],
         }
-        webviewView.webview.html = getClockHtml()
+        webviewView.webview.html = getTimerHtml()
 
         this.scheduleExamRefresh_()
         void this.pushLatestExamData_()

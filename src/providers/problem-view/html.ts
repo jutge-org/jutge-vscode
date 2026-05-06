@@ -327,7 +327,7 @@ export type WebviewHTMLData = {
     scriptUri: Uri
     cspSource: string
 }
-export function htmlWebview(data: WebviewHTMLData) {
+export function htmlProblemView(data: WebviewHTMLData) {
     const {
         handler,
         caption,
@@ -389,3 +389,5 @@ export function htmlWebview(data: WebviewHTMLData) {
         </html>
     `
 }
+
+export const htmlWebview = htmlProblemView

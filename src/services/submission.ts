@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 
 import * as j from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
-import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
+import { WebviewPanelRegistry } from "@/providers/problem-view/panel-registry"
 import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"

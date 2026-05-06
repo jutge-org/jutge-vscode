@@ -1,9 +1,9 @@
 import { Logger } from "@/loggers"
 import * as vscode from "vscode"
-import { ProblemWebviewPanel } from "./panel"
+import { ProblemViewPanel } from "./panel"
 import { WebviewPanelRegistry } from "./panel-registry"
 
-export class ProblemWebviewPanelSerializer
+export class ProblemViewPanelSerializer
     extends Logger
     implements vscode.WebviewPanelSerializer
 {
@@ -24,10 +24,8 @@ export class ProblemWebviewPanelSerializer
                 return
             }
 
-            const panel = new ProblemWebviewPanel(webviewPanel, state)
-
+            const panel = new ProblemViewPanel(webviewPanel, state)
             WebviewPanelRegistry.register(state.problemNm, panel)
-            //
         } catch (error) {
             this.log.error("[WebviewPanel] Error deserializing webview panel: ", error)
             webviewPanel.dispose()

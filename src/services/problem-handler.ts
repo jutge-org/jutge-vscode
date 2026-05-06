@@ -1,8 +1,8 @@
 import { getWorkspaceFolderOrPickOne } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
-import { ProblemWebviewPanel } from "@/providers/problem-webview/panel"
-import { WebviewPanelRegistry } from "@/providers/problem-webview/panel-registry"
+import { ProblemViewPanel } from "@/providers/problem-view/panel"
+import { WebviewPanelRegistry } from "@/providers/problem-view/panel-registry"
 import {
     LanguageInfo,
     Proglang,
@@ -33,13 +33,13 @@ import { JutgeService } from "./jutge"
 import { SubmissionService } from "./submission"
 
 export class ProblemHandler extends Logger {
-    panel_: ProblemWebviewPanel
+    panel_: ProblemViewPanel
     problem_: Problem
     order_: number
     proglang_: Proglang | undefined
     langInfo_: LanguageInfo | undefined
 
-    constructor(panel: ProblemWebviewPanel, problem: Problem, order: number) {
+    constructor(panel: ProblemViewPanel, problem: Problem, order: number) {
         super()
 
         this.panel_ = panel

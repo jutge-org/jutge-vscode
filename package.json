@@ -16,9 +16,10 @@
     ],
     "activationEvents": [
         "onStartupFinished",
-        "onWebviewPanel:problemWebview",
+        "onWebviewPanel:problemView",
         "onView:jutge-sign-in",
         "onView:jutge-home",
+        "onView:jutge-api",
         "onView:jutge-about",
         "onView:jutge-courses",
         "onView:jutge-profile",
@@ -51,7 +52,14 @@
                 },
                 {
                     "id": "jutge-home",
-                    "name": "Home",
+                    "name": "Jutge Stats",
+                    "visibility": "collapsed",
+                    "contextualTitle": "Jutge.org",
+                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
+                },
+                {
+                    "id": "jutge-api",
+                    "name": "Jutge API",
                     "visibility": "collapsed",
                     "contextualTitle": "Jutge.org",
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
@@ -165,11 +173,6 @@
                     "group": "navigation"
                 },
                 {
-                    "command": "jutge-vscode.refreshClockView",
-                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-clock",
-                    "group": "navigation"
-                },
-                {
                     "command": "jutge-vscode.refreshRankingTree",
                     "when": "jutge-vscode.isContestMode && view == jutge-ranking",
                     "group": "navigation"
@@ -182,6 +185,11 @@
                 {
                     "command": "jutge-vscode.refreshHomeTree",
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam && view == jutge-home",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.refreshApiTree",
+                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam && view == jutge-api",
                     "group": "navigation"
                 },
                 {
@@ -255,7 +263,15 @@
             },
             {
                 "command": "jutge-vscode.refreshHomeTree",
-                "title": "Jutge.org: Refresh Home View",
+                "title": "Jutge.org: Refresh Jutge Stats View",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "jutge-vscode.refreshApiTree",
+                "title": "Jutge.org: Refresh Jutge API View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"
@@ -287,7 +303,7 @@
             },
             {
                 "command": "jutge-vscode.refreshClockView",
-                "title": "Jutge.org: Refresh Clock View",
+                "title": "Jutge.org: Refresh Timer View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"

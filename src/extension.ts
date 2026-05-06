@@ -16,15 +16,19 @@ import {
     rankingTreeViewType,
 } from "@/providers/ranking-view/provider"
 import { DashboardPanel } from "@/providers/dashboard-view/provider"
-import { ClockWebviewViewProvider, clockWebviewViewType } from "@/providers/clock-view/provider"
+import { TimerWebviewViewProvider, timerWebviewViewType } from "@/providers/timer-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
-import { HomeTreeProvider, homeTreeViewType } from "@/providers/home-view/provider"
+import {
+    JutgeStatsTreeProvider,
+    jutgeStatsTreeViewType,
+} from "@/providers/jutge-stats-view/provider"
+import { JutgeApiTreeProvider, jutgeApiTreeViewType } from "@/providers/jutge-api-view/provider"
 import { ProfileTreeProvider, profileTreeViewType } from "@/providers/profile-view/provider"
 import { ConfigService } from "@/services/config"
 import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
-import { ProblemWebviewPanel } from "./providers/problem-webview/panel"
-import { WebviewPanelRegistry } from "./providers/problem-webview/panel-registry"
-import { ProblemWebviewPanelSerializer } from "./providers/problem-webview/panel-serializer"
+import { ProblemViewPanel } from "./providers/problem-view/panel"
+import { WebviewPanelRegistry } from "./providers/problem-view/panel-registry"
+import { ProblemViewPanelSerializer } from "./providers/problem-view/panel-serializer"
 import {
     SignInWebviewViewProvider,
     signInWebviewViewType,
@@ -156,7 +160,7 @@ const showExtensionInfo = () => {
 }
 
 export let coursesView: vscode.TreeView<CourseTreeElement> | null = null
-export let homeView: vscode.TreeView<any> | null = null
+export let jutgeStatsView: vscode.TreeView<any> | null = null
 
 const initCoursesTreeView = () => {
     const courseTreeProvider = new JutgeCourseTreeProvider()
@@ -193,12 +197,21 @@ const initExamsTreeView = () => {
 }
 
 const initHomeTreeView = () => {
-    const homeTreeProvider = new HomeTreeProvider()
-    homeView = vscode.window.createTreeView(homeTreeViewType, {
+    const jutgeStatsTreeProvider = new JutgeStatsTreeProvider()
+    jutgeStatsView = vscode.window.createTreeView(jutgeStatsTreeViewType, {
         showCollapseAll: false,
-        treeDataProvider: homeTreeProvider,
+        treeDataProvider: jutgeStatsTreeProvider,
     })
-    return { homeTreeProvider, homeView }
+    return { jutgeStatsTreeProvider, jutgeStatsView }
+}
+
+const initApiTreeView = () => {
+    const jutgeApiTreeProvider = new JutgeApiTreeProvider()
+    const jutgeApiView = vscode.window.createTreeView(jutgeApiTreeViewType, {
+        showCollapseAll: false,
+        treeDataProvider: jutgeApiTreeProvider,
+    })
+    return { jutgeApiTreeProvider, jutgeApiView }
 }
 
 const initAboutTreeView = () => {
@@ -354,6 +367,7 @@ const commandOpenExamDocument = async (
  */
 export async function activate(context: vscode.ExtensionContext) {
     setContext_(context)
+    const isDevelopmentMode = context.extensionMode === vscode.ExtensionMode.Development
 
     // Set JUTGE_API_URL from the start
     setJutgeApiURL({ mode: "normal", useDevApi: false })
@@ -369,9 +383,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const { profileTreeProvider, profileView } = initProfileTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { rankingTreeProvider, rankingView } = initRankingTreeView()
-    const { homeTreeProvider, homeView } = initHomeTreeView()
+    const { jutgeStatsTreeProvider, jutgeStatsView } = initHomeTreeView()
+    const { jutgeApiTreeProvider, jutgeApiView } = initApiTreeView()
     const { aboutViewProvider } = initAboutTreeView()
-    context.subscriptions.push(homeView)
+    context.subscriptions.push(jutgeStatsView)
+    context.subscriptions.push(jutgeApiView)
     context.subscriptions.push(profileView)
     context.subscriptions.push(examPropertiesView)
     context.subscriptions.push(examDocumentsView)
@@ -382,23 +398,20 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             signInWebviewViewType,
-            new SignInWebviewViewProvider(
-                context.extensionUri,
-                context.extensionMode === vscode.ExtensionMode.Development
-            )
+            new SignInWebviewViewProvider(context.extensionUri, isDevelopmentMode)
         )
     )
-    const clockWebviewViewProvider = new ClockWebviewViewProvider(context.extensionUri)
-    context.subscriptions.push(clockWebviewViewProvider)
+    const timerWebviewViewProvider = new TimerWebviewViewProvider(context.extensionUri)
+    context.subscriptions.push(timerWebviewViewProvider)
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
-            clockWebviewViewType,
-            clockWebviewViewProvider
+            timerWebviewViewType,
+            timerWebviewViewProvider
         )
     )
     registerWebviewPanelSerializer(
-        ProblemWebviewPanel.viewType,
-        new ProblemWebviewPanelSerializer(context)
+        ProblemViewPanel.viewType,
+        new ProblemViewPanelSerializer(context)
     )
 
     // Update custom testcases whenever the user deletes a test file
@@ -441,9 +454,16 @@ export async function activate(context: vscode.ExtensionContext) {
         ["jutge-vscode.openRankingPanel", RankingPanel.openOrReveal],
         [
             "jutge-vscode.refreshClockView",
-            clockWebviewViewProvider.forceRefresh.bind(clockWebviewViewProvider),
+            timerWebviewViewProvider.forceRefresh.bind(timerWebviewViewProvider),
         ],
-        ["jutge-vscode.refreshHomeTree", homeTreeProvider.refresh.bind(homeTreeProvider)],
+        [
+            "jutge-vscode.refreshHomeTree",
+            jutgeStatsTreeProvider.refresh.bind(jutgeStatsTreeProvider),
+        ],
+        [
+            "jutge-vscode.refreshApiTree",
+            jutgeApiTreeProvider.refresh.bind(jutgeApiTreeProvider),
+        ],
 
         ["jutge-vscode.showProblem", commandShowProblem],
         ["jutge-vscode.openExamDocument", commandOpenExamDocument],
@@ -458,4 +478,8 @@ export async function activate(context: vscode.ExtensionContext) {
         "jutge-vscode.isDevMode",
         process.env.MODE === "development"
     )
+
+    if (isDevelopmentMode) {
+        await vscode.commands.executeCommand("workbench.view.extension.jutge")
+    }
 }

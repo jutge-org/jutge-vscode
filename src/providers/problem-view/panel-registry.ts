@@ -6,73 +6,48 @@ import { JutgeService } from "@/services/jutge"
 import { VSCodeToWebviewMessage } from "@/types"
 import { getProblemIdFromFilename, sourceFileExists } from "@/utils"
 import { basename } from "path"
-import { ProblemWebviewPanel } from "./panel"
+import { ProblemViewPanel } from "./panel"
 
-/**
- * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.
- *
- */
 export async function isProblemValidAndAccessible(problemNm: string): Promise<boolean> {
     try {
         await JutgeService.getAbstractProblemSWR(problemNm)
         return true
-    } catch (error) {
+    } catch {
         return false
     }
 }
 
 export class WebviewPanelRegistry extends StaticLogger {
-    private static createdPanels_: Map<string, ProblemWebviewPanel> = new Map()
+    private static createdPanels_: Map<string, ProblemViewPanel> = new Map()
 
-    /**
-     * Creates a new problem webview panel.
-     *
-     * @param context The context of the extension.
-     * @param problemNm The problem number.
-     */
     static async createOrReveal(
         problemNm: string,
         order: number = -1
-    ): Promise<ProblemWebviewPanel | null> {
-        this.log.debug(`Attempting to show panel for problem ${problemNm}`)
-
+    ): Promise<ProblemViewPanel | null> {
         const context = getContext()
-
         if (!(await isProblemValidAndAccessible(problemNm))) {
-            this.log.warn(`Problem ${problemNm} not valid or accessible`)
             vscode.window.showErrorMessage("Problem not valid or accessible.")
             return null
         }
-
-        // NOTE(pauek): Always show problem panels on column two!
         const viewColumn = vscode.ViewColumn.Beside
-
-        // If we already have a panel, show it.
         if (this.createdPanels_.has(problemNm)) {
-            this.log.debug(`Reusing existing panel for ${problemNm}`)
-            let panel = this.createdPanels_.get(problemNm) as ProblemWebviewPanel
+            const panel = this.createdPanels_.get(problemNm) as ProblemViewPanel
             panel.panel.reveal(viewColumn, true)
             return panel
         }
-
-        this.log.debug(`Creating new panel for ${problemNm}`)
         const webviewPanel = vscode.window.createWebviewPanel(
-            ProblemWebviewPanel.viewType,
+            ProblemViewPanel.viewType,
             problemNm,
             { viewColumn, preserveFocus: true },
             getWebviewOptions(context.extensionUri)
         )
-
-        const panel = new ProblemWebviewPanel(webviewPanel, { problemNm, order })
+        const panel = new ProblemViewPanel(webviewPanel, { problemNm, order })
         this.createdPanels_.set(problemNm, panel)
-
         return panel
     }
 
     static updatePanelsOnChangedFiles(files: readonly vscode.Uri[]) {
-        this.log.info(`changed files: ${files.map((f) => f.path).join(", ")}`)
         const problemNms = files.map((uri) => getProblemIdFromFilename(basename(uri.fsPath)))
-        this.log.info(`problem_nms: ${problemNms.join(", ")}`)
         for (const problemNm of problemNms) {
             if (problemNm) {
                 WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
@@ -83,13 +58,14 @@ export class WebviewPanelRegistry extends StaticLogger {
     static async notifyProblemFilesChanges(problemNm: string) {
         const panel = this.get(problemNm)
         if (!panel) {
-            this.log.info(`notifyProblemFilesChanges: Problem ${problemNm} not found`)
             return
         }
         await panel.notifyProblemFilesChanges()
+        const fileExists = await sourceFileExists(panel.problem, panel.order)
+        panel.fileExists = fileExists
     }
 
-    static register(problemNm: string, panel: ProblemWebviewPanel) {
+    static register(problemNm: string, panel: ProblemViewPanel) {
         this.createdPanels_.set(problemNm, panel)
     }
 
@@ -105,8 +81,6 @@ export class WebviewPanelRegistry extends StaticLogger {
         const panel = this.createdPanels_.get(problemNm)
         if (panel) {
             await panel.panel.webview.postMessage(message)
-        } else {
-            console.error(`Panel ${problemNm} not found.`)
         }
     }
 }

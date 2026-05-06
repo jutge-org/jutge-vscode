@@ -6,7 +6,7 @@ import {
     WebviewToVSCodeCommand,
 } from "../types"
 import { makeSpacesVisible } from "./utils"
-import { htmlCustomTestcases } from "../providers/problem-webview/html"
+import { htmlCustomTestcases } from "../providers/problem-view/html"
 
 // Warning: this import is important, it will produce a "main.css" file that
 // later we will refer to from the HTML (esbuild does this)

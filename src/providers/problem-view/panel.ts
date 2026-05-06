@@ -15,19 +15,19 @@ import {
 import * as utils from "@/utils"
 import { existsSync } from "node:fs"
 import * as vscode from "vscode"
-import { htmlWebview } from "./html"
+import { htmlProblemView } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
 import { showCodeDocument, sourceFileExists } from "@/utils"
 
-type ProblemWebviewState = {
+type ProblemViewState = {
     problemNm: string
     order: number
     title?: string
     fileExists?: boolean
 }
 
-export class ProblemWebviewPanel extends Logger {
-    public static readonly viewType = "problemWebview"
+export class ProblemViewPanel extends Logger {
+    public static readonly viewType = "problemView"
 
     public readonly panel: vscode.WebviewPanel
     public problem: Problem
@@ -38,7 +38,7 @@ export class ProblemWebviewPanel extends Logger {
 
     public constructor(
         panel: vscode.WebviewPanel,
-        { problemNm, title, order, fileExists }: ProblemWebviewState
+        { problemNm, title, order, fileExists }: ProblemViewState
     ) {
         super()
 
@@ -63,8 +63,6 @@ export class ProblemWebviewPanel extends Logger {
         )
 
         this.log.info(`New panel for problem ${problemNm} (${context.extensionUri})`)
-
-        // Initialize problem info and update webview
         this._loadProblem()
     }
 
@@ -97,8 +95,6 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     async addNewTestcase() {
-        this.log.info(`Adding new test case`)
-
         const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
             return
@@ -109,7 +105,6 @@ export class ProblemWebviewPanel extends Logger {
         }
         const document = await vscode.workspace.openTextDocument(fileUri)
         await showCodeDocument(document)
-
         this.panel.reveal(vscode.ViewColumn.Beside, true)
         await this.notifyProblemFilesChanges()
     }
@@ -130,57 +125,43 @@ export class ProblemWebviewPanel extends Logger {
     }
 
     private async _handleMessage(message: WebviewToVSCodeMessage) {
-        console.debug(`[ProblemWebviewPanel] Received message from webview: ${message.command}`)
-
+        console.debug(`[ProblemViewPanel] Received message from webview: ${message.command}`)
         const { command, data } = message
         switch (command) {
             case WebviewToVSCodeCommand.OPEN_EXISTING_FILE:
                 return this.handler.openExistingFile(this.panel)
-
             case WebviewToVSCodeCommand.NEW_FILE:
                 await this.handler.createNewFile(this.panel)
                 return this.notifyProblemFilesChanges()
-
             case WebviewToVSCodeCommand.ADD_NEW_TESTCASE:
                 return this.addNewTestcase()
-
             case WebviewToVSCodeCommand.RUN_ALL_TESTCASES:
                 return this.handler.runTestcaseAll()
-
             case WebviewToVSCodeCommand.SUBMIT_TO_JUTGE:
                 return this.handler.submitToJudge()
-
             case WebviewToVSCodeCommand.RUN_TESTCASE:
                 return this.handler.runTestcaseByIndex(data.testcaseId)
-
             case WebviewToVSCodeCommand.EDIT_TESTCASE:
                 return this.editTestcaseByIndex(data.testcaseId)
-
             case WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE:
                 return this.handler.runCustomTestcaseByIndex(data.testcaseId)
-
             case WebviewToVSCodeCommand.SHOW_DIFF:
                 return this._showDiff(data)
-
             default:
                 console.warn(
-                    `[ProblemWebviewPanel] Don't know how to handle message: ${message.command}`
+                    `[ProblemViewPanel] Don't know how to handle message: ${message.command}`
                 )
         }
     }
 
     private async _loadProblem() {
-        // Could not do this at the constructor
         this.fileExists = await sourceFileExists(this.problem, this.order)
-
         const updateWebview = async () => {
-            this.log.info(`Updating HTML for ${this.problem.problem_nm}`)
-
             const problemUrl = JutgeService.isExamMode()
                 ? `https://exam.jutge.org/problems/${this.problem.problem_id}`
                 : `https://jutge.org/problems/${this.problem.problem_id}`
 
-            this.panel.webview.html = htmlWebview({
+            this.panel.webview.html = htmlProblemView({
                 problemUrl,
                 problemId: this.problem.problem_id,
                 problemNm: this.problem.problem_nm,
@@ -191,7 +172,6 @@ export class ProblemWebviewPanel extends Logger {
                 testcases: this.problem.testcases || [],
                 customTestcases: this.customTestcases || [],
                 handler: this.problem.handler || null,
-
                 nonce: utils.getNonce(),
                 styleUri: this._getUri("dist", "webview", "main.css"),
                 scriptUri: this._getUri("dist", "webview", "main.js"),
@@ -207,17 +187,8 @@ export class ProblemWebviewPanel extends Logger {
             },
             async (progress) => {
                 const problemNm = this.problem.problem_nm
-
                 try {
                     progress.report({ increment: 0, message: "Loading..." })
-
-                    this.log.info(`Updating webview contents for ${problemNm}`)
-
-                    progress.report({
-                        increment: 20,
-                        message: "Getting concrete problem...",
-                    })
-
                     const absProb = await JutgeService.getAbstractProblem(problemNm)
                     const { problem_id, title } = this.__chooseConcreteProblem(
                         problemNm,
@@ -225,7 +196,6 @@ export class ProblemWebviewPanel extends Logger {
                     )
                     this.problem.title = title
                     this.problem.problem_id = problem_id
-
                     this.panel.title = `${this.problem.problem_nm} - ${title}`
 
                     const _loadHandler = async () => {
@@ -241,37 +211,24 @@ export class ProblemWebviewPanel extends Logger {
                     const _loadStatementHtml = async () => {
                         this.problem.statementHtml =
                             await JutgeService.getHtmlStatement(problem_id)
-                        progress.report({
-                            increment: 20,
-                            message: "Loaded HTML statement",
-                        })
+                        progress.report({ increment: 20, message: "Loaded HTML statement" })
                     }
                     const _loadCustomTestcases = async () => {
                         this.customTestcases = await FileService.loadCustomTestcases(
                             this.problem
                         )
-                        progress.report({
-                            increment: 10,
-                            message: "Loaded Custom testcases",
-                        })
+                        progress.report({ increment: 10, message: "Loaded Custom testcases" })
                     }
-
-                    progress.report({ message: "Loading..." })
                     await Promise.allSettled([
                         _loadHandler(),
                         _loadTestcases(),
                         _loadStatementHtml(),
                         _loadCustomTestcases(),
                     ])
-
-                    // Once everything is loaded, we create a problem handler
-                    // which will take care of all operations
                     this.problemHandler = new ProblemHandler(this, this.problem, this.order)
-                    //
                 } catch (e) {
                     console.error(e)
                 }
-
                 await updateWebview()
             }
         )
@@ -279,7 +236,6 @@ export class ProblemWebviewPanel extends Logger {
 
     private __chooseConcreteProblem(problemNm: string, absProb: AbstractProblem) {
         const langId = ConfigService.getPreferredLangId()
-        console.info(`Preferred language is: ${langId}`)
         const concreteProblems = absProb.problems
         let problem
         let id = `${problemNm}_${langId}`
@@ -287,7 +243,7 @@ export class ProblemWebviewPanel extends Logger {
             problem = concreteProblems[id]
         } else {
             console.warn(
-                "[ProblemWebviewPanel] Preferred language not available. Trying with fallback languages."
+                "[ProblemViewPanel] Preferred language not available. Trying with fallback languages."
             )
             for (const langId of utils.fallbackLangOrder) {
                 const id = `${problemNm}_${langId}`
@@ -311,38 +267,24 @@ export class ProblemWebviewPanel extends Logger {
 
     private async _showDiff(data: { testcaseId: number; expected: string; received: string }) {
         const { testcaseId, expected, received } = data
-
-        // Create a more specific diff display name
         const diffTitle = `Testcase ${testcaseId}: Expected vs. Received Output`
-
-        // Use virtual documents with a custom scheme instead of actual files
         const expectedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/expected.txt`)
         const receivedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/received.txt`)
-
-        // Register document content providers
         const contentProvider = new (class implements vscode.TextDocumentContentProvider {
-            // Event to signal content changes
             onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
             onDidChange = this.onDidChangeEmitter.event
-
-            // Store the content
             private _content = new Map<string, string>([
                 [expectedUri.toString(), expected],
                 [receivedUri.toString(), received],
             ])
-
             provideTextDocumentContent(uri: vscode.Uri): string {
                 return this._content.get(uri.toString()) || ""
             }
         })()
-
-        // Register the provider for our custom scheme
         const registration = vscode.workspace.registerTextDocumentContentProvider(
             "jutge-diff",
             contentProvider
         )
-
-        // Open the diff editor with our virtual documents
         await vscode.commands.executeCommand(
             "vscode.diff",
             expectedUri,
@@ -353,17 +295,12 @@ export class ProblemWebviewPanel extends Logger {
                 preview: true,
             }
         )
-
-        // Keep registration active until diff is closed
-        // We'll create a listener to dispose it when appropriate
         const disposable = vscode.window.onDidChangeVisibleTextEditors((editors) => {
-            // Check if our diff editor is still open
             const isStillOpen = editors.some(
                 (editor) =>
                     editor.document.uri.scheme === "jutge-diff" &&
                     editor.document.uri.path.includes(`/${testcaseId}/`)
             )
-
             if (!isStillOpen) {
                 registration.dispose()
                 disposable.dispose()

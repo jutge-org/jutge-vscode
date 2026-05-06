@@ -185,9 +185,15 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <div id="exam-section" class="conditional">
         <div class="field">
             <label class="field-label" for="exam-name">Exam name</label>
-            <select id="exam-name" name="exam-name">
-                <option value="">Select an exam…</option>
-            </select>
+            <input
+                type="text"
+                id="exam-name"
+                name="exam-name"
+                list="exam-name-options"
+                placeholder="Select or write an exam…"
+                autocomplete="off"
+            />
+            <datalist id="exam-name-options"></datalist>
         </div>
         <div class="field">
             <label class="field-label" for="exam-password">Exam password</label>
@@ -198,9 +204,15 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <div id="contest-section" class="conditional">
         <div class="field">
             <label class="field-label" for="contest-name">Contest name</label>
-            <select id="contest-name" name="contest-name">
-                <option value="">Select a contest…</option>
-            </select>
+            <input
+                type="text"
+                id="contest-name"
+                name="contest-name"
+                list="contest-name-options"
+                placeholder="Select or write a contest…"
+                autocomplete="off"
+            />
+            <datalist id="contest-name-options"></datalist>
         </div>
         <div class="field">
             <label class="field-label" for="contest-password">Contest password</label>
@@ -259,36 +271,37 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                     pendingTimer = null;
                 }
             }
-            function clearSelect(select, placeholder) {
-                select.innerHTML = "";
-                var placeholderOption = document.createElement("option");
-                placeholderOption.value = "";
-                placeholderOption.textContent = placeholder;
-                select.appendChild(placeholderOption);
+            function setComboboxPlaceholder(input, placeholder) {
+                input.placeholder = placeholder;
+            }
+            function clearOptions(list) {
+                list.innerHTML = "";
             }
             function setLoadingOptions(loading) {
                 isLoadingOptions = loading;
-                var examSelect = document.getElementById("exam-name");
-                var contestSelect = document.getElementById("contest-name");
-                examSelect.disabled = loading;
-                contestSelect.disabled = loading;
+                var examInput = document.getElementById("exam-name");
+                var contestInput = document.getElementById("contest-name");
+                examInput.disabled = loading;
+                contestInput.disabled = loading;
             }
             function loadReadyItems(targetMode) {
                 if (targetMode !== "exam" && targetMode !== "contest") {
                     return;
                 }
                 setLoadingOptions(true);
-                var select = targetMode === "exam"
+                var input = targetMode === "exam"
                     ? document.getElementById("exam-name")
                     : document.getElementById("contest-name");
-                clearSelect(
-                    select,
-                    targetMode === "exam" ? "Select an exam…" : "Select a contest…"
+                var list = targetMode === "exam"
+                    ? document.getElementById("exam-name-options")
+                    : document.getElementById("contest-name-options");
+                clearOptions(list);
+                setComboboxPlaceholder(
+                    input,
+                    targetMode === "exam" ? "Select or write an exam…" : "Select or write a contest…"
                 );
-                var loadingOption = document.createElement("option");
-                loadingOption.value = "";
-                loadingOption.textContent = "Loading...";
-                select.appendChild(loadingOption);
+                input.value = "";
+                input.placeholder = "Loading...";
                 vscode.postMessage({
                     type: "loadReadyItemsRequested",
                     payload: {
@@ -387,27 +400,27 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 if (message.type === "loadReadyItemsResult") {
                     var payload = message.payload || {};
                     var targetMode = payload.mode;
-                    var select = targetMode === "contest"
+                    var input = targetMode === "contest"
                         ? document.getElementById("contest-name")
                         : document.getElementById("exam-name");
-                    clearSelect(
-                        select,
-                        targetMode === "contest" ? "Select a contest…" : "Select an exam…"
+                    var list = targetMode === "contest"
+                        ? document.getElementById("contest-name-options")
+                        : document.getElementById("exam-name-options");
+                    clearOptions(list);
+                    setComboboxPlaceholder(
+                        input,
+                        targetMode === "contest" ? "Select or write a contest…" : "Select or write an exam…"
                     );
                     if (payload.ok && Array.isArray(payload.items) && payload.items.length > 0) {
                         payload.items.forEach(function(item) {
                             var option = document.createElement("option");
                             option.value = item;
-                            option.textContent = item;
-                            select.appendChild(option);
+                            list.appendChild(option);
                         });
-                    } else if (payload.ok) {
-                        var emptyOption = document.createElement("option");
-                        emptyOption.value = "";
-                        emptyOption.textContent = targetMode === "contest"
-                            ? "No ready contests found"
-                            : "No ready exams found";
-                        select.appendChild(emptyOption);
+                    } else if (payload.ok && !input.value) {
+                        input.placeholder = targetMode === "contest"
+                            ? "No ready contests found (write one manually)…"
+                            : "No ready exams found (write one manually)…";
                     } else {
                         setMessage(payload.error || "Could not load exams/contests.", "error");
                     }
