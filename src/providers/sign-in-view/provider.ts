@@ -185,15 +185,12 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <div id="exam-section" class="conditional">
         <div class="field">
             <label class="field-label" for="exam-name">Exam name</label>
-            <input
-                type="text"
-                id="exam-name"
-                name="exam-name"
-                list="exam-name-options"
-                placeholder="Select or write an exam…"
-                autocomplete="off"
-            />
-            <datalist id="exam-name-options"></datalist>
+            <select id="exam-name" name="exam-name">
+                <option value="">Select an exam...</option>
+            </select>
+        </div>
+        <div id="exam-custom-name-field" class="field" style="display: none;">
+            <input type="text" id="exam-custom-name" name="exam-custom-name" autocomplete="off" />
         </div>
         <div class="field">
             <label class="field-label" for="exam-password">Exam password</label>
@@ -204,15 +201,12 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <div id="contest-section" class="conditional">
         <div class="field">
             <label class="field-label" for="contest-name">Contest name</label>
-            <input
-                type="text"
-                id="contest-name"
-                name="contest-name"
-                list="contest-name-options"
-                placeholder="Select or write a contest…"
-                autocomplete="off"
-            />
-            <datalist id="contest-name-options"></datalist>
+            <select id="contest-name" name="contest-name">
+                <option value="">Select a contest...</option>
+            </select>
+        </div>
+        <div id="contest-custom-name-field" class="field" style="display: none;">
+            <input type="text" id="contest-custom-name" name="contest-custom-name" autocomplete="off" />
         </div>
         <div class="field">
             <label class="field-label" for="contest-password">Contest password</label>
@@ -271,11 +265,20 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                     pendingTimer = null;
                 }
             }
-            function setComboboxPlaceholder(input, placeholder) {
-                input.placeholder = placeholder;
-            }
             function clearOptions(list) {
                 list.innerHTML = "";
+            }
+            function addDefaultOption(list, text) {
+                var option = document.createElement("option");
+                option.value = "";
+                option.textContent = text;
+                list.appendChild(option);
+            }
+            function addOthersOption(list) {
+                var option = document.createElement("option");
+                option.value = "—Custom name—";
+                option.textContent = "—Custom name—";
+                list.appendChild(option);
             }
             function setLoadingOptions(loading) {
                 isLoadingOptions = loading;
@@ -283,6 +286,36 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 var contestInput = document.getElementById("contest-name");
                 examInput.disabled = loading;
                 contestInput.disabled = loading;
+            }
+            function updateCustomNameField(targetMode) {
+                var select = targetMode === "contest"
+                    ? document.getElementById("contest-name")
+                    : document.getElementById("exam-name");
+                var customField = targetMode === "contest"
+                    ? document.getElementById("contest-custom-name-field")
+                    : document.getElementById("exam-custom-name-field");
+                var customInput = targetMode === "contest"
+                    ? document.getElementById("contest-custom-name")
+                    : document.getElementById("exam-custom-name");
+                var shouldShow = select.value === "—Custom name—";
+                customField.style.display = shouldShow ? "block" : "none";
+                if (!shouldShow) {
+                    customInput.value = "";
+                }
+            }
+            function selectedExamKey() {
+                var selected = document.getElementById("exam-name").value;
+                if (selected !== "—Custom name—") {
+                    return selected;
+                }
+                return document.getElementById("exam-custom-name").value;
+            }
+            function selectedContestKey() {
+                var selected = document.getElementById("contest-name").value;
+                if (selected !== "—Custom name—") {
+                    return selected;
+                }
+                return document.getElementById("contest-custom-name").value;
             }
             function loadReadyItems(targetMode) {
                 if (targetMode !== "exam" && targetMode !== "contest") {
@@ -292,16 +325,14 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 var input = targetMode === "exam"
                     ? document.getElementById("exam-name")
                     : document.getElementById("contest-name");
-                var list = targetMode === "exam"
-                    ? document.getElementById("exam-name-options")
-                    : document.getElementById("contest-name-options");
-                clearOptions(list);
-                setComboboxPlaceholder(
+                clearOptions(input);
+                addDefaultOption(
                     input,
-                    targetMode === "exam" ? "Select or write an exam…" : "Select or write a contest…"
+                    targetMode === "exam" ? "Loading exams..." : "Loading contests..."
                 );
+                input.disabled = true;
                 input.value = "";
-                input.placeholder = "Loading...";
+                updateCustomNameField(targetMode);
                 vscode.postMessage({
                     type: "loadReadyItemsRequested",
                     payload: {
@@ -317,9 +348,17 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 exam.classList.toggle("visible", m === "exam");
                 contest.classList.toggle("visible", m === "contest");
                 loadReadyItems(m);
+                updateCustomNameField("exam");
+                updateCustomNameField("contest");
             }
             document.querySelectorAll('input[name="signin-mode"]').forEach(function (r) {
                 r.addEventListener("change", refresh);
+            });
+            document.getElementById("exam-name").addEventListener("change", function () {
+                updateCustomNameField("exam");
+            });
+            document.getElementById("contest-name").addEventListener("change", function () {
+                updateCustomNameField("contest");
             });
             document.getElementById("sign-in-btn").addEventListener("click", function () {
                 if (isLoadingOptions) {
@@ -339,9 +378,9 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                         email: document.getElementById("email").value,
                         password: document.getElementById("password").value,
                         mode: mode(),
-                        examKey: document.getElementById("exam-name").value,
+                        examKey: selectedExamKey(),
                         examPassword: document.getElementById("exam-password").value,
-                        contestKey: document.getElementById("contest-name").value,
+                        contestKey: selectedContestKey(),
                         contestPassword: document.getElementById("contest-password").value,
                         useDevApi: isUseDevApi()
                     }
@@ -403,28 +442,37 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                     var input = targetMode === "contest"
                         ? document.getElementById("contest-name")
                         : document.getElementById("exam-name");
-                    var list = targetMode === "contest"
-                        ? document.getElementById("contest-name-options")
-                        : document.getElementById("exam-name-options");
-                    clearOptions(list);
-                    setComboboxPlaceholder(
-                        input,
-                        targetMode === "contest" ? "Select or write a contest…" : "Select or write an exam…"
-                    );
+                    clearOptions(input);
                     if (payload.ok && Array.isArray(payload.items) && payload.items.length > 0) {
+                        addDefaultOption(
+                            input,
+                            targetMode === "contest" ? "Select a contest..." : "Select an exam..."
+                        );
                         payload.items.forEach(function(item) {
                             var option = document.createElement("option");
                             option.value = item;
-                            list.appendChild(option);
+                            option.textContent = item;
+                            input.appendChild(option);
                         });
-                    } else if (payload.ok && !input.value) {
-                        input.placeholder = targetMode === "contest"
-                            ? "No ready contests found (write one manually)…"
-                            : "No ready exams found (write one manually)…";
+                        addOthersOption(input);
+                    } else if (payload.ok) {
+                        addDefaultOption(
+                            input,
+                            targetMode === "contest"
+                                ? "No ready contests found"
+                                : "No ready exams found"
+                        );
+                        addOthersOption(input);
                     } else {
+                        addDefaultOption(
+                            input,
+                            targetMode === "contest" ? "Select a contest..." : "Select an exam..."
+                        );
                         setMessage(payload.error || "Could not load exams/contests.", "error");
                     }
+                    input.value = "";
                     setLoadingOptions(false);
+                    updateCustomNameField(targetMode);
                 }
             });
             refresh();
@@ -434,7 +482,6 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
 </body>
 </html>`
 }
-
 export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
     constructor(
         private readonly extensionUri: vscode.Uri,

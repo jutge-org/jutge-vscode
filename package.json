@@ -16,18 +16,7 @@
     ],
     "activationEvents": [
         "onStartupFinished",
-        "onWebviewPanel:problemView",
-        "onView:jutge-sign-in",
-        "onView:jutge-home",
-        "onView:jutge-api",
-        "onView:jutge-about",
-        "onView:jutge-courses",
-        "onView:jutge-profile",
-        "onView:jutge-exams",
-        "onView:jutge-exam-properties",
-        "onView:jutge-exam-documents",
-        "onView:jutge-ranking",
-        "onView:jutge-clock"
+        "onWebviewPanel:problemView"
     ],
     "main": "./dist/extension.js",
     "contributes": {

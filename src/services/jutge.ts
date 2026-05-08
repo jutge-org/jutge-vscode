@@ -650,7 +650,7 @@ export class JutgeService extends StaticLogger {
         message: string
     }): Promise<void> {
         try {
-            const askConfirmation = options?.askConfirmation || true
+            const askConfirmation = options?.askConfirmation ?? false
             if (askConfirmation) {
                 if (!(await this.confirmSignOut())) {
                     return
@@ -669,8 +669,9 @@ export class JutgeService extends StaticLogger {
 
             vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
 
-            const message = options?.message || "You have signed out"
-            vscode.window.showInformationMessage(`Jutge.org: ${message}`)
+            if (typeof options?.message === "string" && options.message.trim().length > 0) {
+                vscode.window.showInformationMessage(`Jutge.org: ${options.message}`)
+            }
         } catch (e) {
             console.error(e)
         }
