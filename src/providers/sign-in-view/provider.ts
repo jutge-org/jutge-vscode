@@ -90,18 +90,9 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             border-bottom-color: var(--vscode-focusBorder);
         }
         .host-row {
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
             margin: 0 0 14px;
+            text-align: center;
             font-size: 12px;
-            color: var(--vscode-descriptionForeground, #888888);
-        }
-        .host-row .host-label {
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            font-size: 11px;
-            opacity: 0.85;
         }
         .host-row .host-url {
             font-family: var(--vscode-editor-font-family, monospace);
@@ -180,6 +171,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             padding: 8px 10px;
             font-size: 12px;
             line-height: 1.45;
+            text-align: center;
             border-radius: 4px;
             border: 1px solid transparent;
         }
@@ -217,7 +209,6 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
         <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false">Contest</button>
     </div>
     <div class="host-row">
-        <span class="host-label">Host</span>
         <span class="host-url" id="host-url"></span>
     </div>
 
