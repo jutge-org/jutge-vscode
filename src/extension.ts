@@ -386,6 +386,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const { jutgeStatsTreeProvider, jutgeStatsView } = initHomeTreeView()
     const { jutgeApiTreeProvider, jutgeApiView } = initApiTreeView()
     const { aboutViewProvider } = initAboutTreeView()
+
     context.subscriptions.push(jutgeStatsView)
     context.subscriptions.push(jutgeApiView)
     context.subscriptions.push(profileView)

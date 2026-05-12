@@ -99,8 +99,14 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
         .conditional.visible {
             display: block;
         }
-        .actions {
+        form#sign-in-form {
+            margin: 0;
+        }
+        #sign-in-form > .message {
             margin-top: 14px;
+        }
+        .actions {
+            margin-top: 8px;
         }
         .action-button-row {
             width: 100%;
@@ -155,6 +161,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     </style>
 </head>
 <body>
+    <form id="sign-in-form">
     <fieldset class="env-fieldset">
         <legend>Site</legend>
         <div class="radio-row">
@@ -214,11 +221,12 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
         </div>
     </div>
 
-    <div class="actions">
         <div id="message" class="message"></div>
         <div class="action-button-row">
-            <button type="button" class="sign-in-btn" id="sign-in-btn">Sign in</button>
+            <button type="submit" class="sign-in-btn" id="sign-in-btn">Sign in</button>
         </div>
+    </form>
+    <div class="actions">
         ${quickSignInRow}
         ${useDevApiCheckboxRow}
     </div>
@@ -360,7 +368,8 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             document.getElementById("contest-name").addEventListener("change", function () {
                 updateCustomNameField("contest");
             });
-            document.getElementById("sign-in-btn").addEventListener("click", function () {
+            document.getElementById("sign-in-form").addEventListener("submit", function (ev) {
+                ev.preventDefault();
                 if (isLoadingOptions) {
                     setMessage("Please wait until exams/contests are loaded.", "error");
                     return;
