@@ -372,7 +372,35 @@ export async function activate(context: vscode.ExtensionContext) {
     // Set JUTGE_API_URL from the start
     setJutgeApiURL({ mode: "normal", useDevApi: false })
 
+    // Initialize sign-in context keys to concrete values so VS Code can
+    // evaluate the `when` clauses for the views from the very first frame
+    // (otherwise they stay undefined until the user signs in/out, which can
+    // hide the sign-in view on first activation).
+    vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Courses", false)
+    vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Exam", false)
+    vscode.commands.executeCommand("setContext", "jutge-vscode.isContestMode", false)
+
     showExtensionInfo()
+
+    // Register webview view providers synchronously, before any await, so the
+    // sign-in and timer views render immediately on the first activation.
+    // Otherwise the Jutge container can appear empty until the user switches
+    // to another view and back, because VS Code tries to resolve the views
+    // before the providers are registered.
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            signInWebviewViewType,
+            new SignInWebviewViewProvider(context.extensionUri, isDevelopmentMode)
+        )
+    )
+    const timerWebviewViewProvider = new TimerWebviewViewProvider(context.extensionUri)
+    context.subscriptions.push(timerWebviewViewProvider)
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            timerWebviewViewType,
+            timerWebviewViewProvider
+        )
+    )
 
     await JutgeService.initialize(context)
     ConfigService.initialize()
@@ -396,20 +424,6 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(rankingTreeProvider)
     context.subscriptions.push(aboutViewProvider)
 
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            signInWebviewViewType,
-            new SignInWebviewViewProvider(context.extensionUri, isDevelopmentMode)
-        )
-    )
-    const timerWebviewViewProvider = new TimerWebviewViewProvider(context.extensionUri)
-    context.subscriptions.push(timerWebviewViewProvider)
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            timerWebviewViewType,
-            timerWebviewViewProvider
-        )
-    )
     registerWebviewPanelSerializer(
         ProblemViewPanel.viewType,
         new ProblemViewPanelSerializer(context)
