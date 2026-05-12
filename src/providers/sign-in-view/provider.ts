@@ -62,39 +62,54 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             outline: 1px solid var(--vscode-focusBorder);
             outline-offset: -1px;
         }
-        fieldset.env-fieldset {
-            margin: 0 0 12px;
-            padding: 8px 10px 10px;
-            border: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.3));
-            border-radius: 8px;
-        }
-        fieldset.env-fieldset legend {
-            padding: 0 4px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            opacity: 0.85;
-        }
-        .radio-row {
+        .tabs {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
+            margin: 0 0 10px;
+            border-bottom: 1px solid var(--vscode-tab-border, var(--vscode-widget-border, rgba(127, 127, 127, 0.3)));
         }
-        .radio-row label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .tab {
+            flex: 1;
+            padding: 6px 8px;
+            background: transparent;
+            color: var(--vscode-tab-inactiveForeground, var(--vscode-descriptionForeground, #888888));
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+            font-size: inherit;
             cursor: pointer;
         }
-        .radio-row input {
-            margin: 0;
+        .tab:hover {
+            color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
+        }
+        .tab:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -2px;
+        }
+        .tab.is-active {
+            color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
+            border-bottom-color: var(--vscode-focusBorder);
+        }
+        .host-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin: 0 0 14px;
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground, #888888);
+        }
+        .host-row .host-label {
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 11px;
+            opacity: 0.85;
+        }
+        .host-row .host-url {
+            font-family: var(--vscode-editor-font-family, monospace);
+            word-break: break-all;
+            color: var(--vscode-foreground);
         }
         .conditional {
             display: none;
-            nono-margin-bottom: 12px;
-            nono-padding-left: 2px;
-            nono-border-left: 2px solid var(--vscode-inputOption-activeBorder, var(--vscode-focusBorder));
-            nono-padding-left: 10px;
         }
         .conditional.visible {
             display: block;
@@ -161,25 +176,17 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     </style>
 </head>
 <body>
-    <form id="sign-in-form">
-    <fieldset class="env-fieldset">
-        <legend>Site</legend>
-        <div class="radio-row">
-            <label>
-                <input type="radio" name="signin-mode" value="jutge" checked />
-                <span>Jutge.org</span>
-            </label>
-            <label>
-                <input type="radio" name="signin-mode" value="exam" />
-                <span>Exam</span>
-            </label>
-            <label>
-                <input type="radio" name="signin-mode" value="contest" />
-                <span>Contest</span>
-            </label>
-        </div>
-    </fieldset>
+    <div class="tabs" role="tablist">
+        <button type="button" class="tab is-active" role="tab" data-mode="jutge" aria-selected="true">Jutge.org</button>
+        <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false">Exam</button>
+        <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false">Contest</button>
+    </div>
+    <div class="host-row">
+        <span class="host-label">Host</span>
+        <span class="host-url" id="host-url"></span>
+    </div>
 
+    <form id="sign-in-form">
     <div class="field">
         <label class="field-label" for="email">Email</label>
         <input type="text" id="email" name="email" autocomplete="username" />
@@ -241,8 +248,28 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 return Boolean(el && el.checked);
             }
             function mode() {
-                var el = document.querySelector('input[name="signin-mode"]:checked');
-                return el ? el.value : "jutge";
+                var el = document.querySelector('.tab.is-active');
+                return el ? el.getAttribute("data-mode") : "jutge";
+            }
+            function setActiveTab(targetMode) {
+                var tabs = document.querySelectorAll('.tab');
+                for (var i = 0; i < tabs.length; i++) {
+                    var t = tabs[i];
+                    var active = t.getAttribute("data-mode") === targetMode;
+                    t.classList.toggle("is-active", active);
+                    t.setAttribute("aria-selected", active ? "true" : "false");
+                }
+            }
+            var HOST_URL_BY_MODE = {
+                jutge: "https://jutge.org",
+                exam: "https://exam.jutge.org",
+                contest: "https://contest.jutge.org"
+            };
+            function updateHostUrl() {
+                var el = document.getElementById("host-url");
+                if (el) {
+                    el.textContent = HOST_URL_BY_MODE[mode()] || HOST_URL_BY_MODE.jutge;
+                }
             }
             function setMessage(text, kind) {
                 var message = document.getElementById("message");
@@ -355,12 +382,20 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 var contest = document.getElementById("contest-section");
                 exam.classList.toggle("visible", m === "exam");
                 contest.classList.toggle("visible", m === "contest");
+                updateHostUrl();
                 loadReadyItems(m);
                 updateCustomNameField("exam");
                 updateCustomNameField("contest");
             }
-            document.querySelectorAll('input[name="signin-mode"]').forEach(function (r) {
-                r.addEventListener("change", refresh);
+            document.querySelectorAll('.tab').forEach(function (t) {
+                t.addEventListener("click", function () {
+                    var targetMode = t.getAttribute("data-mode");
+                    if (!targetMode || targetMode === mode()) {
+                        return;
+                    }
+                    setActiveTab(targetMode);
+                    refresh();
+                });
             });
             document.getElementById("exam-name").addEventListener("change", function () {
                 updateCustomNameField("exam");
