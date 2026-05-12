@@ -2,13 +2,14 @@ import childProcess from "child_process"
 import fs, { existsSync } from "fs"
 import * as vscode from "vscode"
 
-import { getWorkspaceFolder, getWorkspaceFolderOrPickOne } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { CustomTestcase, Problem } from "@/types"
 import {
     fileUriExists,
     findFirstAvailableNumberedFilename,
     getWorkingDirectory,
+    getWorkspaceFolder,
+    getWorkspaceFolderOrPickOne,
     sanitizeTitle,
     string2Uint8Array,
 } from "@/utils"

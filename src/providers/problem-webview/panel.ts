@@ -1,4 +1,4 @@
-import { getContext, getWorkspaceFolderOrPickOne } from "@/extension"
+import { getContext } from "@/context"
 import { AbstractProblem } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
@@ -13,11 +13,11 @@ import {
     WebviewToVSCodeMessage,
 } from "@/types"
 import * as utils from "@/utils"
+import { getWorkspaceFolderOrPickOne, showCodeDocument, sourceFileExists } from "@/utils"
 import { existsSync } from "node:fs"
 import * as vscode from "vscode"
 import { htmlWebview } from "./html"
 import { WebviewPanelRegistry } from "./panel-registry"
-import { showCodeDocument, sourceFileExists } from "@/utils"
 
 type ProblemWebviewState = {
     problemNm: string

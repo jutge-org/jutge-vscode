@@ -5,7 +5,7 @@
     background.
 */
 
-import { setJutgeApiURL } from "@/extension"
+import * as commands from "@/commands"
 import * as j from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import deepEqual from "deep-equal"
@@ -13,6 +13,13 @@ import * as vscode from "vscode"
 
 export const jutgeClient = new j.JutgeApiClient()
 jutgeClient.useCache = false
+
+export const setJutgeApiURL = ({ examMode }: { examMode: boolean }) => {
+    const dev_ = process.env.MODE === "development" ? "dev." : ""
+    const exam_ = examMode ? "exam." : ""
+    jutgeClient.JUTGE_API_URL = `https://${dev_}${exam_}api.jutge.org/api`
+    console.log(`[Extension]: JUTGE_API_URL = '${jutgeClient.JUTGE_API_URL}'`)
+}
 
 type SwrResult<T> = {
     data: T | undefined
@@ -51,11 +58,7 @@ export class JutgeService extends StaticLogger {
     static async setSignedIn(token: string) {
         this.signedIn_ = true
         await this.storeToken(token)
-        await vscode.commands.executeCommand(
-            "setContext",
-            "jutge-vscode.isSignedIn.Courses",
-            true
-        )
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.signedIn", "courses")
         this.setToken(token)
         this.log.info(`Signed in.`)
     }
@@ -69,18 +72,14 @@ export class JutgeService extends StaticLogger {
             }
         }
         this.signedIn_ = false
-        await vscode.commands.executeCommand(
-            "setContext",
-            "jutge-vscode.isSignedIn.Courses",
-            false
-        )
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.signedIn", "none")
         this.log.info(`Signed out.`)
     }
 
     static async setSignedInExam(examToken: string) {
         this.signedIn_ = true
         await this.storeExamToken(examToken)
-        await vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Exam", true)
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.signedIn", "exam")
         this.setExamToken(examToken)
         this.enterExamMode()
         this.log.info(`Signed in to exam.`)
@@ -96,11 +95,7 @@ export class JutgeService extends StaticLogger {
         }
         this.exitExamMode()
         this.signedIn_ = false
-        await vscode.commands.executeCommand(
-            "setContext",
-            "jutge-vscode.isSignedIn.Exam",
-            false
-        )
+        await vscode.commands.executeCommand("setContext", "jutge-vscode.signedIn", "none")
         this.log.info(`Signed out from exam.`)
     }
 
@@ -202,13 +197,13 @@ export class JutgeService extends StaticLogger {
         return this.examMode_
     }
 
-    private static enterExamMode() {
+    static enterExamMode() {
         setJutgeApiURL({ examMode: true })
         this.examMode_ = true
         this.log.info(`Entered exam mode.`)
     }
 
-    private static exitExamMode() {
+    static exitExamMode() {
         setJutgeApiURL({ examMode: false })
         this.examMode_ = false
         this.log.info(`Exited exam mode.`)
@@ -246,7 +241,7 @@ export class JutgeService extends StaticLogger {
         return await vscode.window.showQuickPick(options)
     }
 
-    private static async getTokenFromCredentials(): Promise<string | undefined> {
+    static async getTokenFromCredentials(): Promise<string | undefined> {
         const email = await this.askEmail()
         if (!email) {
             return
@@ -288,7 +283,7 @@ export class JutgeService extends StaticLogger {
         }
     }
 
-    private static async getExamTokenFromCredentials(): Promise<
+    static async getExamTokenFromCredentials(): Promise<
         { exam_key: string; token: string } | undefined
     > {
         const email = await this.askEmail()
@@ -358,6 +353,7 @@ export class JutgeService extends StaticLogger {
             if (examToken && (await this.isExamTokenValid(examToken))) {
                 this.log.info(`Using exam token from VSCode storage`)
                 await this.setSignedInExam(examToken)
+                commands.refreshExams()
                 return
             }
         }
@@ -367,146 +363,12 @@ export class JutgeService extends StaticLogger {
             if (token && (await this.isTokenValid(token))) {
                 this.log.info(`Using token from VSCode storage`)
                 await this.setSignedIn(token)
+                commands.refreshCourses()
                 return
             }
         }
 
         this.log.debug("No valid token found during activation")
-    }
-
-    public static signIn(): void {
-        const _signIn = async () => {
-            const token = await this.getTokenFromCredentials()
-            if (!token) {
-                return
-            }
-
-            await this.setSignedIn(token)
-
-            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
-            vscode.window.showInformationMessage("Jutge.org: You have signed in.")
-
-            this.getProfileSWR() // cache this for later
-        }
-
-        if (!this.isSignedIn()) {
-            _signIn()
-        } else {
-            vscode.window.showInformationMessage("Jutge.org: You are already signed in.")
-        }
-    }
-
-    public static signInExam(): void {
-        const _signInExam = async () => {
-            const result = await this.getExamTokenFromCredentials()
-            if (!result) {
-                return
-            }
-            const { token: examToken, exam_key } = result
-            if (!examToken) {
-                return
-            }
-
-            await this.setSignedInExam(examToken)
-
-            this.getProfileSWR() // cache this for later
-
-            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
-            vscode.window.showInformationMessage(
-                `Jutge.org: You have entered exam ${exam_key}.`
-            )
-        }
-
-        if (!this.isSignedIn()) {
-            _signInExam()
-        } else {
-            vscode.window.showInformationMessage("Jutge.org: You are already in an exam.")
-        }
-    }
-
-    public static async confirmSignOut() {
-        let dialogText = {
-            placeHolder: `Please confirm that you want to sign out`,
-            no: `No, keep signed in.`,
-            yes: `Yes, sign out.`,
-        }
-        if (this.isExamMode()) {
-            dialogText = {
-                placeHolder: `Please confirm that you want to finish the exam`,
-                no: `No, keep doing the exam.`,
-                yes: `Yes, finish the exam.`,
-            }
-        }
-
-        const confirmation = await vscode.window.showQuickPick(
-            [dialogText.no, dialogText.yes],
-            {
-                title: "Confirmation",
-                placeHolder: dialogText.placeHolder,
-            }
-        )
-
-        return confirmation === dialogText.yes
-    }
-
-    public static async signOut(options?: {
-        askConfirmation: boolean
-        message: string
-    }): Promise<void> {
-        try {
-            const askConfirmation = options?.askConfirmation || true
-            if (askConfirmation) {
-                if (!(await this.confirmSignOut())) {
-                    return
-                }
-            }
-
-            // Sign-out (of everything)
-            if (this.isExamMode()) {
-                this.exitExamMode()
-            }
-
-            this.storeExamToken(undefined)
-            this.storeToken(undefined)
-
-            await this.setSignedOut()
-
-            vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
-
-            const message = options?.message || "You have signed out"
-            vscode.window.showInformationMessage(`Jutge.org: ${message}`)
-        } catch (e) {
-            console.error(e)
-        }
-    }
-
-    public static async signOutExam(options?: {
-        askConfirmation: boolean
-        message: string
-    }): Promise<void> {
-        try {
-            const askConfirmation = options?.askConfirmation || true
-            if (askConfirmation) {
-                if (!(await this.confirmSignOut())) {
-                    return
-                }
-            }
-
-            // Sign-out (of everything)
-            if (this.isExamMode()) {
-                this.exitExamMode()
-            }
-
-            this.storeExamToken(undefined)
-            await this.setSignedOut()
-
-            vscode.commands.executeCommand("jutge-vscode.refreshExamsTree")
-
-            const message = options?.message || "You have signed out"
-            vscode.window.showInformationMessage(`Jutge.org: ${message}`)
-        } catch (e) {
-            console.error(e)
-        }
     }
 
     static async setToken(token: string): Promise<void> {
@@ -555,10 +417,7 @@ export class JutgeService extends StaticLogger {
             } catch (e) {
                 if (e instanceof j.UnauthorizedError) {
                     this.log.info(`Token might have expired (UnauthorizedError). Signing out.`)
-                    this.signOut({
-                        askConfirmation: false,
-                        message: "Token has expired",
-                    })
+                    commands.signOut({ askConfirmation: false, message: "Token has expired" })
                 } else {
                     this.log.info(`Error getting data: ${e}`)
                 }
@@ -764,10 +623,7 @@ export class JutgeService extends StaticLogger {
             return result
         } catch (e) {
             if (e instanceof j.UnauthorizedError) {
-                this.signOut({
-                    askConfirmation: false,
-                    message: "Token expired.",
-                })
+                commands.signOut({ askConfirmation: false, message: "Token expired." })
             }
             throw e
         }

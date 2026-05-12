@@ -60,27 +60,27 @@
             "view/title": [
                 {
                     "command": "jutge-vscode.invalidateToken",
-                    "when": "(jutge-vscode.isSignedIn.Courses || jutge-vscode.isSignedIn.Exam) && (view == jutge-courses || view == jutge-exams) && jutge-vscode.isDevMode",
+                    "when": "(jutge-vscode.signedIn != none) && (view == jutge-courses || view == jutge-exams) && jutge-vscode.isDevMode",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.refreshCoursesTree",
-                    "when": "jutge-vscode.isSignedIn.Courses && view == jutge-courses",
+                    "when": "jutge-vscode.signedIn == courses && view == jutge-courses",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.signOut",
-                    "when": "jutge-vscode.isSignedIn.Courses && view == jutge-courses",
+                    "when": "jutge-vscode.signedIn == courses && view == jutge-courses",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.refreshExamsTree",
-                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
+                    "when": "jutge-vscode.signedIn == exam && view == jutge-exams",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.signOutExam",
-                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
+                    "when": "jutge-vscode.signedIn == exam && view == jutge-exams",
                     "group": "navigation"
                 }
             ]

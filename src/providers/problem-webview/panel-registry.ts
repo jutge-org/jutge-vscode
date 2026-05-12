@@ -1,12 +1,13 @@
 import * as vscode from "vscode"
 
-import { getContext, getWebviewOptions } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { JutgeService } from "@/services/jutge"
 import { VSCodeToWebviewMessage } from "@/types"
-import { getProblemIdFromFilename, sourceFileExists } from "@/utils"
+import { getProblemIdFromFilename } from "@/utils"
 import { basename } from "path"
 import { ProblemWebviewPanel } from "./panel"
+import { getContext } from "@/context"
+import { getWebviewOptions } from "./options"
 
 /**
  * A helper function that returns a boolean indicating whether a given problem name is valid and accessible.

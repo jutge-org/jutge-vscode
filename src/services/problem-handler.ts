@@ -1,4 +1,3 @@
-import { getWorkspaceFolderOrPickOne } from "@/extension"
 import { Testcase } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ProblemWebviewPanel } from "@/providers/problem-webview/panel"
@@ -23,6 +22,7 @@ import {
     findPossibleFiles,
     getProglangFromProblem,
     getWorkingDirectory,
+    getWorkspaceFolderOrPickOne,
     showCodeDocument,
 } from "@/utils"
 import { readFile, writeFile } from "fs/promises"

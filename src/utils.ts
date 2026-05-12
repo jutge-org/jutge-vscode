@@ -11,6 +11,8 @@ import {
     proglangInfoGet,
 } from "./services/runners/languages"
 import { InputExpected, Problem } from "./types"
+import { getContext } from "./context"
+import { JutgeService } from "./services/jutge"
 
 /**
  * A function that returns whether the os is Windows.
@@ -254,4 +256,92 @@ export async function showCodeDocument(document: vscode.TextDocument) {
         preview: false,
         viewColumn: vscode.ViewColumn.One,
     })
+}
+
+// Extension
+
+export async function whenWorkspaceFolder(
+    bodyFunc: (workspace: vscode.WorkspaceFolder) => Promise<void>
+) {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+    if (workspaceFolder) {
+        await bodyFunc(workspaceFolder)
+    }
+}
+
+export function getWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
+    return vscode.workspace.workspaceFolders?.[0]
+}
+
+export async function getWorkspaceFolderOrPickOne(): Promise<
+    vscode.WorkspaceFolder | undefined
+> {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+    if (workspaceFolder) {
+        return workspaceFolder
+    }
+    const selection = await vscode.window.showInformationMessage(
+        "You need to have an open folder to create source files.",
+        { title: "Open Folder" }
+    )
+    if (selection && selection.title === "Open Folder") {
+        console.log(`[Extension]: User chose to open folder`)
+        vscode.commands.executeCommand("vscode.openFolder")
+    }
+
+    return undefined
+}
+
+export const getIconUri = (theme: "dark" | "light", filename: string) =>
+    vscode.Uri.joinPath(getContext().extensionUri, "resources", theme, filename)
+
+export const globalStateGet = (key: string): string | undefined =>
+    getContext().globalState.get(key)
+
+export const globalStateUpdate = (key: string, value: string) =>
+    getContext().globalState.update(key, value)
+
+export const registerCommand = (command: string, callback: (...args: any[]) => any) => {
+    const disposable = vscode.commands.registerCommand(command, callback)
+    getContext().subscriptions.push(disposable)
+}
+
+export const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
+    for (const [command, callback] of commands) {
+        registerCommand(command, callback)
+    }
+}
+
+export const registerWebviewPanelSerializer = (
+    viewType: string,
+    serializer: vscode.WebviewPanelSerializer
+) => {
+    const disposable = vscode.window.registerWebviewPanelSerializer(viewType, serializer)
+    getContext().subscriptions.push(disposable)
+}
+
+export const confirmSignOut = async () => {
+    let dialogText = {
+        placeHolder: `Please confirm that you want to sign out`,
+        no: `No, keep signed in.`,
+        yes: `Yes, sign out.`,
+    }
+    const confirmation = await vscode.window.showQuickPick([dialogText.no, dialogText.yes], {
+        title: "Confirmation",
+        placeHolder: dialogText.placeHolder,
+    })
+    return confirmation === dialogText.yes
+}
+
+export const confirmExamSignOut = async () => {
+    let dialogText = {
+        placeHolder: `Please confirm that you want to finish the exam`,
+        no: `No, keep doing the exam.`,
+        yes: `Yes, finish the exam.`,
+    }
+    const confirmation = await vscode.window.showQuickPick([dialogText.no, dialogText.yes], {
+        title: "Confirmation",
+        placeHolder: dialogText.placeHolder,
+    })
+    return confirmation === dialogText.yes
 }

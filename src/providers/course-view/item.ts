@@ -1,4 +1,4 @@
-import { getIconUri, globalStateGet } from "@/extension"
+import { getIconUri, globalStateGet } from "@/utils"
 import * as vscode from "vscode"
 import { CourseItemType, CourseTreeElement, TreeItemCollapseState } from "./element"
 
