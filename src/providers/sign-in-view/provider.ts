@@ -140,8 +140,15 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             font-size: inherit;
             cursor: pointer;
         }
-        button.sign-in-btn:hover {
+        button.sign-in-btn:hover:not(:disabled) {
             background: var(--vscode-button-hoverBackground);
+        }
+        button.sign-in-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        button.sign-in-btn:disabled:hover {
+            background: var(--vscode-button-background);
         }
         button.quick-sign-in-btn {
             color: var(--vscode-button-secondaryForeground);
@@ -243,6 +250,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             var vscode = acquireVsCodeApi();
             var pendingTimer = null;
             var isLoadingOptions = false;
+            var signInPending = false;
             function isUseDevApi() {
                 var el = document.getElementById("use-dev-api");
                 return Boolean(el && el.checked);
@@ -282,10 +290,45 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                     ? "var(--vscode-testing-iconPassed)"
                     : "var(--vscode-errorForeground, #f14c4c)";
             }
+            function isExamContestFormComplete() {
+                var m = mode();
+                if (m === "exam") {
+                    if (isLoadingOptions) {
+                        return false;
+                    }
+                    var key = selectedExamKey();
+                    if (!key || !String(key).trim()) {
+                        return false;
+                    }
+                    var pwd = document.getElementById("exam-password").value;
+                    return Boolean(pwd && String(pwd).trim());
+                }
+                if (m === "contest") {
+                    if (isLoadingOptions) {
+                        return false;
+                    }
+                    var ckey = selectedContestKey();
+                    if (!ckey || !String(ckey).trim()) {
+                        return false;
+                    }
+                    var cpwd = document.getElementById("contest-password").value;
+                    return Boolean(cpwd && String(cpwd).trim());
+                }
+                return true;
+            }
+            function refreshSignInButtonDisabled() {
+                var button = document.getElementById("sign-in-btn");
+                if (!button) {
+                    return;
+                }
+                var disabled = signInPending || !isExamContestFormComplete();
+                button.disabled = disabled;
+            }
             function setPending(pending) {
+                signInPending = pending;
                 var button = document.getElementById("sign-in-btn");
                 var quickButton = document.getElementById("quick-sign-in-btn");
-                button.disabled = pending;
+                refreshSignInButtonDisabled();
                 if (quickButton) {
                     quickButton.disabled = pending;
                 }
@@ -321,6 +364,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 var contestInput = document.getElementById("contest-name");
                 examInput.disabled = loading;
                 contestInput.disabled = loading;
+                refreshSignInButtonDisabled();
             }
             function updateCustomNameField(targetMode) {
                 var select = targetMode === "contest"
@@ -337,6 +381,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 if (!shouldShow) {
                     customInput.value = "";
                 }
+                refreshSignInButtonDisabled();
             }
             function selectedExamKey() {
                 var selected = document.getElementById("exam-name").value;
@@ -386,6 +431,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 loadReadyItems(m);
                 updateCustomNameField("exam");
                 updateCustomNameField("contest");
+                refreshSignInButtonDisabled();
             }
             document.querySelectorAll('.tab').forEach(function (t) {
                 t.addEventListener("click", function () {
@@ -403,6 +449,10 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             document.getElementById("contest-name").addEventListener("change", function () {
                 updateCustomNameField("contest");
             });
+            document.getElementById("exam-password").addEventListener("input", refreshSignInButtonDisabled);
+            document.getElementById("contest-password").addEventListener("input", refreshSignInButtonDisabled);
+            document.getElementById("exam-custom-name").addEventListener("input", refreshSignInButtonDisabled);
+            document.getElementById("contest-custom-name").addEventListener("input", refreshSignInButtonDisabled);
             document.getElementById("sign-in-form").addEventListener("submit", function (ev) {
                 ev.preventDefault();
                 if (isLoadingOptions) {
