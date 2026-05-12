@@ -117,14 +117,12 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
         form#sign-in-form {
             margin: 0;
         }
-        #sign-in-form > .message {
-            margin-top: 14px;
-        }
         .actions {
             margin-top: 8px;
         }
         .action-button-row {
             width: 100%;
+            margin-top: 12px;
             margin-bottom: 8px;
         }
         button.sign-in-btn {
@@ -174,11 +172,41 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             color: var(--vscode-descriptionForeground, #888888) !important;
             opacity: 0.9;
         }
-        .message {
-            margin-top: 8px;
+        .sign-in-banner {
+            display: none;
+            box-sizing: border-box;
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px 10px;
             font-size: 12px;
-            min-height: 1.2em;
-            color: var(--vscode-descriptionForeground, #888888);
+            line-height: 1.45;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+        .sign-in-banner.is-visible {
+            display: block;
+        }
+        .sign-in-banner.sign-in-banner--error {
+            color: var(--vscode-errorForeground, #f14c4c);
+            background: var(
+                --vscode-inputValidation-errorBackground,
+                color-mix(in srgb, var(--vscode-errorForeground, #f14c4c) 12%, transparent)
+            );
+            border-color: var(
+                --vscode-inputValidation-errorBorder,
+                var(--vscode-errorForeground, #f14c4c)
+            );
+        }
+        .sign-in-banner.sign-in-banner--success {
+            color: var(--vscode-testing-iconPassed, var(--vscode-gitDecoration-addedResourceForeground));
+            background: var(
+                --vscode-inputValidation-infoBackground,
+                color-mix(in srgb, var(--vscode-testing-iconPassed, #73c991) 14%, transparent)
+            );
+            border-color: var(
+                --vscode-inputValidation-infoBorder,
+                var(--vscode-testing-iconPassed, #73c991)
+            );
         }
     </style>
 </head>
@@ -202,6 +230,13 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
         <label class="field-label" for="password">Password</label>
         <input type="password" id="password" name="password" autocomplete="current-password" />
     </div>
+    <div
+        id="sign-in-message-jutge"
+        class="sign-in-banner"
+        role="status"
+        aria-live="polite"
+        data-message-mode="jutge"
+    ></div>
 
     <div id="exam-section" class="conditional">
         <div class="field">
@@ -217,6 +252,13 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             <label class="field-label" for="exam-password">Exam password</label>
             <input type="password" id="exam-password" name="exam-password" autocomplete="off" />
         </div>
+        <div
+            id="sign-in-message-exam"
+            class="sign-in-banner"
+            role="status"
+            aria-live="polite"
+            data-message-mode="exam"
+        ></div>
     </div>
 
     <div id="contest-section" class="conditional">
@@ -233,9 +275,15 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             <label class="field-label" for="contest-password">Contest password</label>
             <input type="password" id="contest-password" name="contest-password" autocomplete="off" />
         </div>
+        <div
+            id="sign-in-message-contest"
+            class="sign-in-banner"
+            role="status"
+            aria-live="polite"
+            data-message-mode="contest"
+        ></div>
     </div>
 
-        <div id="message" class="message"></div>
         <div class="action-button-row">
             <button type="submit" class="sign-in-btn" id="sign-in-btn">Sign in</button>
         </div>
@@ -251,6 +299,52 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             var pendingTimer = null;
             var isLoadingOptions = false;
             var signInPending = false;
+            var pendingSignInMode = null;
+            var SIGN_IN_BANNER_MODES = ["jutge", "exam", "contest"];
+            function bannerEl(tabMode) {
+                return document.getElementById("sign-in-message-" + tabMode);
+            }
+            function syncBannerVisibility() {
+                SIGN_IN_BANNER_MODES.forEach(function (m) {
+                    var el = bannerEl(m);
+                    if (!el) {
+                        return;
+                    }
+                    var hasContent = Boolean(el.textContent && el.textContent.trim());
+                    el.classList.toggle("is-visible", hasContent && mode() === m);
+                });
+            }
+            function clearBanner(tabMode) {
+                var el = bannerEl(tabMode);
+                if (!el) {
+                    return;
+                }
+                el.textContent = "";
+                el.classList.remove("sign-in-banner--error", "sign-in-banner--success");
+                syncBannerVisibility();
+            }
+            function setBanner(tabMode, text, kind) {
+                var el = bannerEl(tabMode);
+                if (!el) {
+                    return;
+                }
+                var str = text == null ? "" : String(text);
+                el.textContent = str;
+                el.classList.remove("sign-in-banner--error", "sign-in-banner--success");
+                if (!str.trim()) {
+                    syncBannerVisibility();
+                    return;
+                }
+                el.classList.add(kind === "success" ? "sign-in-banner--success" : "sign-in-banner--error");
+                syncBannerVisibility();
+            }
+            function signInResultTargetMode(payload) {
+                var m = payload && payload.mode;
+                if (m === "jutge" || m === "exam" || m === "contest") {
+                    return m;
+                }
+                return mode();
+            }
             function isUseDevApi() {
                 var el = document.getElementById("use-dev-api");
                 return Boolean(el && el.checked);
@@ -278,17 +372,6 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 if (el) {
                     el.textContent = HOST_URL_BY_MODE[mode()] || HOST_URL_BY_MODE.jutge;
                 }
-            }
-            function setMessage(text, kind) {
-                var message = document.getElementById("message");
-                message.textContent = text || "";
-                if (!text) {
-                    message.style.color = "var(--vscode-descriptionForeground, #888888)";
-                    return;
-                }
-                message.style.color = kind === "success"
-                    ? "var(--vscode-testing-iconPassed)"
-                    : "var(--vscode-errorForeground, #f14c4c)";
             }
             function isExamContestFormComplete() {
                 var m = mode();
@@ -432,6 +515,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 updateCustomNameField("exam");
                 updateCustomNameField("contest");
                 refreshSignInButtonDisabled();
+                syncBannerVisibility();
             }
             document.querySelectorAll('.tab').forEach(function (t) {
                 t.addEventListener("click", function () {
@@ -456,15 +540,24 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             document.getElementById("sign-in-form").addEventListener("submit", function (ev) {
                 ev.preventDefault();
                 if (isLoadingOptions) {
-                    setMessage("Please wait until exams/contests are loaded.", "error");
+                    setBanner(mode(), "Please wait until exams/contests are loaded.", "error");
                     return;
                 }
-                setMessage("");
+                pendingSignInMode = mode();
+                clearBanner(pendingSignInMode);
                 setPending(true);
                 clearPendingTimer();
                 pendingTimer = setTimeout(function () {
                     setPending(false);
-                    setMessage("Could not sign in. Please try again.", "error");
+                    var m = pendingSignInMode || mode();
+                    pendingSignInMode = null;
+                    var timeoutMsg =
+                        m === "exam"
+                            ? "Exam sign-in timed out. Please try again."
+                            : m === "contest"
+                              ? "Contest sign-in timed out. Please try again."
+                              : "Jutge.org sign-in timed out. Please try again.";
+                    setBanner(m, timeoutMsg, "error");
                 }, 12000);
                 vscode.postMessage({
                     type: "signInRequested",
@@ -483,12 +576,18 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             var quickSignInButton = document.getElementById("quick-sign-in-btn");
             if (quickSignInButton) {
                 quickSignInButton.addEventListener("click", function () {
-                    setMessage("");
+                    pendingSignInMode = "contest";
+                    clearBanner("contest");
                     setPending(true);
                     clearPendingTimer();
                     pendingTimer = setTimeout(function () {
                         setPending(false);
-                        setMessage("Could not sign in. Please try again.", "error");
+                        pendingSignInMode = null;
+                        setBanner(
+                            "contest",
+                            "Contest sign-in timed out. Please try again.",
+                            "error"
+                        );
                     }, 12000);
                     vscode.postMessage({
                         type: "quickSignInRequested",
@@ -522,12 +621,20 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 if (message.type === "signInResult") {
                     clearPendingTimer();
                     setPending(false);
+                    pendingSignInMode = null;
                     var payload = message.payload || {};
                     var text = payload.message;
                     if (!payload.ok && (!text || !String(text).trim())) {
-                        text = "Invalid credentials.";
+                        var tm = signInResultTargetMode(payload);
+                        if (tm === "exam") {
+                            text = "Could not sign in to this exam. Check your details and try again.";
+                        } else if (tm === "contest") {
+                            text = "Could not sign in to this contest. Check your details and try again.";
+                        } else {
+                            text = "Could not sign in to Jutge.org. Check your details and try again.";
+                        }
                     }
-                    setMessage(text, payload.ok ? "success" : "error");
+                    setBanner(signInResultTargetMode(payload), text, payload.ok ? "success" : "error");
                     return;
                 }
                 if (message.type === "loadReadyItemsResult") {
@@ -536,6 +643,9 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                     var input = targetMode === "contest"
                         ? document.getElementById("contest-name")
                         : document.getElementById("exam-name");
+                    if (payload.ok) {
+                        clearBanner(targetMode);
+                    }
                     clearOptions(input);
                     if (payload.ok && Array.isArray(payload.items) && payload.items.length > 0) {
                         addDefaultOption(
@@ -562,7 +672,14 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                             input,
                             targetMode === "contest" ? "Select a contest..." : "Select an exam..."
                         );
-                        setMessage(payload.error || "Could not load exams/contests.", "error");
+                        setBanner(
+                            targetMode,
+                            payload.error
+                                || (targetMode === "contest"
+                                    ? "Could not load ready contests."
+                                    : "Could not load ready exams."),
+                            "error"
+                        );
                     }
                     input.value = "";
                     setLoadingOptions(false);
@@ -640,7 +757,10 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                         payload: {
                             ok: false,
                             mode: requestedMode,
-                            error: "Could not load ready exams/contests.",
+                            error:
+                                requestedMode === "contest"
+                                    ? "Could not load ready contests."
+                                    : "Could not load ready exams.",
                         },
                     })
                     return
@@ -662,6 +782,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                         type: "signInResult",
                         payload: {
                             ok: false,
+                            mode: "contest",
                             message: "Quick sign in is only available in development.",
                         },
                     })
@@ -674,6 +795,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                         type: "signInResult",
                         payload: {
                             ok: false,
+                            mode: "contest",
                             message:
                                 "Quick sign in requires JUTGE_EMAIL and JUTGE_PASSWORD env vars.",
                         },
@@ -697,6 +819,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                         type: "signInResult",
                         payload: {
                             ok: result.ok,
+                            mode: "contest",
                             message: result.ok ? "Signed in successfully." : result.error,
                         },
                     })
@@ -704,10 +827,10 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                     const text =
                         error instanceof Error && error.message
                             ? error.message
-                            : "Could not sign in. Please try again."
+                            : "Contest quick sign-in failed. Please try again."
                     webviewView.webview.postMessage({
                         type: "signInResult",
-                        payload: { ok: false, message: text },
+                        payload: { ok: false, mode: "contest", message: text },
                     })
                 }
                 return
@@ -716,6 +839,13 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
             if (msg.type !== "signInRequested") {
                 return
             }
+
+            const signInMode =
+                msg.payload?.mode === "contest" ||
+                msg.payload?.mode === "exam" ||
+                msg.payload?.mode === "jutge"
+                    ? msg.payload.mode
+                    : "jutge"
 
             try {
                 const result = await JutgeService.signInWithCredentials({
@@ -733,6 +863,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                     type: "signInResult",
                     payload: {
                         ok: result.ok,
+                        mode: signInMode,
                         message: result.ok ? "Signed in successfully." : result.error,
                     },
                 })
@@ -740,10 +871,14 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                 const text =
                     error instanceof Error && error.message
                         ? error.message
-                        : "Could not sign in. Please try again."
+                        : signInMode === "exam"
+                          ? "Could not sign in to this exam. Please try again."
+                          : signInMode === "contest"
+                            ? "Could not sign in to this contest. Please try again."
+                            : "Could not sign in to Jutge.org. Please try again."
                 webviewView.webview.postMessage({
                     type: "signInResult",
-                    payload: { ok: false, message: text },
+                    payload: { ok: false, mode: signInMode, message: text },
                 })
             }
         })
