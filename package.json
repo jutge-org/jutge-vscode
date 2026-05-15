@@ -91,14 +91,6 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
-                    "id": "jutge-clock",
-                    "name": "Timer",
-                    "type": "webview",
-                    "visibility": "visible",
-                    "contextualTitle": "Jutge.org",
-                    "when": "jutge-vscode.isSignedIn.Exam"
-                },
-                {
                     "id": "jutge-ranking",
                     "name": "Ranking",
                     "visibility": "visible",
@@ -287,14 +279,6 @@
             {
                 "command": "jutge-vscode.refreshExamDocumentsTree",
                 "title": "Jutge.org: Refresh Exam Documents View",
-                "icon": {
-                    "light": "resources/light/refresh.svg",
-                    "dark": "resources/dark/refresh.svg"
-                }
-            },
-            {
-                "command": "jutge-vscode.refreshClockView",
-                "title": "Jutge.org: Refresh Timer View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"

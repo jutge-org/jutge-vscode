@@ -28,6 +28,35 @@ type ProblemRow = {
     iconStatus: IconStatus
 }
 
+type ExamMeta = {
+    title: string
+    startMs: number | null
+    expectedStartMs: number | null
+    totalMs: number
+}
+
+function parseTime(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined) {
+        return null
+    }
+    const ms = new Date(value).getTime()
+    return Number.isNaN(ms) ? null : ms
+}
+
+function toExamMeta(exam: {
+    title: string
+    time_start: string | number | null
+    exp_time_start: string | number
+    running_time: number
+}): ExamMeta {
+    return {
+        title: exam.title ?? "",
+        startMs: parseTime(exam.time_start),
+        expectedStartMs: parseTime(exam.exp_time_start),
+        totalMs: Math.max(0, Number(exam.running_time || 0)) * 60_000,
+    }
+}
+
 type IconMap = Record<string, { dark: string; light: string }>
 
 function loadIconMap(extensionUri: vscode.Uri): IconMap {
@@ -99,92 +128,223 @@ function getExamsHtml(iconMap: IconMap): string {
         .status[hidden] {
             display: none;
         }
-        table.exam-problems {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13.8px;
+        .exam-header {
+            margin: 0 0 14px;
         }
-        table.exam-problems[hidden] {
+        .exam-header[hidden] {
             display: none;
         }
-        table.exam-problems th,
-        table.exam-problems td {
-            padding: 4px 6px;
-            vertical-align: middle;
-            text-align: left;
+        .exam-header .exam-title {
+            margin: 0 0 10px;
+            min-height: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.25;
+            color: var(--vscode-foreground);
+            word-break: break-word;
         }
-        table.exam-problems thead th {
-            font-weight: 500;
+        .timer-block.is-dead {
+            opacity: 0.55;
+        }
+        .timer-block .timer-bar {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(127, 127, 127, 0.22);
+            overflow: hidden;
+        }
+        .timer-block .timer-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--vscode-charts-foreground, var(--vscode-foreground));
+            transition: width 600ms linear;
+        }
+        .timer-block .timer-bar-fill.is-danger {
+            background: #c8302c;
+        }
+        .timer-block .timer-bar-fill.is-ended {
+            background: #c8302c;
+        }
+        .timer-block .timer-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 11.5px;
             color: var(--vscode-descriptionForeground, #888888);
-            border-bottom: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.25));
+            gap: 8px;
         }
-        table.exam-problems th.points,
-        table.exam-problems td.points {
-            text-align: right;
+        .timer-block .timer-labels.is-hidden {
+            visibility: hidden;
+        }
+        .timer-block .timer-label {
             white-space: nowrap;
-            width: 1%;
         }
-        table.exam-problems td.icon {
-            width: 1%;
-            padding-right: 4px;
+        .timer-block .timer-label .timer-label-name {
+            opacity: 0.75;
+            margin-right: 4px;
         }
-        table.exam-problems td.icon .icon-slot {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-top: -3px;
-            vertical-align: middle;
+        .timer-block .timer-label .timer-label-value {
+            color: var(--vscode-foreground);
+            font-variant-numeric: tabular-nums;
         }
-        table.exam-problems td.icon .icon-slot svg {
+        .timer-block .timer-label.timer-remaining .timer-label-value.is-danger {
+            color: #d33;
+        }
+        .exam-empty-state {
+            text-align: center;
+            padding: 64px 16px;
+        }
+        .exam-empty-state[hidden] {
+            display: none;
+        }
+        .exam-empty-state .empty-title {
+            margin: 0 0 3px;
+            font-size: 14px;
+            font-style: italic;
+            color: var(--vscode-foreground);
+        }
+        .exam-empty-state .empty-subtitle {
+            margin: 0;
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground, #888888);
+        }
+        .exam-empty-state .empty-subtitle:empty {
+            display: none;
+        }
+        .problems-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .problems-list[hidden] {
+            display: none;
+        }
+        .problem-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.25));
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            color: var(--vscode-foreground);
+            transition: background-color 100ms ease, border-color 100ms ease;
+        }
+        .problem-card:hover {
+            background: var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.10));
+        }
+        .problem-card:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+        .problem-card .icon-slot {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+        .problem-card .icon-slot svg {
             display: block;
             width: 100%;
             height: 100%;
         }
-        table.exam-problems td.caption {
-            width: 1%;
-            white-space: nowrap;
-            color: var(--vscode-descriptionForeground, #888888);
-            padding-right: 4px;
+        .problem-card .card-text {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
         }
-        table.exam-problems td.title {
+        .problem-card .card-caption {
+            color: var(--vscode-descriptionForeground, #888888);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .problem-card .card-title {
+            flex: 1;
+            min-width: 0;
+            font-size: 14px;
+            line-height: 1.3;
             word-break: break-word;
         }
-        table.exam-problems tbody tr {
-            cursor: pointer;
+        .problem-card .card-points {
+            flex: 0 0 auto;
+            font-variant-numeric: tabular-nums;
+            color: var(--vscode-descriptionForeground, #888888);
+            font-size: 12px;
+            white-space: nowrap;
         }
-        table.exam-problems tbody tr:hover {
-            background: var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.12));
+        .problem-card.is-accepted {
+            border-color: rgba(76, 175, 80, 0.55);
+            background: rgba(76, 175, 80, 0.07);
         }
-        table.exam-problems tbody tr:focus {
-            outline: 1px solid var(--vscode-focusBorder);
-            outline-offset: -1px;
+        .problem-card.is-accepted:hover {
+            background: rgba(76, 175, 80, 0.14);
         }
-        table.exam-problems tbody tr + tr td {
-            border-top: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.18));
+        .problem-card.is-accepted .card-title {
+            color: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #4caf50));
+            font-weight: 500;
+        }
+        .problem-card.is-accepted .card-points {
+            color: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #4caf50));
         }
     </style>
 </head>
 <body>
     <div id="status" class="status">Loading exam problems...</div>
-    <table id="problems" class="exam-problems" hidden>
-        <thead>
-            <tr>
-                <th></th>
-                <th></th>
-                <th>Problem</th>
-                <th class="points">Points</th>
-            </tr>
-        </thead>
-        <tbody id="problems-body"></tbody>
-    </table>
+    <header id="exam-header" class="exam-header">
+        <h2 id="exam-title" class="exam-title"></h2>
+        <div id="timer-block" class="timer-block is-dead">
+            <div class="timer-bar">
+                <div id="timer-bar-fill" class="timer-bar-fill"></div>
+            </div>
+            <div id="timer-labels-running" class="timer-labels is-hidden">
+                <span class="timer-label timer-start">
+                    <span class="timer-label-name">Start</span>
+                    <span id="timer-start-value" class="timer-label-value">—</span>
+                </span>
+                <span class="timer-label timer-end">
+                    <span class="timer-label-name">End</span>
+                    <span id="timer-end-value" class="timer-label-value">—</span>
+                </span>
+                <span class="timer-label timer-remaining">
+                    <span class="timer-label-name">Remaining</span>
+                    <span id="timer-remaining-value" class="timer-label-value">—</span>
+                </span>
+            </div>
+        </div>
+    </header>
+    <div id="exam-empty-state" class="exam-empty-state" hidden>
+        <p id="empty-title" class="empty-title">Exam not started yet</p>
+        <p id="empty-subtitle" class="empty-subtitle"></p>
+    </div>
+    <div id="problems" class="problems-list" hidden></div>
 
     <script>
         (function() {
             const vscode = acquireVsCodeApi();
             const statusEl = document.getElementById("status");
             const tableEl = document.getElementById("problems");
-            const bodyEl = document.getElementById("problems-body");
+            const bodyEl = tableEl;
+            const headerEl = document.getElementById("exam-header");
+            const titleEl = document.getElementById("exam-title");
+            const timerEl = document.getElementById("timer-block");
+            const fillEl = document.getElementById("timer-bar-fill");
+            const labelsRunningEl = document.getElementById("timer-labels-running");
+            const startValEl = document.getElementById("timer-start-value");
+            const endValEl = document.getElementById("timer-end-value");
+            const remainingValEl = document.getElementById("timer-remaining-value");
+            const emptyStateEl = document.getElementById("exam-empty-state");
+            const emptyTitleEl = document.getElementById("empty-title");
+            const emptySubtitleEl = document.getElementById("empty-subtitle");
             const ICONS = ${iconJson};
+            const TICK_MS = 10000;
+            const DANGER_THRESHOLD_RATIO = 0.10;
+            let timerState = null;
+            let tickHandle = null;
 
             function isLightTheme() {
                 return document.body.classList.contains("vscode-light");
@@ -216,57 +376,163 @@ function getExamsHtml(iconMap: IconMap): string {
                 return String(rounded);
             }
 
+            function formatClock(ms) {
+                if (typeof ms !== "number" || !isFinite(ms)) return "—";
+                const d = new Date(ms);
+                if (isNaN(d.getTime())) return "—";
+                const hh = String(d.getHours()).padStart(2, "0");
+                const mm = String(d.getMinutes()).padStart(2, "0");
+                return hh + ":" + mm;
+            }
+            function formatRemaining(ms) {
+                const clamped = Math.max(0, ms);
+                const totalMinutes = Math.floor(clamped / 60000);
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                if (hours > 0) return hours + "h " + minutes + "m";
+                if (minutes > 0) return minutes + "m";
+                return "<1m";
+            }
+
+            function setHeaderPlaceholder() {
+                titleEl.textContent = "";
+                timerState = null;
+                stopTicker();
+                timerEl.classList.add("is-dead");
+                fillEl.style.width = "0%";
+                fillEl.classList.remove("is-danger", "is-ended");
+                labelsRunningEl.classList.add("is-hidden");
+            }
+            function renderHeader(meta) {
+                if (!meta) {
+                    setHeaderPlaceholder();
+                    return;
+                }
+                titleEl.textContent = meta.title || "";
+
+                const hasStart = typeof meta.startMs === "number";
+                const hasDuration = typeof meta.totalMs === "number" && meta.totalMs > 0;
+                fillEl.classList.remove("is-danger", "is-ended");
+
+                if (hasStart && hasDuration) {
+                    timerState = {
+                        startMs: meta.startMs,
+                        endMs: meta.startMs + meta.totalMs,
+                        totalMs: meta.totalMs
+                    };
+                    timerEl.classList.remove("is-dead");
+                    labelsRunningEl.classList.remove("is-hidden");
+                    startValEl.textContent = formatClock(timerState.startMs);
+                    endValEl.textContent = formatClock(timerState.endMs);
+                    redrawTimer();
+                    startTicker();
+                    return;
+                }
+
+                // Exam has not started yet (no real start time): dead, gray, no labels.
+                timerState = null;
+                stopTicker();
+                timerEl.classList.add("is-dead");
+                fillEl.style.width = "0%";
+                labelsRunningEl.classList.add("is-hidden");
+            }
+            function showEmptyState(message, subtitle) {
+                emptyTitleEl.textContent = message || "";
+                emptySubtitleEl.textContent = subtitle || "";
+                emptyStateEl.hidden = !message;
+            }
+            function hideEmptyState() {
+                emptyStateEl.hidden = true;
+            }
+            function redrawTimer() {
+                if (!timerState) return;
+                const now = Date.now();
+                const elapsed = Math.max(0, Math.min(1, (now - timerState.startMs) / timerState.totalMs));
+                const remaining = Math.max(0, timerState.endMs - now);
+                const ended = elapsed >= 1;
+                fillEl.style.width = (elapsed * 100).toFixed(2) + "%";
+                fillEl.classList.toggle("is-danger", !ended && elapsed > 1 - DANGER_THRESHOLD_RATIO);
+                fillEl.classList.toggle("is-ended", ended);
+                if (ended) {
+                    remainingValEl.textContent = "ended";
+                    remainingValEl.classList.add("is-danger");
+                } else {
+                    remainingValEl.textContent = formatRemaining(remaining);
+                    remainingValEl.classList.toggle(
+                        "is-danger",
+                        remaining <= timerState.totalMs * DANGER_THRESHOLD_RATIO
+                    );
+                }
+            }
+            function startTicker() {
+                stopTicker();
+                tickHandle = setInterval(redrawTimer, TICK_MS);
+            }
+            function stopTicker() {
+                if (tickHandle !== null) {
+                    clearInterval(tickHandle);
+                    tickHandle = null;
+                }
+            }
+
             function renderRows(rows) {
                 bodyEl.innerHTML = "";
                 rows.forEach(function(row) {
-                    const tr = document.createElement("tr");
-                    tr.setAttribute("data-problem-nm", row.problem_nm);
-                    tr.setAttribute("data-order", String(row.order));
-                    tr.setAttribute("tabindex", "0");
-                    tr.title = row.problem_nm;
+                    const card = document.createElement("div");
+                    card.className = "problem-card";
+                    if (row.iconStatus === "accepted") {
+                        card.classList.add("is-accepted");
+                    }
+                    card.setAttribute("data-problem-nm", row.problem_nm);
+                    card.setAttribute("data-order", String(row.order));
+                    card.setAttribute("tabindex", "0");
+                    card.setAttribute("role", "button");
+                    card.title = row.problem_nm;
 
-                    const tdIcon = document.createElement("td");
-                    tdIcon.className = "icon";
                     const slot = document.createElement("span");
                     slot.className = "icon-slot";
                     slot.setAttribute("data-status", row.iconStatus);
                     slot.setAttribute("title", row.iconStatus);
                     slot.innerHTML = iconSvg(row.iconStatus);
-                    tdIcon.appendChild(slot);
-                    tr.appendChild(tdIcon);
+                    card.appendChild(slot);
 
-                    const tdCaption = document.createElement("td");
-                    tdCaption.className = "caption";
-                    tdCaption.textContent = row.caption || "";
-                    tr.appendChild(tdCaption);
+                    const text = document.createElement("div");
+                    text.className = "card-text";
+                    if (row.caption) {
+                        const captionEl = document.createElement("span");
+                        captionEl.className = "card-caption";
+                        captionEl.textContent = row.caption;
+                        text.appendChild(captionEl);
+                    }
+                    const titleEl = document.createElement("span");
+                    titleEl.className = "card-title";
+                    titleEl.textContent = row.title || "";
+                    text.appendChild(titleEl);
+                    card.appendChild(text);
 
-                    const tdTitle = document.createElement("td");
-                    tdTitle.className = "title";
-                    tdTitle.textContent = row.title || "";
-                    tr.appendChild(tdTitle);
+                    const pointsText = formatPoints(row.weight);
+                    if (pointsText) {
+                        const pointsEl = document.createElement("span");
+                        pointsEl.className = "card-points";
+                        pointsEl.textContent = pointsText + " pts";
+                        card.appendChild(pointsEl);
+                    }
 
-                    const tdPoints = document.createElement("td");
-                    tdPoints.className = "points";
-                    tdPoints.textContent = formatPoints(row.weight);
-                    tr.appendChild(tdPoints);
-
-                    tr.addEventListener("click", function() {
+                    function activate() {
                         vscode.postMessage({
                             type: "openProblem",
                             payload: { problem_nm: row.problem_nm, order: row.order }
                         });
-                    });
-                    tr.addEventListener("keydown", function(ev) {
+                    }
+                    card.addEventListener("click", activate);
+                    card.addEventListener("keydown", function(ev) {
                         if (ev.key === "Enter" || ev.key === " ") {
                             ev.preventDefault();
-                            vscode.postMessage({
-                                type: "openProblem",
-                                payload: { problem_nm: row.problem_nm, order: row.order }
-                            });
+                            activate();
                         }
                     });
 
-                    bodyEl.appendChild(tr);
+                    bodyEl.appendChild(card);
                 });
                 tableEl.hidden = rows.length === 0;
             }
@@ -276,22 +542,42 @@ function getExamsHtml(iconMap: IconMap): string {
                 if (!message || typeof message !== "object") return;
                 if (message.type === "examLoading") {
                     setStatus("Loading exam problems...", false);
+                    setHeaderPlaceholder();
                     tableEl.hidden = true;
+                    hideEmptyState();
                     return;
                 }
                 if (message.type === "examResult") {
                     const payload = message.payload || {};
                     if (!payload.ok) {
                         setStatus(payload.error || "Could not load exam problems.", true);
+                        setHeaderPlaceholder();
                         tableEl.hidden = true;
+                        hideEmptyState();
                         return;
                     }
+                    const meta = payload.exam || null;
+                    renderHeader(meta);
                     const rows = Array.isArray(payload.rows) ? payload.rows : [];
+                    const started = meta && typeof meta.startMs === "number";
+                    if (meta && !started) {
+                        setStatus("", false);
+                        tableEl.hidden = true;
+                        showEmptyState(
+                            "Exam not started yet",
+                            typeof meta.expectedStartMs === "number"
+                                ? "expected " + formatClock(meta.expectedStartMs)
+                                : ""
+                        );
+                        return;
+                    }
                     if (rows.length === 0) {
-                        setStatus("No problems in this exam.", false);
+                        hideEmptyState();
+                        setStatus("", false);
                         tableEl.hidden = true;
                         return;
                     }
+                    hideEmptyState();
                     setStatus("", false);
                     renderRows(rows);
                 }
@@ -310,6 +596,7 @@ export class JutgeExamsWebviewViewProvider
 {
     private webviewView: vscode.WebviewView | undefined
     private currentRows: ProblemRow[] = []
+    private currentExamMeta: ExamMeta | null = null
     private iconMap: IconMap
 
     constructor(private readonly extensionUri: vscode.Uri) {
@@ -378,9 +665,10 @@ export class JutgeExamsWebviewViewProvider
         }
         if (!JutgeService.isSignedInExam()) {
             this.currentRows = []
+            this.currentExamMeta = null
             await this.webviewView.webview.postMessage({
                 type: "examResult",
-                payload: { ok: true, rows: [] },
+                payload: { ok: true, rows: [], exam: null },
             })
             return
         }
@@ -394,6 +682,7 @@ export class JutgeExamsWebviewViewProvider
                 await this.webviewView.webview.postMessage({ type: "examLoading" })
                 return
             }
+            this.currentExamMeta = toExamMeta(exam)
 
             const problem_nms = exam.problems.map((p) => p.problem_nm)
             const swrProblems = JutgeService.getAbstractProblemsSWR(problem_nms)
@@ -442,7 +731,7 @@ export class JutgeExamsWebviewViewProvider
         }
         await this.webviewView.webview.postMessage({
             type: "examResult",
-            payload: { ok: true, rows: this.currentRows },
+            payload: { ok: true, rows: this.currentRows, exam: this.currentExamMeta },
         })
     }
 }

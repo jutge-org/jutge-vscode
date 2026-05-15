@@ -16,7 +16,6 @@ import {
     rankingTreeViewType,
 } from "@/providers/ranking-view/provider"
 import { DashboardPanel } from "@/providers/dashboard-view/provider"
-import { TimerWebviewViewProvider, timerWebviewViewType } from "@/providers/timer-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
 import {
     JutgeStatsTreeProvider,
@@ -379,14 +378,6 @@ export async function activate(context: vscode.ExtensionContext) {
             new SignInWebviewViewProvider(context.extensionUri, isDevelopmentMode)
         )
     )
-    const timerWebviewViewProvider = new TimerWebviewViewProvider(context.extensionUri)
-    context.subscriptions.push(timerWebviewViewProvider)
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            timerWebviewViewType,
-            timerWebviewViewProvider
-        )
-    )
     const profileWebviewViewProvider = new ProfileWebviewViewProvider()
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
@@ -468,10 +459,6 @@ export async function activate(context: vscode.ExtensionContext) {
             rankingTreeProvider.refresh.bind(rankingTreeProvider),
         ],
         ["jutge-vscode.openRankingPanel", RankingPanel.openOrReveal],
-        [
-            "jutge-vscode.refreshClockView",
-            timerWebviewViewProvider.forceRefresh.bind(timerWebviewViewProvider),
-        ],
         [
             "jutge-vscode.refreshHomeTree",
             jutgeStatsTreeProvider.refresh.bind(jutgeStatsTreeProvider),

@@ -8,6 +8,10 @@ const EXAM_PROPERTIES_TIMEOUT_MS = 12000
 
 type JsonLike = null | boolean | number | string | JsonLike[] | { [key: string]: JsonLike }
 
+// These fields are surfaced directly in the exam-view header (title + timer block),
+// so we hide them from the properties tree to avoid duplication.
+const HIDDEN_ROOT_FIELDS = new Set(["title", "time_start", "exp_time_start", "running_time"])
+
 class ExamPropertyTreeItem extends vscode.TreeItem {
     constructor(
         public readonly keyLabel: string,
@@ -100,9 +104,9 @@ export class ExamPropertiesTreeProvider implements vscode.TreeDataProvider<ExamP
             )
         }
         if (typeof value === "object" && value !== null) {
-            return Object.entries(value).map(
-                ([key, entry]) => new ExamPropertyTreeItem(key, entry, `$.${key}`)
-            )
+            return Object.entries(value)
+                .filter(([key]) => !HIDDEN_ROOT_FIELDS.has(key))
+                .map(([key, entry]) => new ExamPropertyTreeItem(key, entry, `$.${key}`))
         }
         return [new ExamPropertyTreeItem("value", value, "$")]
     }
