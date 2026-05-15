@@ -130,7 +130,17 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         .host-row .host-url {
             font-family: var(--vscode-editor-font-family, monospace);
             word-break: break-all;
-            color: var(--vscode-foreground);
+            color: var(--vscode-textLink-foreground, #3794ff);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .host-row .host-url:hover {
+            color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground, #3794ff));
+            text-decoration: underline;
+        }
+        .host-row .host-url:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
         }
         .conditional {
             display: none;
@@ -252,7 +262,7 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         </button>
     </div>
     <div class="host-row">
-        <span class="host-url" id="host-url"></span>
+        <a class="host-url" id="host-url" href="#" target="_blank" rel="noopener noreferrer"></a>
     </div>
 
     <form id="sign-in-form">
@@ -408,7 +418,9 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             function updateHostUrl() {
                 var el = document.getElementById("host-url");
                 if (el) {
-                    el.textContent = HOST_URL_BY_MODE[mode()] || HOST_URL_BY_MODE.jutge;
+                    var url = HOST_URL_BY_MODE[mode()] || HOST_URL_BY_MODE.jutge;
+                    el.textContent = url;
+                    el.setAttribute("href", url);
                 }
             }
             function isExamContestFormComplete() {
