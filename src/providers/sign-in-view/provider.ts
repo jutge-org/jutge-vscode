@@ -85,6 +85,13 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             font-family: inherit;
             font-size: inherit;
             cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tab--primary {
+            flex: 3;
+            font-weight: 600;
         }
         .tab:hover {
             color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
@@ -96,6 +103,19 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         .tab.is-active {
             color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
             border-bottom-color: var(--vscode-focusBorder);
+        }
+        .tab .tab-icon {
+            display: none;
+            font-size: 14px;
+            line-height: 1;
+        }
+        @media (max-width: 320px) {
+            .tab:not(.tab--primary) .tab-text {
+                display: none;
+            }
+            .tab:not(.tab--primary) .tab-icon {
+                display: inline;
+            }
         }
         .host-row {
             margin: 0 0 14px;
@@ -216,9 +236,15 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
 </head>
 <body>
     <div class="tabs" role="tablist">
-        <button type="button" class="tab is-active" role="tab" data-mode="jutge" aria-selected="true">Jutge.org</button>
-        <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false">Exam</button>
-        <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false">Contest</button>
+        <button type="button" class="tab tab--primary is-active" role="tab" data-mode="jutge" aria-selected="true">Jutge.org</button>
+        <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false" aria-label="Exam">
+            <span class="tab-text">Exam</span>
+            <span class="tab-icon" aria-hidden="true">📝</span>
+        </button>
+        <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false" aria-label="Contest">
+            <span class="tab-text">Contest</span>
+            <span class="tab-icon" aria-hidden="true">🏆</span>
+        </button>
     </div>
     <div class="host-row">
         <span class="host-url" id="host-url"></span>
