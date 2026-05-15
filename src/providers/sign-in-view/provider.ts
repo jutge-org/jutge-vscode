@@ -10,16 +10,17 @@ type SignInHtmlOptions = {
 }
 
 function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOptions): string {
-    const quickSignInRow = isDevelopmentMode
-        ? `<div class="action-button-row">
-            <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in for devs</button>
-        </div>`
-        : ""
-    const useDevApiCheckboxRow = isDevelopmentMode
-        ? `<div class="checkbox-row">
-            <label for="use-dev-api">Use dev API</label>
-            <input type="checkbox" id="use-dev-api" name="use-dev-api" />
-        </div>`
+    const devActions = isDevelopmentMode
+        ? `<fieldset class="dev-actions">
+            <legend>Development</legend>
+            <div class="action-button-row">
+                <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in for devs</button>
+            </div>
+            <div class="checkbox-row">
+                <label for="use-dev-api">Use dev API</label>
+                <input type="checkbox" id="use-dev-api" name="use-dev-api" />
+            </div>
+        </fieldset>`
         : ""
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -152,8 +153,22 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         form#sign-in-form {
             margin: 0;
         }
-        .actions {
-            margin-top: 48px;
+        .dev-actions {
+            margin: 48px 0 0;
+            padding: 6px;
+            border: 1px solid #d4a72c;
+            border-radius: 4px;
+        }
+        .dev-actions > legend {
+            padding: 0 6px;
+            color: #d4a72c;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .dev-actions > :first-of-type {
+            margin-top: 0;
         }
         .action-button-row {
             width: 100%;
@@ -333,10 +348,7 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             data-message-mode="contest"
         ></div>
     </form>
-    <div class="actions">
-        ${quickSignInRow}
-        ${useDevApiCheckboxRow}
-    </div>
+    ${devActions}
 
     <script src="${scriptUri}"></script>
     <script>
