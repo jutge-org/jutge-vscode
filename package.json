@@ -400,6 +400,7 @@
         "typescript": "^6.0.3"
     },
     "dependencies": {
+        "@vscode-elements/elements": "^2.5.1",
         "@vscode/python-extension": "^1.0.6",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "dayjs": "^1.11.20",

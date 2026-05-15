@@ -35,6 +35,17 @@ const webviewConfig = {
     outfile: "./dist/webview/main.js",
 }
 
+// Config for the sign-in view's custom-element registrations. Built as IIFE so
+// the elements are defined synchronously before the inline sign-in script runs.
+/** @type BuildOptions */
+const signinElementsConfig = {
+    ...baseConfig,
+    target: "esnext",
+    format: "iife",
+    entryPoints: ["./src/webview/signin-elements.ts"],
+    outfile: "./dist/webview/signin-elements.js",
+}
+
 const createWatchLoggerPlugin = (name) => ({
     name: `${name}-watch-logger`,
     setup(build) {
@@ -64,20 +75,27 @@ const createWatchLoggerPlugin = (name) => ({
                 ...webviewConfig,
                 plugins: [createWatchLoggerPlugin("webview")],
             })
+            const signinElementsContext = await context({
+                ...signinElementsConfig,
+                plugins: [createWatchLoggerPlugin("signin-elements")],
+            })
 
             await extensionContext.watch()
             await webviewContext.watch()
+            await signinElementsContext.watch()
             console.log("[watch] build finished")
 
             process.on("SIGINT", async () => {
                 await extensionContext.dispose()
                 await webviewContext.dispose()
+                await signinElementsContext.dispose()
                 process.exit(0)
             })
         } else {
             // Build extension and webview code
             await build(extensionConfig)
             await build(webviewConfig)
+            await build(signinElementsConfig)
             console.log("[watch] build complete")
         }
     } catch (err) {

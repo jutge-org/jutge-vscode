@@ -3,7 +3,13 @@ import { JutgeService } from "@/services/jutge"
 
 export const signInWebviewViewType = "jutge-sign-in"
 
-function getSignInHtml(isDevelopmentMode: boolean): string {
+type SignInHtmlOptions = {
+    isDevelopmentMode: boolean
+    scriptUri: string
+    cspSource: string
+}
+
+function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOptions): string {
     const quickSignInRow = isDevelopmentMode
         ? `<div class="action-button-row">
             <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in for devs</button>
@@ -21,7 +27,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <meta charset="UTF-8" />
     <meta
         http-equiv="Content-Security-Policy"
-        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src ${cspSource} 'unsafe-inline';"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign in</title>
@@ -45,8 +51,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             opacity: 0.9;
         }
         input[type="text"],
-        input[type="password"],
-        select {
+        input[type="password"] {
             box-sizing: border-box;
             width: 100%;
             padding: 4px 8px;
@@ -57,10 +62,13 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             font-family: inherit;
             font-size: inherit;
         }
-        input:focus,
-        select:focus {
+        input:focus {
             outline: 1px solid var(--vscode-focusBorder);
             outline-offset: -1px;
+        }
+        vscode-single-select {
+            display: block;
+            width: 100%;
         }
         .tabs {
             display: flex;
@@ -109,7 +117,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
             margin: 0;
         }
         .actions {
-            margin-top: 8px;
+            margin-top: 48px;
         }
         .action-button-row {
             width: 100%;
@@ -232,9 +240,9 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <div id="exam-section" class="conditional">
         <div class="field">
             <label class="field-label" for="exam-name">Exam name</label>
-            <select id="exam-name" name="exam-name">
-                <option value="">Select an exam...</option>
-            </select>
+            <vscode-single-select id="exam-name" name="exam-name">
+                <vscode-option value="">Select an exam...</vscode-option>
+            </vscode-single-select>
         </div>
         <div id="exam-custom-name-field" class="field" style="display: none;">
             <input type="text" id="exam-custom-name" name="exam-custom-name" autocomplete="off" />
@@ -255,9 +263,9 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
     <div id="contest-section" class="conditional">
         <div class="field">
             <label class="field-label" for="contest-name">Contest name</label>
-            <select id="contest-name" name="contest-name">
-                <option value="">Select a contest...</option>
-            </select>
+            <vscode-single-select id="contest-name" name="contest-name">
+                <vscode-option value="">Select a contest...</vscode-option>
+            </vscode-single-select>
         </div>
         <div id="contest-custom-name-field" class="field" style="display: none;">
             <input type="text" id="contest-custom-name" name="contest-custom-name" autocomplete="off" />
@@ -284,6 +292,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
         ${useDevApiCheckboxRow}
     </div>
 
+    <script src="${scriptUri}"></script>
     <script>
         (function () {
             var vscode = acquireVsCodeApi();
@@ -421,23 +430,19 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                 list.innerHTML = "";
             }
             function addDefaultOption(list, text) {
-                var option = document.createElement("option");
+                var option = document.createElement("vscode-option");
                 option.value = "";
                 option.textContent = text;
                 list.appendChild(option);
             }
             function addOthersOption(list) {
-                var option = document.createElement("option");
+                var option = document.createElement("vscode-option");
                 option.value = "—Custom name—";
                 option.textContent = "—Custom name—";
                 list.appendChild(option);
             }
             function setLoadingOptions(loading) {
                 isLoadingOptions = loading;
-                var examInput = document.getElementById("exam-name");
-                var contestInput = document.getElementById("contest-name");
-                examInput.disabled = loading;
-                contestInput.disabled = loading;
                 refreshSignInButtonDisabled();
             }
             function updateCustomNameField(targetMode) {
@@ -484,7 +489,6 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                     input,
                     targetMode === "exam" ? "Loading exams..." : "Loading contests..."
                 );
-                input.disabled = true;
                 input.value = "";
                 updateCustomNameField(targetMode);
                 vscode.postMessage({
@@ -644,7 +648,7 @@ function getSignInHtml(isDevelopmentMode: boolean): string {
                             targetMode === "contest" ? "Select a contest..." : "Select an exam..."
                         );
                         payload.items.forEach(function(item) {
-                            var option = document.createElement("option");
+                            var option = document.createElement("vscode-option");
                             option.value = item;
                             option.textContent = item;
                             input.appendChild(option);
@@ -698,7 +702,14 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                 vscode.Uri.joinPath(this.extensionUri, "dist"),
             ],
         }
-        webviewView.webview.html = getSignInHtml(this.showQuickSignIn)
+        const scriptUri = webviewView.webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "signin-elements.js")
+        )
+        webviewView.webview.html = getSignInHtml({
+            isDevelopmentMode: this.showQuickSignIn,
+            scriptUri: scriptUri.toString(),
+            cspSource: webviewView.webview.cspSource,
+        })
         webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
             if (!message || typeof message !== "object") {
                 return
