@@ -129,6 +129,7 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         }
         .host-row .host-url {
             font-family: var(--vscode-editor-font-family, monospace);
+            font-size: 120%;
             word-break: break-all;
             color: var(--vscode-textLink-foreground, #3794ff);
             text-decoration: none;
