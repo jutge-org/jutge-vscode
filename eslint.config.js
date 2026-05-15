@@ -3,7 +3,7 @@ const tsParser = require("@typescript-eslint/parser")
 
 module.exports = [
     {
-        ignores: ["out/**", "dist/**", "**/*.d.ts"],
+        ignores: ["out/**", "dist/**", "**/*.d.ts", "src/jutge_api_client.ts"],
     },
     {
         files: ["**/*.ts"],
