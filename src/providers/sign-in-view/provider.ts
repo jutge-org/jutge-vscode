@@ -173,6 +173,7 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         }
         .sign-in-banner {
             display: none;
+            opacity: 0;
             box-sizing: border-box;
             width: 100%;
             margin-top: 10px;
@@ -182,20 +183,23 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             text-align: center;
             border-radius: 4px;
             border: 1px solid transparent;
+            transition:
+                opacity 400ms ease,
+                display 400ms allow-discrete;
         }
         .sign-in-banner.is-visible {
             display: block;
+            opacity: 1;
+        }
+        @starting-style {
+            .sign-in-banner.is-visible {
+                opacity: 0;
+            }
         }
         .sign-in-banner.sign-in-banner--error {
-            color: var(--vscode-errorForeground, #f14c4c);
-            background: var(
-                --vscode-inputValidation-errorBackground,
-                color-mix(in srgb, var(--vscode-errorForeground, #f14c4c) 12%, transparent)
-            );
-            border-color: var(
-                --vscode-inputValidation-errorBorder,
-                var(--vscode-errorForeground, #f14c4c)
-            );
+            color: #ffffff;
+            background: #c8302c;
+            border: none;
         }
         .sign-in-banner.sign-in-banner--success {
             color: var(--vscode-testing-iconPassed, var(--vscode-gitDecoration-addedResourceForeground));
@@ -229,14 +233,6 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         <label class="field-label" for="password">Password</label>
         <input type="password" id="password" name="password" autocomplete="current-password" />
     </div>
-    <div
-        id="sign-in-message-jutge"
-        class="sign-in-banner"
-        role="status"
-        aria-live="polite"
-        data-message-mode="jutge"
-    ></div>
-
     <div id="exam-section" class="conditional">
         <div class="field">
             <label class="field-label" for="exam-name">Exam name</label>
@@ -251,13 +247,6 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             <label class="field-label" for="exam-password">Exam password</label>
             <input type="password" id="exam-password" name="exam-password" autocomplete="off" />
         </div>
-        <div
-            id="sign-in-message-exam"
-            class="sign-in-banner"
-            role="status"
-            aria-live="polite"
-            data-message-mode="exam"
-        ></div>
     </div>
 
     <div id="contest-section" class="conditional">
@@ -274,6 +263,26 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             <label class="field-label" for="contest-password">Contest password</label>
             <input type="password" id="contest-password" name="contest-password" autocomplete="off" />
         </div>
+    </div>
+
+        <div class="action-button-row">
+            <button type="submit" class="sign-in-btn" id="sign-in-btn">Sign in</button>
+        </div>
+
+        <div
+            id="sign-in-message-jutge"
+            class="sign-in-banner"
+            role="status"
+            aria-live="polite"
+            data-message-mode="jutge"
+        ></div>
+        <div
+            id="sign-in-message-exam"
+            class="sign-in-banner"
+            role="status"
+            aria-live="polite"
+            data-message-mode="exam"
+        ></div>
         <div
             id="sign-in-message-contest"
             class="sign-in-banner"
@@ -281,11 +290,6 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             aria-live="polite"
             data-message-mode="contest"
         ></div>
-    </div>
-
-        <div class="action-button-row">
-            <button type="submit" class="sign-in-btn" id="sign-in-btn">Sign in</button>
-        </div>
     </form>
     <div class="actions">
         ${quickSignInRow}
@@ -322,6 +326,9 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
                 el.textContent = "";
                 el.classList.remove("sign-in-banner--error", "sign-in-banner--success");
                 syncBannerVisibility();
+            }
+            function clearAllBanners() {
+                SIGN_IN_BANNER_MODES.forEach(clearBanner);
             }
             function setBanner(tabMode, text, kind) {
                 var el = bannerEl(tabMode);
@@ -532,6 +539,8 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             document.getElementById("contest-password").addEventListener("input", refreshSignInButtonDisabled);
             document.getElementById("exam-custom-name").addEventListener("input", refreshSignInButtonDisabled);
             document.getElementById("contest-custom-name").addEventListener("input", refreshSignInButtonDisabled);
+            document.getElementById("sign-in-form").addEventListener("input", clearAllBanners);
+            document.getElementById("sign-in-form").addEventListener("change", clearAllBanners);
             document.getElementById("sign-in-form").addEventListener("submit", function (ev) {
                 ev.preventDefault();
                 if (isLoadingOptions) {
