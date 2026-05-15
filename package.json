@@ -63,6 +63,7 @@
                 {
                     "id": "jutge-profile",
                     "name": "Profile",
+                    "type": "webview",
                     "visibility": "visible",
                     "contextualTitle": "Jutge.org",
                     "when": "jutge-vscode.isSignedIn.Courses"

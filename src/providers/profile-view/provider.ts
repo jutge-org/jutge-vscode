@@ -1,39 +1,11 @@
 import * as vscode from "vscode"
 
+import { Profile } from "@/jutge_api_client"
 import { jutgeClient } from "@/services/jutge"
 
-export const profileTreeViewType = "jutge-profile"
+export const profileWebviewViewType = "jutge-profile"
 
 const PROFILE_TIMEOUT_MS = 12000
-
-type JsonLike = null | boolean | number | string | JsonLike[] | { [key: string]: JsonLike }
-
-class ProfilePropertyTreeItem extends vscode.TreeItem {
-    constructor(
-        public readonly keyLabel: string,
-        public readonly value: JsonLike,
-        public readonly fullPath: string
-    ) {
-        const hasChildren = typeof value === "object" && value !== null
-        super(
-            keyLabel,
-            hasChildren
-                ? vscode.TreeItemCollapsibleState.Collapsed
-                : vscode.TreeItemCollapsibleState.None
-        )
-        this.contextValue = hasChildren ? "profile-property-node" : "profile-property-leaf"
-        this.id = fullPath
-        this.description = hasChildren ? undefined : this.toInlineValue_(value)
-        this.tooltip = `${fullPath}: ${this.toInlineValue_(value)}`
-    }
-
-    private toInlineValue_(value: JsonLike): string {
-        if (typeof value === "string") {
-            return value
-        }
-        return JSON.stringify(value)
-    }
-}
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -45,87 +17,202 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string)
     })
 }
 
-export class ProfileTreeProvider implements vscode.TreeDataProvider<ProfilePropertyTreeItem> {
-    private readonly _onDidChangeTreeData = new vscode.EventEmitter<
-        ProfilePropertyTreeItem | undefined
-    >()
-    readonly onDidChangeTreeData = this._onDidChangeTreeData.event
+function getProfileHtml(): string {
+    return /* html */ `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            font-size: 13px;
+        }
+        body {
+            margin: 0;
+            padding: 8px 10px 12px;
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-font-family);
+            line-height: 1.45;
+            background: var(--vscode-sideBar-background);
+        }
+        .status {
+            padding: 4px 0;
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground, #888888);
+        }
+        .status.is-error {
+            color: var(--vscode-errorForeground, #d33);
+        }
+        table.profile {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        table.profile th,
+        table.profile td {
+            padding: 4px 8px 4px 0;
+            vertical-align: top;
+            text-align: left;
+        }
+        table.profile th {
+            font-weight: 500;
+            color: var(--vscode-descriptionForeground, #888888);
+            white-space: nowrap;
+            width: 1%;
+        }
+        table.profile td {
+            color: var(--vscode-foreground);
+            word-break: break-word;
+        }
+        table.profile td.empty-value {
+            opacity: 0.6;
+            font-style: italic;
+        }
+        table.profile tr + tr th,
+        table.profile tr + tr td {
+            border-top: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.18));
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="status">Loading profile...</div>
+    <table id="profile" class="profile" hidden></table>
 
-    private rootValue: JsonLike = null
-    private rootItems: ProfilePropertyTreeItem[] = [
-        new ProfilePropertyTreeItem("Loading...", "", "$"),
-    ]
+    <script>
+        (function() {
+            const vscode = acquireVsCodeApi();
+            const statusEl = document.getElementById("status");
+            const tableEl = document.getElementById("profile");
 
-    constructor() {
-        void this.refresh()
+            function setStatus(text, isError) {
+                statusEl.textContent = text || "";
+                statusEl.classList.toggle("is-error", Boolean(isError));
+                statusEl.hidden = !text;
+            }
+
+            function inlineValue(value) {
+                if (typeof value === "string") return value;
+                return JSON.stringify(value);
+            }
+
+            function appendRow(key, value) {
+                const tr = document.createElement("tr");
+                const th = document.createElement("th");
+                th.textContent = key;
+                tr.appendChild(th);
+                const td = document.createElement("td");
+                if (value === null || value === undefined) {
+                    td.textContent = "null";
+                    td.classList.add("empty-value");
+                } else if (typeof value === "string" && value === "") {
+                    td.textContent = "(empty)";
+                    td.classList.add("empty-value");
+                } else {
+                    td.textContent = inlineValue(value);
+                }
+                tr.appendChild(td);
+                tableEl.appendChild(tr);
+            }
+
+            function renderTable(profile) {
+                tableEl.innerHTML = "";
+                if (profile === null || profile === undefined || typeof profile !== "object") {
+                    appendRow("value", profile);
+                    tableEl.hidden = false;
+                    return;
+                }
+                const entries = Array.isArray(profile)
+                    ? profile.map(function(v, i) { return ["[" + i + "]", v]; })
+                    : Object.entries(profile);
+                entries.forEach(function(entry) {
+                    appendRow(entry[0], entry[1]);
+                });
+                tableEl.hidden = false;
+            }
+
+            window.addEventListener("message", function(event) {
+                const message = event.data;
+                if (!message || typeof message !== "object") return;
+                if (message.type === "profileLoading") {
+                    setStatus("Loading profile...", false);
+                    tableEl.hidden = true;
+                    return;
+                }
+                if (message.type === "profileResult") {
+                    const payload = message.payload || {};
+                    if (payload.ok) {
+                        setStatus("", false);
+                        renderTable(payload.profile);
+                    } else {
+                        setStatus(payload.error || "Could not load profile.", true);
+                        tableEl.hidden = true;
+                    }
+                }
+            });
+
+            vscode.postMessage({ type: "profileViewReady" });
+        })();
+    </script>
+</body>
+</html>`
+}
+
+export class ProfileWebviewViewProvider implements vscode.WebviewViewProvider {
+    private webviewView: vscode.WebviewView | undefined
+
+    resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
+        this.webviewView = webviewView
+        webviewView.webview.options = {
+            enableScripts: true,
+        }
+        webviewView.webview.html = getProfileHtml()
+
+        webviewView.onDidDispose(() => {
+            this.webviewView = undefined
+        })
+
+        webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
+            if (!message || typeof message !== "object") {
+                return
+            }
+            const msg = message as { type?: string }
+            if (msg.type === "profileViewReady") {
+                await this.loadAndPushProfile_()
+            }
+        })
     }
 
     async refresh(): Promise<void> {
-        this.rootItems = [new ProfilePropertyTreeItem("Loading profile...", "", "$")]
-        this._onDidChangeTreeData.fire(undefined)
+        await this.loadAndPushProfile_()
+    }
 
+    private async loadAndPushProfile_(): Promise<void> {
+        if (!this.webviewView) {
+            return
+        }
+        await this.webviewView.webview.postMessage({ type: "profileLoading" })
         try {
-            const profile = await withTimeout(
+            const profile: Profile = await withTimeout(
                 jutgeClient.student.profile.get(),
                 PROFILE_TIMEOUT_MS,
                 "Timed out while fetching profile."
             )
-            this.rootValue = profile as JsonLike
-            this.rootItems = this.toRootItems_(this.rootValue)
+            await this.webviewView.webview.postMessage({
+                type: "profileResult",
+                payload: { ok: true, profile },
+            })
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error)
-            this.rootItems = [
-                new ProfilePropertyTreeItem("Could not load profile", message, "$"),
-            ]
+            await this.webviewView.webview.postMessage({
+                type: "profileResult",
+                payload: { ok: false, error: message },
+            })
         }
-
-        this._onDidChangeTreeData.fire(undefined)
-    }
-
-    getTreeItem(element: ProfilePropertyTreeItem): vscode.TreeItem {
-        return element
-    }
-
-    getChildren(element?: ProfilePropertyTreeItem): Thenable<ProfilePropertyTreeItem[]> {
-        if (!element) {
-            return Promise.resolve(this.rootItems)
-        }
-        return Promise.resolve(this.toChildren_(element))
-    }
-
-    private toRootItems_(value: JsonLike): ProfilePropertyTreeItem[] {
-        if (Array.isArray(value)) {
-            return value.map(
-                (entry, index) =>
-                    new ProfilePropertyTreeItem(`[${index}]`, entry, `$[${index}]`)
-            )
-        }
-        if (typeof value === "object" && value !== null) {
-            return Object.entries(value).map(
-                ([key, entry]) => new ProfilePropertyTreeItem(key, entry, `$.${key}`)
-            )
-        }
-        return [new ProfilePropertyTreeItem("value", value, "$")]
-    }
-
-    private toChildren_(element: ProfilePropertyTreeItem): ProfilePropertyTreeItem[] {
-        const value = element.value
-        if (Array.isArray(value)) {
-            return value.map(
-                (entry, index) =>
-                    new ProfilePropertyTreeItem(
-                        `[${index}]`,
-                        entry,
-                        `${element.fullPath}[${index}]`
-                    )
-            )
-        }
-        if (typeof value === "object" && value !== null) {
-            return Object.entries(value).map(
-                ([key, entry]) =>
-                    new ProfilePropertyTreeItem(key, entry, `${element.fullPath}.${key}`)
-            )
-        }
-        return []
     }
 }

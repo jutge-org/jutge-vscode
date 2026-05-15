@@ -23,7 +23,10 @@ import {
     jutgeStatsTreeViewType,
 } from "@/providers/jutge-stats-view/provider"
 import { JutgeApiTreeProvider, jutgeApiTreeViewType } from "@/providers/jutge-api-view/provider"
-import { ProfileTreeProvider, profileTreeViewType } from "@/providers/profile-view/provider"
+import {
+    ProfileWebviewViewProvider,
+    profileWebviewViewType,
+} from "@/providers/profile-view/provider"
 import { ConfigService } from "@/services/config"
 import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
 import { ProblemViewPanel } from "./providers/problem-view/panel"
@@ -232,15 +235,6 @@ const initExamPropertiesTreeView = () => {
     return { examPropertiesTreeProvider, examPropertiesView }
 }
 
-const initProfileTreeView = () => {
-    const profileTreeProvider = new ProfileTreeProvider()
-    const profileView = vscode.window.createTreeView(profileTreeViewType, {
-        showCollapseAll: true,
-        treeDataProvider: profileTreeProvider,
-    })
-    return { profileTreeProvider, profileView }
-}
-
 const initExamDocumentsTreeView = () => {
     const examDocumentsTreeProvider = new ExamDocumentsTreeProvider()
     const examDocumentsView = vscode.window.createTreeView(examDocumentsTreeViewType, {
@@ -401,6 +395,13 @@ export async function activate(context: vscode.ExtensionContext) {
             timerWebviewViewProvider
         )
     )
+    const profileWebviewViewProvider = new ProfileWebviewViewProvider()
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            profileWebviewViewType,
+            profileWebviewViewProvider
+        )
+    )
 
     await JutgeService.initialize(context)
     ConfigService.initialize()
@@ -408,7 +409,6 @@ export async function activate(context: vscode.ExtensionContext) {
     const { courseTreeProvider } = initCoursesTreeView()
     const { examsTreeProvider } = initExamsTreeView()
     const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
-    const { profileTreeProvider, profileView } = initProfileTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { rankingTreeProvider, rankingView } = initRankingTreeView()
     const { jutgeStatsTreeProvider, jutgeStatsView } = initHomeTreeView()
@@ -417,7 +417,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(jutgeStatsView)
     context.subscriptions.push(jutgeApiView)
-    context.subscriptions.push(profileView)
     context.subscriptions.push(examPropertiesView)
     context.subscriptions.push(examDocumentsView)
     context.subscriptions.push(rankingView)
@@ -455,7 +454,7 @@ export async function activate(context: vscode.ExtensionContext) {
         ],
         [
             "jutge-vscode.refreshProfileTree",
-            profileTreeProvider.refresh.bind(profileTreeProvider),
+            profileWebviewViewProvider.refresh.bind(profileWebviewViewProvider),
         ],
         ["jutge-vscode.openDashboardPanel", DashboardPanel.openOrReveal],
         [
