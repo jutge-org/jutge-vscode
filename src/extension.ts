@@ -28,7 +28,10 @@ import {
     profileWebviewViewType,
 } from "@/providers/profile-view/provider"
 import { ConfigService } from "@/services/config"
-import { JutgeExamsTreeProvider } from "./providers/exam-view/provider"
+import {
+    JutgeExamsWebviewViewProvider,
+    examsWebviewViewType,
+} from "./providers/exam-view/provider"
 import { ProblemViewPanel } from "./providers/problem-view/panel"
 import { WebviewPanelRegistry } from "./providers/problem-view/panel-registry"
 import { ProblemViewPanelSerializer } from "./providers/problem-view/panel-serializer"
@@ -186,17 +189,6 @@ const initCoursesTreeView = () => {
     })
 
     return { courseTreeProvider, coursesView }
-}
-
-const initExamsTreeView = () => {
-    const examsTreeProvider = new JutgeExamsTreeProvider()
-
-    const examsTreeView = vscode.window.createTreeView("jutge-exams", {
-        showCollapseAll: true,
-        treeDataProvider: examsTreeProvider,
-    })
-
-    return { examsTreeProvider }
 }
 
 const initHomeTreeView = () => {
@@ -402,12 +394,22 @@ export async function activate(context: vscode.ExtensionContext) {
             profileWebviewViewProvider
         )
     )
+    const examsWebviewViewProvider = new JutgeExamsWebviewViewProvider(context.extensionUri)
+    context.subscriptions.push(examsWebviewViewProvider)
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            examsWebviewViewType,
+            examsWebviewViewProvider
+        )
+    )
+    SubmissionService.onDidReceiveVeredict((veredict) => {
+        examsWebviewViewProvider.refreshProblem(veredict)
+    })
 
     await JutgeService.initialize(context)
     ConfigService.initialize()
 
     const { courseTreeProvider } = initCoursesTreeView()
-    const { examsTreeProvider } = initExamsTreeView()
     const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { rankingTreeProvider, rankingView } = initRankingTreeView()
@@ -447,7 +449,7 @@ export async function activate(context: vscode.ExtensionContext) {
         ["jutge-vscode.signOutExam", JutgeService.signOutExam.bind(JutgeService)],
 
         ["jutge-vscode.refreshCoursesTree", courseTreeProvider.refresh],
-        ["jutge-vscode.refreshExamsTree", examsTreeProvider.refresh],
+        ["jutge-vscode.refreshExamsTree", examsWebviewViewProvider.refresh],
         [
             "jutge-vscode.refreshExamPropertiesTree",
             examPropertiesTreeProvider.refresh.bind(examPropertiesTreeProvider),
