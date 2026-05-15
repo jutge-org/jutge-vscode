@@ -106,8 +106,13 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         }
         .tab .tab-icon {
             display: none;
-            font-size: 14px;
             line-height: 1;
+            vertical-align: middle;
+        }
+        .tab .tab-icon svg {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
         }
         @media (max-width: 320px) {
             .tab:not(.tab--primary) .tab-text {
@@ -239,11 +244,11 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         <button type="button" class="tab tab--primary is-active" role="tab" data-mode="jutge" aria-selected="true">Jutge.org</button>
         <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false" aria-label="Exam">
             <span class="tab-text">Exam</span>
-            <span class="tab-icon" aria-hidden="true">📝</span>
+            <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
         </button>
         <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false" aria-label="Contest">
             <span class="tab-text">Contest</span>
-            <span class="tab-icon" aria-hidden="true">🏆</span>
+            <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg></span>
         </button>
     </div>
     <div class="host-row">
