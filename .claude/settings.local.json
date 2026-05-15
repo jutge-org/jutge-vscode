@@ -1,0 +1,13 @@
+{
+    "permissions": {
+        "allow": [
+            "Read",
+            "Write",
+            "Update",
+            "Bash(bun compile *)",
+            "Bash(bun lint *)",
+            "Bash(git add *)",
+            "Bash(git commit *)"
+        ]
+    }
+}
