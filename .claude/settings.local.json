@@ -7,7 +7,9 @@
             "Bash(bun compile *)",
             "Bash(bun lint *)",
             "Bash(git add *)",
-            "Bash(git commit *)"
+            "Bash(git commit *)",
+            "Bash(bunx tsc *)",
+            "Bash(tee /tmp/tsc.log)"
         ]
     }
 }
