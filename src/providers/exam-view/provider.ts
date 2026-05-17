@@ -2,7 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 import * as vscode from "vscode"
 
-import { AbstractProblem, AbstractStatus, BriefProblem } from "@/jutge_api_client"
+import { AbstractProblem, BriefProblem, Submission } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
@@ -59,6 +59,18 @@ function toExamMeta(exam: {
 
 type IconMap = Record<string, { dark: string; light: string }>
 
+// Each status SVG declares its gradient as `id="a"` and references it via
+// `url(#a)`. Inlining several of them into the same document makes those ids
+// collide — every reference resolves to the first match, so all icons end up
+// the same color. Rewrite the id to be unique per status.
+function namespaceSvgIds(svg: string, status: string): string {
+    if (!svg) {
+        return svg
+    }
+    const uniqueId = `grad-${status}`
+    return svg.replace(/id="a"/g, `id="${uniqueId}"`).replace(/url\(#a\)/g, `url(#${uniqueId})`)
+}
+
 function loadIconMap(extensionUri: vscode.Uri): IconMap {
     const map: IconMap = {}
     const resourcesDir = path.join(extensionUri.fsPath, "resources")
@@ -77,7 +89,10 @@ function loadIconMap(extensionUri: vscode.Uri): IconMap {
         } catch {
             // Missing icons fall back to the "none" SVG below.
         }
-        map[status] = { dark, light }
+        map[status] = {
+            dark: namespaceSvgIds(dark, status),
+            light: namespaceSvgIds(light, status),
+        }
     }
     // Fall back to "none" for any status whose SVG is missing.
     const fallback = map[IconStatus.NONE]
@@ -291,6 +306,38 @@ function getExamsHtml(iconMap: IconMap): string {
         .problem-card.is-accepted .card-points {
             color: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #4caf50));
         }
+        .problem-card.is-presentation-error {
+            border-color: rgba(214, 200, 0, 0.55);
+            background: rgba(214, 200, 0, 0.07);
+        }
+        .problem-card.is-presentation-error:hover {
+            background: rgba(214, 200, 0, 0.14);
+        }
+        .problem-card.is-presentation-error .card-title {
+            color: var(--vscode-charts-yellow, #d6c800);
+            font-weight: 500;
+        }
+        .problem-card.is-presentation-error .card-points {
+            color: var(--vscode-charts-yellow, #d6c800);
+        }
+        .problem-card.is-rejected,
+        .problem-card.is-failed {
+            border-color: rgba(214, 0, 0, 0.55);
+            background: rgba(214, 0, 0, 0.07);
+        }
+        .problem-card.is-rejected:hover,
+        .problem-card.is-failed:hover {
+            background: rgba(214, 0, 0, 0.14);
+        }
+        .problem-card.is-rejected .card-title,
+        .problem-card.is-failed .card-title {
+            color: var(--vscode-testing-iconFailed, var(--vscode-charts-red, #d60000));
+            font-weight: 500;
+        }
+        .problem-card.is-rejected .card-points,
+        .problem-card.is-failed .card-points {
+            color: var(--vscode-testing-iconFailed, var(--vscode-charts-red, #d60000));
+        }
     </style>
 </head>
 <body>
@@ -480,8 +527,8 @@ function getExamsHtml(iconMap: IconMap): string {
                 rows.forEach(function(row) {
                     const card = document.createElement("div");
                     card.className = "problem-card";
-                    if (row.iconStatus === "accepted") {
-                        card.classList.add("is-accepted");
+                    if (row.iconStatus && row.iconStatus !== "none") {
+                        card.classList.add("is-" + row.iconStatus.replace(/_/g, "-"));
                     }
                     card.setAttribute("data-problem-nm", row.problem_nm);
                     card.setAttribute("data-order", String(row.order));
@@ -729,16 +776,19 @@ export class JutgeExamsWebviewViewProvider
             const swrProblems = JutgeService.getAbstractProblemsSWR(problem_nms)
             swrProblems.onUpdate = () => void this.loadAndPush_()
 
-            const swrStatus = JutgeService.getAllStatusesSWR()
-            swrStatus.onUpdate = () => void this.loadAndPush_()
+            // Status is derived from this session's submissions instead of
+            // `student.statuses.getAll()`, which returns the student's lifetime
+            // verdicts and would color exam problems based on prior solves.
+            const swrSubmissions = JutgeService.getAllSubmissionsSWR()
+            swrSubmissions.onUpdate = () => void this.loadAndPush_()
 
-            if (swrProblems.data === undefined || swrStatus.data === undefined) {
+            if (swrProblems.data === undefined || swrSubmissions.data === undefined) {
                 await this.webviewView.webview.postMessage({ type: "examLoading" })
                 return
             }
 
             const abstractProblems = swrProblems.data
-            const allStatuses = swrStatus.data
+            const iconByProblemNm = iconStatusBySubmissions(swrSubmissions.data)
 
             const rows: ProblemRow[] = []
             let order = 1
@@ -746,10 +796,8 @@ export class JutgeExamsWebviewViewProvider
                 const examProblem = exam.problems[order - 1]
                 const caption = examProblem?.caption || ""
                 const weight = examProblem?.weight ?? 1.0
-                const { title, iconStatus, problem_nm } = abstractProblemSummary(
-                    abstractProblem,
-                    allStatuses
-                )
+                const { title, problem_nm } = abstractProblemSummary(abstractProblem)
+                const iconStatus = iconByProblemNm.get(problem_nm) ?? IconStatus.NONE
                 rows.push({ problem_nm, order, caption, title, weight, iconStatus })
                 order++
             }
@@ -779,10 +827,10 @@ export class JutgeExamsWebviewViewProvider
     }
 }
 
-function abstractProblemSummary(
-    abstractProblem: AbstractProblem,
-    allStatuses: Record<string, AbstractStatus>
-): { problem_nm: string; title: string; iconStatus: IconStatus } {
+function abstractProblemSummary(abstractProblem: AbstractProblem): {
+    problem_nm: string
+    title: string
+} {
     const { problem_nm, problems } = abstractProblem
     const langCode = ConfigService.getPreferredLangId()
     const preferredId = `${problem_nm}_${langCode}`
@@ -794,8 +842,42 @@ function abstractProblemSummary(
         problem = Object.values(problems)[0]
     }
 
-    const iconStatus = (allStatuses[problem_nm]?.status || "none") as IconStatus
-    return { problem_nm, title: problem.title, iconStatus }
+    return { problem_nm, title: problem.title }
+}
+
+function problemNmFromProblemId(problem_id: string): string {
+    const underscore = problem_id.indexOf("_")
+    return underscore <= 0 ? problem_id : problem_id.slice(0, underscore)
+}
+
+function submissionStatusFromVeredict(veredict: string | null): SubmissionStatus | null {
+    if (!veredict) {
+        return null
+    }
+    if ((Object.values(SubmissionStatus) as string[]).includes(veredict)) {
+        return veredict as SubmissionStatus
+    }
+    return null
+}
+
+/**
+ * Collapses a flat list of submissions into the best icon status per problem,
+ * applying the same precedence as {@link mergeIconStatus}: accepted ≻ presentation
+ * error ≻ rejected/failed ≻ none. Problems with no submissions are absent from
+ * the result and fall back to `none`.
+ */
+function iconStatusBySubmissions(submissions: Submission[]): Map<string, IconStatus> {
+    const result = new Map<string, IconStatus>()
+    for (const submission of submissions) {
+        const status = submissionStatusFromVeredict(submission.veredict)
+        if (status === null) {
+            continue
+        }
+        const problem_nm = problemNmFromProblemId(submission.problem_id)
+        const current = result.get(problem_nm) ?? IconStatus.NONE
+        result.set(problem_nm, mergeIconStatus(current, status))
+    }
+    return result
 }
 
 function mergeIconStatus(current: IconStatus, status: SubmissionStatus): IconStatus {

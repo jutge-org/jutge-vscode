@@ -779,6 +779,12 @@ export class JutgeService extends StaticLogger {
         )
     }
 
+    static getAllSubmissionsSWR() {
+        return this.SWR<j.Submission[]>(`getAllSubmissions()`, async () =>
+            jutgeClient.student.submissions.getAll()
+        )
+    }
+
     static getTemplateListSWR(problem_id: string) {
         return this.SWR<string[]>(`getTemplates(${problem_id})`, async () =>
             jutgeClient.problems.getTemplates(problem_id)
