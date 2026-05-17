@@ -590,6 +590,17 @@ function getExamsHtml(iconMap: IconMap): string {
 </html>`
 }
 
+// Jittered polling window for the "exam not started yet" case. With ~500
+// concurrent students re-rolling the delay each tick spreads the load across
+// the [POLL_MIN_MS, POLL_MAX_MS] window instead of producing a synchronized
+// spike on the server.
+const POLL_MIN_MS = 20_000
+const POLL_MAX_MS = 40_000
+
+function pollDelayMs(): number {
+    return POLL_MIN_MS + Math.floor(Math.random() * (POLL_MAX_MS - POLL_MIN_MS))
+}
+
 export class JutgeExamsWebviewViewProvider
     extends Logger
     implements vscode.WebviewViewProvider, vscode.Disposable
@@ -598,6 +609,7 @@ export class JutgeExamsWebviewViewProvider
     private currentRows: ProblemRow[] = []
     private currentExamMeta: ExamMeta | null = null
     private iconMap: IconMap
+    private startPollHandle: ReturnType<typeof setTimeout> | null = null
 
     constructor(private readonly extensionUri: vscode.Uri) {
         super()
@@ -638,7 +650,35 @@ export class JutgeExamsWebviewViewProvider
     }
 
     dispose(): void {
+        this.stopStartPoll_()
         this.webviewView = undefined
+    }
+
+    private stopStartPoll_(): void {
+        if (this.startPollHandle !== null) {
+            clearTimeout(this.startPollHandle)
+            this.startPollHandle = null
+        }
+    }
+
+    /**
+     * While the exam has not started yet, keep checking `exam.get()` so the UI
+     * automatically transitions from "Exam not started" to the live timer the
+     * moment the server flips `time_start`. Uses jittered timing — see
+     * POLL_MIN_MS / POLL_MAX_MS.
+     */
+    private scheduleStartPoll_(): void {
+        this.stopStartPoll_()
+        if (!this.webviewView) {
+            return
+        }
+        if (!this.currentExamMeta || this.currentExamMeta.startMs !== null) {
+            return
+        }
+        this.startPollHandle = setTimeout(() => {
+            this.startPollHandle = null
+            void this.loadAndPush_()
+        }, pollDelayMs())
     }
 
     public refresh = async (): Promise<void> => {
@@ -664,6 +704,7 @@ export class JutgeExamsWebviewViewProvider
             return
         }
         if (!JutgeService.isSignedInExam()) {
+            this.stopStartPoll_()
             this.currentRows = []
             this.currentExamMeta = null
             await this.webviewView.webview.postMessage({
@@ -722,6 +763,8 @@ export class JutgeExamsWebviewViewProvider
                 type: "examResult",
                 payload: { ok: false, error: message },
             })
+        } finally {
+            this.scheduleStartPoll_()
         }
     }
 

@@ -184,14 +184,6 @@
         },
         "commands": [
             {
-                "command": "jutge-vscode.signIn",
-                "title": "Jutge.org: Sign In"
-            },
-            {
-                "command": "jutge-vscode.signInExam",
-                "title": "Jutge.org: Sign In to an Exam"
-            },
-            {
                 "command": "jutge-vscode.signOut",
                 "title": "Jutge.org: Sign Out",
                 "icon": {

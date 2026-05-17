@@ -363,6 +363,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // hide the sign-in view on first activation).
     vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Courses", false)
     vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.Exam", false)
+    vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.PreExam", false)
     vscode.commands.executeCommand("setContext", "jutge-vscode.isContestMode", false)
 
     showExtensionInfo()
@@ -375,7 +376,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             signInWebviewViewType,
-            new SignInWebviewViewProvider(context.extensionUri, isDevelopmentMode)
+            new SignInWebviewViewProvider(context.extensionUri)
         )
     )
     const profileWebviewViewProvider = new ProfileWebviewViewProvider()
@@ -433,10 +434,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
 
     registerCommands([
-        ["jutge-vscode.signIn", JutgeService.signIn.bind(JutgeService)],
         ["jutge-vscode.signOut", JutgeService.signOut.bind(JutgeService)],
-
-        ["jutge-vscode.signInExam", JutgeService.signInExam.bind(JutgeService)],
         ["jutge-vscode.signOutExam", JutgeService.signOutExam.bind(JutgeService)],
 
         ["jutge-vscode.refreshCoursesTree", courseTreeProvider.refresh],

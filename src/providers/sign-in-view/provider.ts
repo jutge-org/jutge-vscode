@@ -1,27 +1,16 @@
 import * as vscode from "vscode"
-import { JutgeService } from "@/services/jutge"
+import { ExamMode, JutgeService } from "@/services/jutge"
 
 export const signInWebviewViewType = "jutge-sign-in"
 
+type Mode = "jutge" | "exam" | "contest"
+
 type SignInHtmlOptions = {
-    isDevelopmentMode: boolean
     scriptUri: string
     cspSource: string
 }
 
-function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOptions): string {
-    const devActions = isDevelopmentMode
-        ? `<fieldset class="dev-actions">
-            <legend>Development</legend>
-            <div class="action-button-row">
-                <button type="button" class="sign-in-btn quick-sign-in-btn" id="quick-sign-in-btn">Quick sign in for devs</button>
-            </div>
-            <div class="checkbox-row">
-                <label for="use-dev-api">Use dev API</label>
-                <input type="checkbox" id="use-dev-api" name="use-dev-api" />
-            </div>
-        </fieldset>`
-        : ""
+function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,38 +133,49 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             outline: 1px solid var(--vscode-focusBorder);
             outline-offset: 2px;
         }
+        .pre-exam-banner {
+            margin: 0 0 14px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 8%, transparent);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .pre-exam-banner .pre-exam-banner-label {
+            color: var(--vscode-descriptionForeground);
+            margin-right: 4px;
+        }
+        .pre-exam-banner .pre-exam-banner-value {
+            font-weight: 600;
+        }
         .conditional {
             display: none;
         }
-        .conditional.visible {
+        body[data-state="not-signed-in"] .state-not-signed-in {
             display: block;
         }
-        form#sign-in-form {
+        body[data-state="not-signed-in"] .state-pre-exam {
+            display: none;
+        }
+        body[data-state="pre-exam"] .state-pre-exam {
+            display: block;
+        }
+        body[data-state="pre-exam"] .state-not-signed-in {
+            display: none;
+        }
+        .state-not-signed-in,
+        .state-pre-exam {
+            display: none;
+        }
+        form {
             margin: 0;
-        }
-        .dev-actions {
-            margin: 48px 0 0;
-            padding: 6px;
-            border: 1px solid #d4a72c;
-            border-radius: 4px;
-        }
-        .dev-actions > legend {
-            padding: 0 6px;
-            color: #d4a72c;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-        .dev-actions > :first-of-type {
-            margin-top: 0;
         }
         .action-button-row {
             width: 100%;
             margin-top: 12px;
             margin-bottom: 8px;
         }
-        button.sign-in-btn {
+        button.action-btn {
             display: block;
             width: 100%;
             box-sizing: border-box;
@@ -188,41 +188,30 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
             font-size: inherit;
             cursor: pointer;
         }
-        button.sign-in-btn:hover:not(:disabled) {
+        button.action-btn:hover:not(:disabled) {
             background: var(--vscode-button-hoverBackground);
         }
-        button.sign-in-btn:disabled {
+        button.action-btn:disabled {
             opacity: 0.55;
             cursor: not-allowed;
         }
-        button.sign-in-btn:disabled:hover {
+        button.action-btn:disabled:hover {
             background: var(--vscode-button-background);
         }
-        button.quick-sign-in-btn {
-            color: var(--vscode-button-secondaryForeground);
-            background: var(--vscode-button-secondaryBackground);
+        .link-row {
+            margin-top: 10px;
+            text-align: center;
         }
-        button.quick-sign-in-btn:hover {
-            background: var(--vscode-button-secondaryHoverBackground);
-        }
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            user-select: none;
-            margin-top: 8px;
-            justify-content: flex-end;
-        }
-        .checkbox-row input {
-            margin: 0;
+        .link-row a {
+            color: var(--vscode-textLink-foreground, #3794ff);
+            text-decoration: none;
+            font-size: 12px;
             cursor: pointer;
         }
-        .checkbox-row label {
-            cursor: pointer;
-            color: var(--vscode-descriptionForeground, #888888) !important;
-            opacity: 0.9;
+        .link-row a:hover {
+            text-decoration: underline;
         }
-        .sign-in-banner {
+        .banner {
             display: none;
             opacity: 0;
             box-sizing: border-box;
@@ -238,21 +227,21 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
                 opacity 400ms ease,
                 display 400ms allow-discrete;
         }
-        .sign-in-banner.is-visible {
+        .banner.is-visible {
             display: block;
             opacity: 1;
         }
         @starting-style {
-            .sign-in-banner.is-visible {
+            .banner.is-visible {
                 opacity: 0;
             }
         }
-        .sign-in-banner.sign-in-banner--error {
+        .banner.banner--error {
             color: #ffffff;
             background: #c8302c;
             border: none;
         }
-        .sign-in-banner.sign-in-banner--success {
+        .banner.banner--success {
             color: var(--vscode-testing-iconPassed, var(--vscode-gitDecoration-addedResourceForeground));
             background: var(
                 --vscode-inputValidation-infoBackground,
@@ -265,501 +254,361 @@ function getSignInHtml({ isDevelopmentMode, scriptUri, cspSource }: SignInHtmlOp
         }
     </style>
 </head>
-<body>
-    <div class="tabs" role="tablist">
-        <button type="button" class="tab tab--primary is-active" role="tab" data-mode="jutge" aria-selected="true">Jutge.org</button>
-        <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false" aria-label="Exam">
-            <span class="tab-text">Exam</span>
-            <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
-        </button>
-        <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false" aria-label="Contest">
-            <span class="tab-text">Contest</span>
-            <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg></span>
-        </button>
-    </div>
-    <div class="host-row">
-        <a class="host-url" id="host-url" href="#" target="_blank" rel="noopener noreferrer"></a>
-    </div>
-
-    <form id="sign-in-form">
-    <div class="field">
-        <label class="field-label" for="email">Email</label>
-        <input type="text" id="email" name="email" autocomplete="username" />
-    </div>
-    <div class="field">
-        <label class="field-label" for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" />
-    </div>
-    <div id="exam-section" class="conditional">
-        <div class="field">
-            <label class="field-label" for="exam-name">Exam name</label>
-            <vscode-single-select id="exam-name" name="exam-name">
-                <vscode-option value="">Select an exam...</vscode-option>
-            </vscode-single-select>
+<body data-state="not-signed-in">
+    <!-- ===== NOT_SIGNED_IN ===== -->
+    <div class="state-not-signed-in">
+        <div class="tabs" role="tablist">
+            <button type="button" class="tab tab--primary is-active" role="tab" data-mode="jutge" aria-selected="true">Jutge.org</button>
+            <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false" aria-label="Exam">
+                <span class="tab-text">Exam</span>
+                <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+            </button>
+            <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false" aria-label="Contest">
+                <span class="tab-text">Contest</span>
+                <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg></span>
+            </button>
         </div>
-        <div id="exam-custom-name-field" class="field" style="display: none;">
-            <input type="text" id="exam-custom-name" name="exam-custom-name" autocomplete="off" />
+        <div class="host-row">
+            <a class="host-url" id="host-url" href="#" target="_blank" rel="noopener noreferrer"></a>
         </div>
-        <div class="field">
-            <label class="field-label" for="exam-password">Exam password</label>
-            <input type="password" id="exam-password" name="exam-password" autocomplete="off" />
-        </div>
+        <form id="base-form">
+            <div class="field">
+                <label class="field-label" for="email">Email</label>
+                <input type="text" id="email" name="email" autocomplete="username" />
+            </div>
+            <div class="field">
+                <label class="field-label" for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" />
+            </div>
+            <div class="action-button-row">
+                <button type="submit" class="action-btn" id="base-btn">Sign in</button>
+            </div>
+            <div id="base-banner" class="banner" role="status" aria-live="polite"></div>
+        </form>
     </div>
 
-    <div id="contest-section" class="conditional">
-        <div class="field">
-            <label class="field-label" for="contest-name">Contest name</label>
-            <vscode-single-select id="contest-name" name="contest-name">
-                <vscode-option value="">Select a contest...</vscode-option>
-            </vscode-single-select>
+    <!-- ===== PRE_EXAM ===== -->
+    <div class="state-pre-exam">
+        <div class="pre-exam-banner">
+            <div>
+                <span class="pre-exam-banner-label">Signed in as</span>
+                <span class="pre-exam-banner-value" id="pre-exam-email">—</span>
+            </div>
+            <div>
+                <span class="pre-exam-banner-label">Mode</span>
+                <span class="pre-exam-banner-value" id="pre-exam-mode-label">—</span>
+            </div>
         </div>
-        <div id="contest-custom-name-field" class="field" style="display: none;">
-            <input type="text" id="contest-custom-name" name="contest-custom-name" autocomplete="off" />
-        </div>
-        <div class="field">
-            <label class="field-label" for="contest-password">Contest password</label>
-            <input type="password" id="contest-password" name="contest-password" autocomplete="off" />
+        <form id="enter-form">
+            <div class="field">
+                <label class="field-label" for="exam-key">
+                    <span id="exam-key-label">Exam name</span>
+                </label>
+                <vscode-single-select id="exam-key" name="exam-key">
+                    <vscode-option value="">—</vscode-option>
+                </vscode-single-select>
+            </div>
+            <div id="custom-key-field" class="field" style="display: none;">
+                <input type="text" id="custom-key" name="custom-key" autocomplete="off" placeholder="Custom name" />
+            </div>
+            <div class="field">
+                <label class="field-label" for="exam-password">
+                    <span id="exam-password-label">Exam password</span>
+                </label>
+                <input type="password" id="exam-password" name="exam-password" autocomplete="off" />
+            </div>
+            <div class="action-button-row">
+                <button type="submit" class="action-btn" id="enter-btn">Enter exam</button>
+            </div>
+            <div id="enter-banner" class="banner" role="status" aria-live="polite"></div>
+        </form>
+        <div class="link-row">
+            <a href="#" id="sign-out-pre-exam">Sign out</a>
         </div>
     </div>
-
-        <div class="action-button-row">
-            <button type="submit" class="sign-in-btn" id="sign-in-btn">Sign in</button>
-        </div>
-
-        <div
-            id="sign-in-message-jutge"
-            class="sign-in-banner"
-            role="status"
-            aria-live="polite"
-            data-message-mode="jutge"
-        ></div>
-        <div
-            id="sign-in-message-exam"
-            class="sign-in-banner"
-            role="status"
-            aria-live="polite"
-            data-message-mode="exam"
-        ></div>
-        <div
-            id="sign-in-message-contest"
-            class="sign-in-banner"
-            role="status"
-            aria-live="polite"
-            data-message-mode="contest"
-        ></div>
-    </form>
-    ${devActions}
 
     <script src="${scriptUri}"></script>
     <script>
         (function () {
-            var vscode = acquireVsCodeApi();
-            var pendingTimer = null;
-            var isLoadingOptions = false;
-            var signInPending = false;
-            var pendingSignInMode = null;
-            var SIGN_IN_BANNER_MODES = ["jutge", "exam", "contest"];
-            function bannerEl(tabMode) {
-                return document.getElementById("sign-in-message-" + tabMode);
-            }
-            function syncBannerVisibility() {
-                SIGN_IN_BANNER_MODES.forEach(function (m) {
-                    var el = bannerEl(m);
-                    if (!el) {
-                        return;
-                    }
-                    var hasContent = Boolean(el.textContent && el.textContent.trim());
-                    el.classList.toggle("is-visible", hasContent && mode() === m);
-                });
-            }
-            function clearBanner(tabMode) {
-                var el = bannerEl(tabMode);
-                if (!el) {
-                    return;
-                }
-                el.textContent = "";
-                el.classList.remove("sign-in-banner--error", "sign-in-banner--success");
-                syncBannerVisibility();
-            }
-            function clearAllBanners() {
-                SIGN_IN_BANNER_MODES.forEach(clearBanner);
-            }
-            function setBanner(tabMode, text, kind) {
-                var el = bannerEl(tabMode);
-                if (!el) {
-                    return;
-                }
-                var str = text == null ? "" : String(text);
-                el.textContent = str;
-                el.classList.remove("sign-in-banner--error", "sign-in-banner--success");
-                if (!str.trim()) {
-                    syncBannerVisibility();
-                    return;
-                }
-                el.classList.add(kind === "success" ? "sign-in-banner--success" : "sign-in-banner--error");
-                syncBannerVisibility();
-            }
-            function signInResultTargetMode(payload) {
-                var m = payload && payload.mode;
-                if (m === "jutge" || m === "exam" || m === "contest") {
-                    return m;
-                }
-                return mode();
-            }
-            function isUseDevApi() {
-                var el = document.getElementById("use-dev-api");
-                return Boolean(el && el.checked);
-            }
-            function mode() {
-                var el = document.querySelector('.tab.is-active');
-                return el ? el.getAttribute("data-mode") : "jutge";
-            }
-            function setActiveTab(targetMode) {
-                var tabs = document.querySelectorAll('.tab');
-                for (var i = 0; i < tabs.length; i++) {
-                    var t = tabs[i];
-                    var active = t.getAttribute("data-mode") === targetMode;
-                    t.classList.toggle("is-active", active);
-                    t.setAttribute("aria-selected", active ? "true" : "false");
-                }
-            }
-            var HOST_URL_BY_MODE = {
+            const vscode = acquireVsCodeApi();
+
+            // ----- DOM refs -----
+            const bodyEl = document.body;
+            const hostUrlEl = document.getElementById("host-url");
+            const baseFormEl = document.getElementById("base-form");
+            const baseBtnEl = document.getElementById("base-btn");
+            const baseBannerEl = document.getElementById("base-banner");
+            const emailEl = document.getElementById("email");
+            const passwordEl = document.getElementById("password");
+
+            const enterFormEl = document.getElementById("enter-form");
+            const enterBtnEl = document.getElementById("enter-btn");
+            const enterBannerEl = document.getElementById("enter-banner");
+            const preExamEmailEl = document.getElementById("pre-exam-email");
+            const preExamModeLabelEl = document.getElementById("pre-exam-mode-label");
+            const examKeyEl = document.getElementById("exam-key");
+            const customKeyFieldEl = document.getElementById("custom-key-field");
+            const customKeyEl = document.getElementById("custom-key");
+            const examKeyLabelEl = document.getElementById("exam-key-label");
+            const examPasswordLabelEl = document.getElementById("exam-password-label");
+            const enterPasswordEl = document.getElementById("exam-password");
+            const signOutPreExamEl = document.getElementById("sign-out-pre-exam");
+
+            // ----- State -----
+            let isBasePending = false;
+            let isEnterPending = false;
+            let preExamMode = "exam";
+
+            const HOST_URL_BY_MODE = {
                 jutge: "https://jutge.org",
                 exam: "https://exam.jutge.org",
                 contest: "https://contest.jutge.org"
             };
+            const CUSTOM_KEY_VALUE = "—Custom name—";
+
+            // ----- Banner helpers -----
+            function setBanner(el, text, kind) {
+                const str = text == null ? "" : String(text);
+                el.textContent = str;
+                el.classList.remove("banner--error", "banner--success");
+                if (!str.trim()) {
+                    el.classList.remove("is-visible");
+                    return;
+                }
+                el.classList.add(kind === "success" ? "banner--success" : "banner--error");
+                el.classList.add("is-visible");
+            }
+            function clearBanner(el) {
+                el.textContent = "";
+                el.classList.remove("is-visible", "banner--error", "banner--success");
+            }
+
+            // ----- Tabs -----
+            function activeMode() {
+                const t = document.querySelector(".tab.is-active");
+                return t ? t.getAttribute("data-mode") : "jutge";
+            }
+            function setActiveTab(targetMode) {
+                document.querySelectorAll(".tab").forEach(function (t) {
+                    const active = t.getAttribute("data-mode") === targetMode;
+                    t.classList.toggle("is-active", active);
+                    t.setAttribute("aria-selected", active ? "true" : "false");
+                });
+                updateHostUrl();
+                updateBaseButtonLabel();
+            }
             function updateHostUrl() {
-                var el = document.getElementById("host-url");
-                if (el) {
-                    var url = HOST_URL_BY_MODE[mode()] || HOST_URL_BY_MODE.jutge;
-                    el.textContent = url;
-                    el.setAttribute("href", url);
-                }
+                const m = activeMode();
+                const url = HOST_URL_BY_MODE[m] || HOST_URL_BY_MODE.jutge;
+                hostUrlEl.textContent = url;
+                hostUrlEl.setAttribute("href", url);
             }
-            function isExamContestFormComplete() {
-                var m = mode();
-                if (m === "exam") {
-                    if (isLoadingOptions) {
-                        return false;
-                    }
-                    var key = selectedExamKey();
-                    if (!key || !String(key).trim()) {
-                        return false;
-                    }
-                    var pwd = document.getElementById("exam-password").value;
-                    return Boolean(pwd && String(pwd).trim());
-                }
-                if (m === "contest") {
-                    if (isLoadingOptions) {
-                        return false;
-                    }
-                    var ckey = selectedContestKey();
-                    if (!ckey || !String(ckey).trim()) {
-                        return false;
-                    }
-                    var cpwd = document.getElementById("contest-password").value;
-                    return Boolean(cpwd && String(cpwd).trim());
-                }
-                return true;
-            }
-            function refreshSignInButtonDisabled() {
-                var button = document.getElementById("sign-in-btn");
-                if (!button) {
+            function updateBaseButtonLabel() {
+                if (isBasePending) {
+                    baseBtnEl.textContent = "Signing in...";
                     return;
                 }
-                var disabled = signInPending || !isExamContestFormComplete();
-                button.disabled = disabled;
+                const m = activeMode();
+                baseBtnEl.textContent = m === "jutge" ? "Sign in" : "Continue";
             }
-            function setPending(pending) {
-                signInPending = pending;
-                var button = document.getElementById("sign-in-btn");
-                var quickButton = document.getElementById("quick-sign-in-btn");
-                refreshSignInButtonDisabled();
-                if (quickButton) {
-                    quickButton.disabled = pending;
-                }
-                button.textContent = pending ? "Signing in..." : "Sign in";
-                if (quickButton) {
-                    quickButton.textContent = pending ? "Signing in..." : "Quick sign in";
-                }
+
+            // ----- Step 1: base sign-in -----
+            function setBasePending(pending) {
+                isBasePending = pending;
+                baseBtnEl.disabled = pending;
+                updateBaseButtonLabel();
             }
-            function clearPendingTimer() {
-                if (pendingTimer !== null) {
-                    clearTimeout(pendingTimer);
-                    pendingTimer = null;
-                }
-            }
-            function clearOptions(list) {
-                list.innerHTML = "";
-            }
-            function addDefaultOption(list, text) {
-                var option = document.createElement("vscode-option");
-                option.value = "";
-                option.textContent = text;
-                list.appendChild(option);
-            }
-            function addOthersOption(list) {
-                var option = document.createElement("vscode-option");
-                option.value = "—Custom name—";
-                option.textContent = "—Custom name—";
-                list.appendChild(option);
-            }
-            function setLoadingOptions(loading) {
-                isLoadingOptions = loading;
-                refreshSignInButtonDisabled();
-            }
-            function updateCustomNameField(targetMode) {
-                var select = targetMode === "contest"
-                    ? document.getElementById("contest-name")
-                    : document.getElementById("exam-name");
-                var customField = targetMode === "contest"
-                    ? document.getElementById("contest-custom-name-field")
-                    : document.getElementById("exam-custom-name-field");
-                var customInput = targetMode === "contest"
-                    ? document.getElementById("contest-custom-name")
-                    : document.getElementById("exam-custom-name");
-                var shouldShow = select.value === "—Custom name—";
-                customField.style.display = shouldShow ? "block" : "none";
-                if (!shouldShow) {
-                    customInput.value = "";
-                }
-                refreshSignInButtonDisabled();
-            }
-            function selectedExamKey() {
-                var selected = document.getElementById("exam-name").value;
-                if (selected !== "—Custom name—") {
-                    return selected;
-                }
-                return document.getElementById("exam-custom-name").value;
-            }
-            function selectedContestKey() {
-                var selected = document.getElementById("contest-name").value;
-                if (selected !== "—Custom name—") {
-                    return selected;
-                }
-                return document.getElementById("contest-custom-name").value;
-            }
-            function loadReadyItems(targetMode) {
-                if (targetMode !== "exam" && targetMode !== "contest") {
-                    return;
-                }
-                setLoadingOptions(true);
-                var input = targetMode === "exam"
-                    ? document.getElementById("exam-name")
-                    : document.getElementById("contest-name");
-                clearOptions(input);
-                addDefaultOption(
-                    input,
-                    targetMode === "exam" ? "Loading exams..." : "Loading contests..."
-                );
-                input.value = "";
-                updateCustomNameField(targetMode);
+
+            baseFormEl.addEventListener("submit", function (ev) {
+                ev.preventDefault();
+                clearBanner(baseBannerEl);
+                setBasePending(true);
                 vscode.postMessage({
-                    type: "loadReadyItemsRequested",
+                    type: "signInBaseRequested",
                     payload: {
-                        mode: targetMode,
-                        useDevApi: isUseDevApi()
+                        email: emailEl.value,
+                        password: passwordEl.value,
+                        mode: activeMode()
                     }
                 });
-            }
-            function refresh() {
-                var m = mode();
-                var exam = document.getElementById("exam-section");
-                var contest = document.getElementById("contest-section");
-                exam.classList.toggle("visible", m === "exam");
-                contest.classList.toggle("visible", m === "contest");
-                updateHostUrl();
-                loadReadyItems(m);
-                updateCustomNameField("exam");
-                updateCustomNameField("contest");
-                refreshSignInButtonDisabled();
-                syncBannerVisibility();
-            }
-            document.querySelectorAll('.tab').forEach(function (t) {
+            });
+            document.querySelectorAll(".tab").forEach(function (t) {
                 t.addEventListener("click", function () {
-                    var targetMode = t.getAttribute("data-mode");
-                    if (!targetMode || targetMode === mode()) {
+                    const targetMode = t.getAttribute("data-mode");
+                    if (!targetMode || targetMode === activeMode()) {
                         return;
                     }
+                    clearBanner(baseBannerEl);
                     setActiveTab(targetMode);
-                    refresh();
                 });
             });
-            document.getElementById("exam-name").addEventListener("change", function () {
-                updateCustomNameField("exam");
+            baseFormEl.addEventListener("input", function () {
+                clearBanner(baseBannerEl);
             });
-            document.getElementById("contest-name").addEventListener("change", function () {
-                updateCustomNameField("contest");
-            });
-            document.getElementById("exam-password").addEventListener("input", refreshSignInButtonDisabled);
-            document.getElementById("contest-password").addEventListener("input", refreshSignInButtonDisabled);
-            document.getElementById("exam-custom-name").addEventListener("input", refreshSignInButtonDisabled);
-            document.getElementById("contest-custom-name").addEventListener("input", refreshSignInButtonDisabled);
-            document.getElementById("sign-in-form").addEventListener("input", clearAllBanners);
-            document.getElementById("sign-in-form").addEventListener("change", clearAllBanners);
-            document.getElementById("sign-in-form").addEventListener("submit", function (ev) {
-                ev.preventDefault();
-                if (isLoadingOptions) {
-                    setBanner(mode(), "Please wait until exams/contests are loaded.", "error");
-                    return;
-                }
-                pendingSignInMode = mode();
-                clearBanner(pendingSignInMode);
-                setPending(true);
-                clearPendingTimer();
-                pendingTimer = setTimeout(function () {
-                    setPending(false);
-                    var m = pendingSignInMode || mode();
-                    pendingSignInMode = null;
-                    var timeoutMsg =
-                        m === "exam"
-                            ? "Exam sign-in timed out. Please try again."
-                            : m === "contest"
-                              ? "Contest sign-in timed out. Please try again."
-                              : "Jutge.org sign-in timed out. Please try again.";
-                    setBanner(m, timeoutMsg, "error");
-                }, 12000);
-                vscode.postMessage({
-                    type: "signInRequested",
-                    payload: {
-                        email: document.getElementById("email").value,
-                        password: document.getElementById("password").value,
-                        mode: mode(),
-                        examKey: selectedExamKey(),
-                        examPassword: document.getElementById("exam-password").value,
-                        contestKey: selectedContestKey(),
-                        contestPassword: document.getElementById("contest-password").value,
-                        useDevApi: isUseDevApi()
-                    }
-                });
-            });
-            var quickSignInButton = document.getElementById("quick-sign-in-btn");
-            if (quickSignInButton) {
-                quickSignInButton.addEventListener("click", function () {
-                    pendingSignInMode = "contest";
-                    clearBanner("contest");
-                    setPending(true);
-                    clearPendingTimer();
-                    pendingTimer = setTimeout(function () {
-                        setPending(false);
-                        pendingSignInMode = null;
-                        setBanner(
-                            "contest",
-                            "Contest sign-in timed out. Please try again.",
-                            "error"
-                        );
-                    }, 12000);
-                    vscode.postMessage({
-                        type: "quickSignInRequested",
-                        payload: {
-                            useDevApi: isUseDevApi()
-                        }
+
+            // ----- Step 2: enter exam -----
+            function setEnterPending(pending) {
+                isEnterPending = pending;
+                enterBtnEl.disabled = pending;
+                enterBtnEl.textContent = pending
+                    ? (preExamMode === "contest" ? "Entering contest..." : "Entering exam...")
+                    : (preExamMode === "contest" ? "Enter contest" : "Enter exam");
+            }
+            function setExamItems(items) {
+                examKeyEl.innerHTML = "";
+                const placeholder = document.createElement("vscode-option");
+                placeholder.value = "";
+                placeholder.textContent = preExamMode === "contest"
+                    ? "Select a contest..."
+                    : "Select an exam...";
+                examKeyEl.appendChild(placeholder);
+                if (Array.isArray(items)) {
+                    items.forEach(function (item) {
+                        const o = document.createElement("vscode-option");
+                        o.value = item;
+                        o.textContent = item;
+                        examKeyEl.appendChild(o);
                     });
-                });
+                }
+                const custom = document.createElement("vscode-option");
+                custom.value = CUSTOM_KEY_VALUE;
+                custom.textContent = CUSTOM_KEY_VALUE;
+                examKeyEl.appendChild(custom);
+                examKeyEl.value = "";
+                updateCustomKeyFieldVisibility();
             }
-            var useDevApiEl = document.getElementById("use-dev-api");
-            if (useDevApiEl) {
-                useDevApiEl.addEventListener("change", function() {
-                    loadReadyItems(mode());
-                });
+            function updateCustomKeyFieldVisibility() {
+                const showCustom = examKeyEl.value === CUSTOM_KEY_VALUE;
+                customKeyFieldEl.style.display = showCustom ? "block" : "none";
+                if (!showCustom) {
+                    customKeyEl.value = "";
+                }
             }
+            function selectedExamKey() {
+                if (examKeyEl.value !== CUSTOM_KEY_VALUE) {
+                    return examKeyEl.value;
+                }
+                return customKeyEl.value;
+            }
+            examKeyEl.addEventListener("change", updateCustomKeyFieldVisibility);
+            enterFormEl.addEventListener("input", function () {
+                clearBanner(enterBannerEl);
+            });
+            enterFormEl.addEventListener("submit", function (ev) {
+                ev.preventDefault();
+                clearBanner(enterBannerEl);
+                setEnterPending(true);
+                vscode.postMessage({
+                    type: "enterExamRequested",
+                    payload: {
+                        examKey: selectedExamKey(),
+                        examPassword: enterPasswordEl.value
+                    }
+                });
+            });
+            signOutPreExamEl.addEventListener("click", function (ev) {
+                ev.preventDefault();
+                vscode.postMessage({ type: "signOutPreExamRequested" });
+            });
+
+            // ----- Apply state pushed by the extension -----
+            function applySignInState(payload) {
+                const p = payload || {};
+                if (p.state === "pre-exam") {
+                    preExamMode = p.mode === "contest" ? "contest" : "exam";
+                    bodyEl.setAttribute("data-state", "pre-exam");
+                    preExamEmailEl.textContent = p.email || "";
+                    preExamModeLabelEl.textContent =
+                        preExamMode === "contest" ? "Contest" : "Exam";
+                    examKeyLabelEl.textContent =
+                        preExamMode === "contest" ? "Contest name" : "Exam name";
+                    examPasswordLabelEl.textContent =
+                        preExamMode === "contest" ? "Contest password" : "Exam password";
+                    setExamItems(p.items || []);
+                    setEnterPending(false);
+                    clearBanner(enterBannerEl);
+                    if (p.itemsError) {
+                        setBanner(enterBannerEl, p.itemsError, "error");
+                    }
+                    return;
+                }
+                // not-signed-in
+                bodyEl.setAttribute("data-state", "not-signed-in");
+                if (typeof p.email === "string") {
+                    emailEl.value = p.email;
+                }
+                if (typeof p.password === "string") {
+                    passwordEl.value = p.password;
+                }
+                setBasePending(false);
+                clearBanner(baseBannerEl);
+                setActiveTab(activeMode());
+            }
+
             window.addEventListener("message", function (event) {
-                var message = event.data;
+                const message = event.data;
                 if (!message) return;
-                if (message.type === "savedSignInDefaults") {
-                    var p = message.payload || {};
-                    var emailEl = document.getElementById("email");
-                    var passwordEl = document.getElementById("password");
-                    if (typeof p.email === "string" && emailEl) {
-                        emailEl.value = p.email;
-                    }
-                    if (typeof p.password === "string" && passwordEl) {
-                        passwordEl.value = p.password;
-                    }
+                if (message.type === "signInState") {
+                    applySignInState(message.payload);
                     return;
                 }
-                if (message.type === "signInResult") {
-                    clearPendingTimer();
-                    setPending(false);
-                    pendingSignInMode = null;
-                    var payload = message.payload || {};
-                    var text = payload.message;
-                    if (!payload.ok && (!text || !String(text).trim())) {
-                        var tm = signInResultTargetMode(payload);
-                        if (tm === "exam") {
-                            text = "Could not sign in to this exam. Check your details and try again.";
-                        } else if (tm === "contest") {
-                            text = "Could not sign in to this contest. Check your details and try again.";
-                        } else {
-                            text = "Could not sign in to Jutge.org. Check your details and try again.";
-                        }
+                if (message.type === "signInBaseResult") {
+                    const p = message.payload || {};
+                    setBasePending(false);
+                    if (p.ok) {
+                        // Extension will follow up with a "signInState" message for PRE_EXAM.
+                        return;
                     }
-                    setBanner(signInResultTargetMode(payload), text, payload.ok ? "success" : "error");
+                    setBanner(baseBannerEl, p.error || "Could not sign in.", "error");
                     return;
                 }
-                if (message.type === "loadReadyItemsResult") {
-                    var payload = message.payload || {};
-                    var targetMode = payload.mode;
-                    var input = targetMode === "contest"
-                        ? document.getElementById("contest-name")
-                        : document.getElementById("exam-name");
-                    if (payload.ok) {
-                        clearBanner(targetMode);
+                if (message.type === "enterExamResult") {
+                    const p = message.payload || {};
+                    setEnterPending(false);
+                    if (p.ok) {
+                        // The webview will disappear via the context-key transition.
+                        return;
                     }
-                    clearOptions(input);
-                    if (payload.ok && Array.isArray(payload.items) && payload.items.length > 0) {
-                        addDefaultOption(
-                            input,
-                            targetMode === "contest" ? "Select a contest..." : "Select an exam..."
-                        );
-                        payload.items.forEach(function(item) {
-                            var option = document.createElement("vscode-option");
-                            option.value = item;
-                            option.textContent = item;
-                            input.appendChild(option);
-                        });
-                        addOthersOption(input);
-                    } else if (payload.ok) {
-                        addDefaultOption(
-                            input,
-                            targetMode === "contest"
-                                ? "No ready contests found"
-                                : "No ready exams found"
-                        );
-                        addOthersOption(input);
-                    } else {
-                        addDefaultOption(
-                            input,
-                            targetMode === "contest" ? "Select a contest..." : "Select an exam..."
-                        );
-                        setBanner(
-                            targetMode,
-                            payload.error
-                                || (targetMode === "contest"
-                                    ? "Could not load ready contests."
-                                    : "Could not load ready exams."),
-                            "error"
-                        );
+                    setBanner(enterBannerEl, p.error || "Could not enter.", "error");
+                    return;
+                }
+                if (message.type === "readyExamsUpdate") {
+                    const p = message.payload || {};
+                    setExamItems(p.items || []);
+                    if (p.error) {
+                        setBanner(enterBannerEl, p.error, "error");
                     }
-                    input.value = "";
-                    setLoadingOptions(false);
-                    updateCustomNameField(targetMode);
+                    return;
                 }
             });
-            refresh();
+
+            updateHostUrl();
+            updateBaseButtonLabel();
             vscode.postMessage({ type: "signInWebviewReady" });
         })();
     </script>
 </body>
 </html>`
 }
+
+type SignInBaseRequestPayload = {
+    email?: string
+    password?: string
+    mode?: string
+}
+
+type EnterExamRequestPayload = {
+    examKey?: string
+    examPassword?: string
+}
+
 export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
-    constructor(
-        private readonly extensionUri: vscode.Uri,
-        private readonly showQuickSignIn: boolean
-    ) {}
+    private webviewView_: vscode.WebviewView | undefined
+
+    constructor(private readonly extensionUri: vscode.Uri) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
+        this.webviewView_ = webviewView
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [
@@ -771,183 +620,133 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "signin-elements.js")
         )
         webviewView.webview.html = getSignInHtml({
-            isDevelopmentMode: this.showQuickSignIn,
             scriptUri: scriptUri.toString(),
             cspSource: webviewView.webview.cspSource,
         })
+
+        webviewView.onDidDispose(() => {
+            this.webviewView_ = undefined
+        })
+
         webviewView.webview.onDidReceiveMessage(async (message: unknown) => {
             if (!message || typeof message !== "object") {
                 return
             }
-
-            const msg = message as {
-                type?: string
-                payload?: {
-                    email?: string
-                    password?: string
-                    mode?: string
-                    examKey?: string
-                    examPassword?: string
-                    contestKey?: string
-                    contestPassword?: string
-                    useDevApi?: boolean
-                }
-            }
-
-            if (msg.type === "signInWebviewReady") {
-                const [email, password] = await Promise.all([
-                    JutgeService.getStoredSignInEmail(),
-                    JutgeService.getStoredSignInPassword(),
-                ])
-                webviewView.webview.postMessage({
-                    type: "savedSignInDefaults",
-                    payload: {
-                        email: email ?? "",
-                        password: password ?? "",
-                    },
-                })
-                return
-            }
-
-            if (msg.type === "loadReadyItemsRequested") {
-                const requestedMode =
-                    msg.payload?.mode === "contest" || msg.payload?.mode === "exam"
-                        ? msg.payload.mode
-                        : "exam"
-                const readyItems = await JutgeService.getReadyExamsForMode(
-                    requestedMode,
-                    Boolean(msg.payload?.useDevApi)
-                )
-                if (!readyItems) {
-                    webviewView.webview.postMessage({
-                        type: "loadReadyItemsResult",
-                        payload: {
-                            ok: false,
-                            mode: requestedMode,
-                            error:
-                                requestedMode === "contest"
-                                    ? "Could not load ready contests."
-                                    : "Could not load ready exams.",
-                        },
-                    })
+            const msg = message as { type?: string; payload?: unknown }
+            switch (msg.type) {
+                case "signInWebviewReady":
+                    await this.pushInitialState_()
                     return
-                }
-                webviewView.webview.postMessage({
-                    type: "loadReadyItemsResult",
-                    payload: {
-                        ok: true,
-                        mode: requestedMode,
-                        items: readyItems,
-                    },
-                })
-                return
-            }
-
-            if (msg.type === "quickSignInRequested") {
-                if (!this.showQuickSignIn) {
-                    webviewView.webview.postMessage({
-                        type: "signInResult",
-                        payload: {
-                            ok: false,
-                            mode: "contest",
-                            message: "Quick sign in is only available in development.",
-                        },
-                    })
+                case "signInBaseRequested":
+                    await this.handleSignInBase_(msg.payload as SignInBaseRequestPayload)
                     return
-                }
-                const email = process.env.JUTGE_EMAIL ?? ""
-                const password = process.env.JUTGE_PASSWORD ?? ""
-                if (!email || !password) {
-                    webviewView.webview.postMessage({
-                        type: "signInResult",
-                        payload: {
-                            ok: false,
-                            mode: "contest",
-                            message:
-                                "Quick sign in requires JUTGE_EMAIL and JUTGE_PASSWORD env vars.",
-                        },
-                    })
+                case "enterExamRequested":
+                    await this.handleEnterExam_(msg.payload as EnterExamRequestPayload)
                     return
-                }
-
-                try {
-                    const result = await JutgeService.signInWithCredentials({
-                        email,
-                        password,
-                        mode: "contest",
-                        examKey: "Jutge:ProvesJordi",
-                        examPassword: "PEZATIWU",
-                        contestKey: "Jutge:ProvesJordi",
-                        contestPassword: "PEZATIWU",
-                        useDevApi: Boolean(msg.payload?.useDevApi),
-                    })
-
-                    webviewView.webview.postMessage({
-                        type: "signInResult",
-                        payload: {
-                            ok: result.ok,
-                            mode: "contest",
-                            message: result.ok ? "Signed in successfully." : result.error,
-                        },
-                    })
-                } catch (error) {
-                    const text =
-                        error instanceof Error && error.message
-                            ? error.message
-                            : "Contest quick sign-in failed. Please try again."
-                    webviewView.webview.postMessage({
-                        type: "signInResult",
-                        payload: { ok: false, mode: "contest", message: text },
-                    })
-                }
-                return
+                case "signOutPreExamRequested":
+                    await JutgeService.signOutPreExam()
+                    await this.pushInitialState_()
+                    return
+                default:
+                    return
             }
+        })
+    }
 
-            if (msg.type !== "signInRequested") {
-                return
+    private post_(message: unknown): void {
+        this.webviewView_?.webview.postMessage(message)
+    }
+
+    private async pushInitialState_(): Promise<void> {
+        if (JutgeService.isSignedInPreExam()) {
+            await this.pushPreExamState_()
+            return
+        }
+        const [email, password] = await Promise.all([
+            JutgeService.getStoredSignInEmail(),
+            JutgeService.getStoredSignInPassword(),
+        ])
+        this.post_({
+            type: "signInState",
+            payload: {
+                state: "not-signed-in",
+                email: email ?? "",
+                password: password ?? "",
+            },
+        })
+    }
+
+    private async pushPreExamState_(): Promise<void> {
+        const mode = JutgeService.getApiMode()
+        const examMode: ExamMode = mode === "contest" ? "contest" : "exam"
+        const email = (await JutgeService.getStoredSignInEmail()) ?? ""
+        const items = await JutgeService.getReadyExamsForMode(examMode)
+        this.post_({
+            type: "signInState",
+            payload: {
+                state: "pre-exam",
+                mode: examMode,
+                email,
+                items: items ?? [],
+                itemsError:
+                    items === undefined
+                        ? examMode === "contest"
+                            ? "Could not load ready contests."
+                            : "Could not load ready exams."
+                        : undefined,
+            },
+        })
+    }
+
+    private async handleSignInBase_(
+        payload: SignInBaseRequestPayload | undefined
+    ): Promise<void> {
+        const mode = (payload?.mode as Mode | undefined) ?? "jutge"
+        const email = payload?.email || ""
+        const password = payload?.password || ""
+
+        if (mode === "exam" || mode === "contest") {
+            const result = await JutgeService.signInPreExam({
+                email,
+                password,
+                mode,
+                useDevApi: false,
+            })
+            this.post_({
+                type: "signInBaseResult",
+                payload: { ok: result.ok, mode, error: result.ok ? undefined : result.error },
+            })
+            if (result.ok) {
+                await this.pushPreExamState_()
             }
+            return
+        }
 
-            const signInMode =
-                msg.payload?.mode === "contest" ||
-                msg.payload?.mode === "exam" ||
-                msg.payload?.mode === "jutge"
-                    ? msg.payload.mode
-                    : "jutge"
+        // Normal Jutge sign-in.
+        const result = await JutgeService.signInJutge({ email, password })
+        this.post_({
+            type: "signInBaseResult",
+            payload: {
+                ok: result.ok,
+                mode: "jutge",
+                error: result.ok ? undefined : result.error,
+            },
+        })
+    }
 
-            try {
-                const result = await JutgeService.signInWithCredentials({
-                    email: msg.payload?.email || "",
-                    password: msg.payload?.password || "",
-                    mode: msg.payload?.mode,
-                    examKey: msg.payload?.examKey,
-                    examPassword: msg.payload?.examPassword,
-                    contestKey: msg.payload?.contestKey,
-                    contestPassword: msg.payload?.contestPassword,
-                    useDevApi: Boolean(msg.payload?.useDevApi),
-                })
-
-                webviewView.webview.postMessage({
-                    type: "signInResult",
-                    payload: {
-                        ok: result.ok,
-                        mode: signInMode,
-                        message: result.ok ? "Signed in successfully." : result.error,
-                    },
-                })
-            } catch (error) {
-                const text =
-                    error instanceof Error && error.message
-                        ? error.message
-                        : signInMode === "exam"
-                          ? "Could not sign in to this exam. Please try again."
-                          : signInMode === "contest"
-                            ? "Could not sign in to this contest. Please try again."
-                            : "Could not sign in to Jutge.org. Please try again."
-                webviewView.webview.postMessage({
-                    type: "signInResult",
-                    payload: { ok: false, mode: signInMode, message: text },
-                })
-            }
+    private async handleEnterExam_(
+        payload: EnterExamRequestPayload | undefined
+    ): Promise<void> {
+        const mode = JutgeService.getApiMode()
+        const examMode: ExamMode = mode === "contest" ? "contest" : "exam"
+        const result = await JutgeService.enterExam({
+            mode: examMode,
+            examKey: payload?.examKey || "",
+            examPassword: payload?.examPassword || "",
+        })
+        this.post_({
+            type: "enterExamResult",
+            payload: { ok: result.ok, error: result.ok ? undefined : result.error },
         })
     }
 }
