@@ -19,3 +19,10 @@ esbuild.js
 .prettierignore
 Makefile
 .husky/**
+
+# Other internal things not to include
+.claude/**
+docs/**
+TODO.md
+IDEAS.md
+ERRORS.md
