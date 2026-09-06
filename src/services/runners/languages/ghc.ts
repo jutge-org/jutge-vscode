@@ -16,13 +16,9 @@ export class GHCRunner extends Logger implements LanguageRunner {
         const workingDir = getWorkingDirectory(codePath)
 
         // First compile via spawnSync to check for errors
-        const result = childProcess.spawnSync(
-            command,
-            [codePath, "-o", binaryPath, ...flags],
-            {
-                cwd: workingDir,
-            }
-        )
+        const result = childProcess.spawnSync(command, [codePath, "-o", binaryPath, ...flags], {
+            cwd: workingDir,
+        })
 
         // Check if there are compilation errors
         const hasErrors =

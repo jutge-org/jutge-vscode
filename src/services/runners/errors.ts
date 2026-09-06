@@ -2,10 +2,8 @@ import { SpawnSyncReturns } from "node:child_process"
 import * as vscode from "vscode"
 
 // Create diagnostic collections at the module level
-const runtimeDiagnosticCollection =
-    vscode.languages.createDiagnosticCollection("jutge-runtime")
-const compileDiagnosticCollection =
-    vscode.languages.createDiagnosticCollection("jutge-compile")
+const runtimeDiagnosticCollection = vscode.languages.createDiagnosticCollection("jutge-runtime")
+const compileDiagnosticCollection = vscode.languages.createDiagnosticCollection("jutge-compile")
 
 /**
  * Creates a diagnostic with the appropriate severity and range

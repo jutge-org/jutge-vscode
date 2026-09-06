@@ -48,14 +48,7 @@ export const editIcon = () => `
     </svg>
 `
 
-export type IconType =
-    | "add"
-    | "run"
-    | "run-all"
-    | "submit"
-    | "run-again"
-    | "edit"
-    | "none"
+export type IconType = "add" | "run" | "run-all" | "submit" | "run-again" | "edit" | "none"
 
 export const icons: Record<IconType, () => string> = {
     "add": addIcon,

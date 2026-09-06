@@ -47,10 +47,7 @@ export class TerminalService {
      * @param prefix Optional file name prefix
      * @returns The path to the created temporary file
      */
-    private static createTempFile(
-        content: string,
-        prefix: string = "jutge-input-"
-    ): string {
+    private static createTempFile(content: string, prefix: string = "jutge-input-"): string {
         const tmpDir = os.tmpdir()
         const tmpFileName = `${prefix}${Date.now()}.txt`
         const tmpFilePath = path.join(tmpDir, tmpFileName)

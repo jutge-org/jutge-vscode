@@ -16,7 +16,8 @@ export class CppRunner extends Logger implements LanguageRunner {
         const workingDir = getWorkingDirectory(codePath)
 
         let params = [codePath, "-o", binaryPath, ...flags]
-        if (command === "cl") { // VS Build tools for Windows
+        if (command === "cl") {
+            // VS Build tools for Windows
             params = [codePath, "/nologo", "/Fe" + binaryPath, ...flags]
         }
 

@@ -355,7 +355,7 @@
         "lint": "eslint src --ext ts",
         "clean": "rm -rf out dist",
         "prepare": "husky",
-        "format": "prettier --write * --ignore-unknown",
+        "format": "prettier --ignore-unknown --list-different --write *",
         "package": "NODE_ENV=production node ./esbuild.js",
         "vsce:prepublish": "bun package",
         "vsce:package": "vsce package",
