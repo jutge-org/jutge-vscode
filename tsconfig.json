@@ -6,10 +6,10 @@
         "sourceMap": true,
         "rootDir": "src",
         "strict": true,
-        "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*"]
-        }
+            "@/*": ["./src/*"]
+        },
+        "types": ["node"]
     },
     "exclude": ["node_modules", ".vscode-test", "src/webview/", "openapi-ts.config.ts"]
 }
