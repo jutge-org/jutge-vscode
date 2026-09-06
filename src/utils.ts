@@ -11,6 +11,7 @@ import {
     proglangInfoGet,
 } from "./services/runners/languages"
 import { InputExpected, Problem } from "./types"
+import { getContext } from "./extension"
 
 /**
  * A function that returns whether the os is Windows.
@@ -76,18 +77,32 @@ export function getDefaultProblemId(problemNm: string): string {
     return problemNm + "_" + preferredLangId
 }
 
-export const getWorkingDirectory = (filename: string) => {
-    let workingDir = ""
+export const getWorkspaceUri = (): vscode.Uri | null => {
     let workspaces = vscode.workspace.workspaceFolders
     if (workspaces && workspaces.length > 0) {
         // TODO: Check that this uri is not remote?
-        workingDir = workspaces[0].uri.path
-    } else {
-        workingDir = dirname(filename)
+        return workspaces[0].uri
     }
+    return null
+}
+
+export const getExtensionDirectory = (): string => {
+    const uri = getContext().extensionUri
+    // TODO: Check that `workspaceUri` is not remote?
+    return uri.path
+}
+
+export const getWorkingDirectory = (filename: string) => {
+    let workspaceUri = getWorkspaceUri()
+
+    // TODO: Check that `workspaceUri` is not remote?
+    let workingDir = workspaceUri !== null ? workspaceUri.path : dirname(filename)
+
+    // Windows: remove leading '/'
     if (isWindows() && workingDir[0] === "/") {
         workingDir = workingDir.slice(1)
     }
+
     console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
 }
