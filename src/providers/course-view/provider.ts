@@ -253,22 +253,30 @@ export class JutgeCourseTreeProvider
             let order = 1
             const items: CourseTreeElement[] = []
             for (const problemOrSeparator of problems) {
-                let item: CourseTreeElement
                 if (typeof problemOrSeparator === "string") {
                     const separator = problemOrSeparator
-                    item = this.separatorToElement_(
+
+                    const item = this.separatorToElement_(
                         `${listElem.key}:separator${sepIndex}`,
                         separator
                     )
+                    item.parent = listElem
+                    items.push(item)
                     sepIndex++
                 } else {
-                    const problem_nm = problemOrSeparator
-                    item = this.abstractProblemToElement_(problem_nm, allStatuses)
+                    const problem = problemOrSeparator
+
+                    // Avoid quizzes (which have `driver_id = "quiz"`)
+                    if (problem.driver_id === "quiz") {
+                        continue
+                    }
+
+                    const item = this.abstractProblemToElement_(problem, allStatuses)
                     item.order = order
+                    item.parent = listElem
+                    items.push(item)
                     order++
                 }
-                item.parent = listElem
-                items.push(item)
             }
             listElem.children = items
 
