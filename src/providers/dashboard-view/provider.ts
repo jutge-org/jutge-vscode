@@ -1,6 +1,7 @@
 import * as vscode from "vscode"
 
 import { AbstractProblem, RunningExam, Submission } from "@/jutge_api_client"
+import { Logger } from "@/loggers"
 import { jutgeClient } from "@/services/jutge"
 
 const DASHBOARD_REFRESH_INTERVAL_MS = 10000
@@ -474,7 +475,7 @@ function panelErrorHtml(message: string): string {
 </html>`
 }
 
-export class DashboardPanel implements vscode.Disposable {
+export class DashboardPanel extends Logger implements vscode.Disposable {
     private static current: DashboardPanel | undefined
     private readonly panel: vscode.WebviewPanel
     private readonly intervalId: ReturnType<typeof setInterval>
@@ -482,6 +483,7 @@ export class DashboardPanel implements vscode.Disposable {
     private refreshing = false
 
     private constructor() {
+        super()
         this.panel = vscode.window.createWebviewPanel(
             dashboardPanelViewType,
             "Exam Dashboard",
@@ -546,6 +548,7 @@ export class DashboardPanel implements vscode.Disposable {
         }
         this.refreshing = true
         try {
+            this.log.info(`loadDashboardData`)
             const data = await loadDashboardData()
             this.panel.webview.html = panelHtml({ data })
         } catch (error) {
