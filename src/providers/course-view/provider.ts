@@ -30,10 +30,10 @@ export class JutgeCourseTreeProvider
             item.command = {
                 command: "jutge-vscode.showProblem",
                 title: "Open Problem",
-                arguments: [item.element.key, item.element.order],
+                arguments: [item.element.nm, item.element.order],
             }
         }
-        this.problemName2TreeItem.set(element.key, item) // keep the item in a map, by problemNm (itemKey)
+        this.problemName2TreeItem.set(element.nm, item) // keep the item in a map, by problemNm (itemKey)
         return item
     }
 
@@ -70,6 +70,7 @@ export class JutgeCourseTreeProvider
             key,
             label,
             iconStatus,
+            options?.order || 0,
             options?.description
         )
         if (options?.parent !== undefined) {
@@ -132,7 +133,11 @@ export class JutgeCourseTreeProvider
             const elems: CourseTreeElement[] = []
             let order: number = 1
             for (const abstractProblem of abstractProblems) {
-                const problemElem = this.abstractProblemToElement_(abstractProblem, allStatuses)
+                const problemElem = this.abstractProblemToElement_(
+                    abstractProblem,
+                    order,
+                    allStatuses
+                )
                 problemElem.parent = examElement
                 problemElem.order = order
 
@@ -212,6 +217,7 @@ export class JutgeCourseTreeProvider
 
     private abstractProblemToElement_(
         abstractProblem: AbstractProblem,
+        order: number,
         allStatuses: Record<string, AbstractStatus>
     ): CourseTreeElement {
         const { problem_nm, problems } = abstractProblem
@@ -227,7 +233,9 @@ export class JutgeCourseTreeProvider
 
         // Get status for this problem
         const iconStatus = (allStatuses[problem_nm]?.status || "none") as IconStatus
-        return this.makeTreeElement("problem", problem_nm, problem.title, iconStatus)
+        return this.makeTreeElement("problem", problem_nm, problem.title, iconStatus, {
+            order: order,
+        })
     }
 
     private async getProblemsFromListNm_(
@@ -263,7 +271,7 @@ export class JutgeCourseTreeProvider
                     sepIndex++
                 } else {
                     const problem_nm = problemOrSeparator
-                    item = this.abstractProblemToElement_(problem_nm, allStatuses)
+                    item = this.abstractProblemToElement_(problem_nm, order, allStatuses)
                     item.order = order
                     order++
                 }

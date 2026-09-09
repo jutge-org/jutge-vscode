@@ -20,7 +20,6 @@ The extension is still in its early stages, and we are actively working on impro
 - Automatic installation of compilers and interpreters to ease new users' setup.
 - Enhanced problem browsing and filtering.
 - Copying with more types of problems in Jutge.org (problems with functions, quiz problems, graphical problems, ...).
-- Support for custom test cases.
 - Support for exams and contests.
 
 The extension is built using TypeScript and leverages the VSCode API to provide a rich user experience. It uses webviews to display problem statements and test cases, and it integrates with [Jutge.org's API](https://api.jutge.org/) to manage authentication, problem retrieval, and submission handling.

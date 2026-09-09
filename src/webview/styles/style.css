@@ -115,6 +115,31 @@ textarea {
     display: none;
 }
 
+.warning {
+    border: black solid 1px;
+    border-radius: 0.4em;
+    padding: 5px;
+    border-left: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-direction: row;
+    background: var(--checkbox-background);
+    border: 1px solid var(--panel-view-border);
+    border-radius: 0.4em;
+    padding: 0.3em;
+}
+.warning > div {
+    width: 5%;
+}
+.warning > div > svg {
+    max-width: 100%;
+}
+
+.warning > span {
+    width: 92.5%;
+}
+
 .running-text {
     color: yellow;
     padding-right: 5px;

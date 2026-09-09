@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { getContext, getWebviewOptions } from "@/extension"
 import { StaticLogger } from "@/loggers"
 import { JutgeService } from "@/services/jutge"
-import { VSCodeToWebviewMessage } from "@/types"
+import { LanguageCode, VSCodeToWebviewMessage } from "@/types"
 import { getProblemIdFromFilename, sourceFileExists } from "@/utils"
 import { basename } from "path"
 import { ProblemViewPanel } from "./panel"
@@ -22,8 +22,11 @@ export class WebviewPanelRegistry extends StaticLogger {
 
     static async createOrReveal(
         problemNm: string,
-        order: number = -1
+        order: number = -1,
+        langId?: string
     ): Promise<ProblemViewPanel | null> {
+        this.log.debug(`Attempting to show panel for problem ${problemNm}`)
+
         const context = getContext()
         if (!(await isProblemValidAndAccessible(problemNm))) {
             vscode.window.showErrorMessage("Problem not valid or accessible.")
@@ -41,7 +44,12 @@ export class WebviewPanelRegistry extends StaticLogger {
             { viewColumn, preserveFocus: true },
             getWebviewOptions(context.extensionUri)
         )
-        const panel = new ProblemViewPanel(webviewPanel, { problemNm, order })
+
+        const panel = new ProblemViewPanel(
+            webviewPanel,
+            { problemNm, order },
+            langId as LanguageCode
+        )
         this.createdPanels_.set(problemNm, panel)
         return panel
     }

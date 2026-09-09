@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * This file has been automatically generated at 2026-05-15T14:00:15.044Z
+ * This file has been automatically generated at 2026-09-09T08:48:21.843Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -37,6 +37,51 @@ export type CredentialsWithUsernameIn = {
     password: string
 }
 
+export type RegisterIn = {
+    name: string
+    email: string
+    birth_year: number
+    parent_email: string | null
+    country_id: string
+    policies_agreement: boolean
+    recaptcha_token: string
+    password: string
+}
+
+export type RequestPasswordResetIn = {
+    email: string
+    hostname: string
+    recaptcha_token: string
+}
+
+export type ConfirmPasswordRequestIn = {
+    email: string
+    code: string
+    password: string
+    recaptcha_token: string
+}
+
+export type RequestUnregistrationIn = {
+    password: string
+    hostname: string
+    recaptcha_token: string
+}
+
+export type ConfirmUnregistrationIn = {
+    email: string
+    code: string
+    recaptcha_token: string
+}
+
+export type RequestChangeEmailIn = {
+    new_email: string
+    password: string
+    hostname: string
+    recaptcha_token: string
+}
+
+export type ConfirmChangeEmailIn = ConfirmUnregistrationIn
+
 export type Time = {
     full_time: string
     int_timestamp: number
@@ -51,6 +96,12 @@ export type HomepageStats = {
     submissions: number
     exams: number
     contests: number
+    recent_submissions: {
+        latest_01_minutes: number
+        latest_05_minutes: number
+        latest_15_minutes: number
+        latest_60_minutes: number
+    }
 }
 
 export type ColorMapping = Record<string, Record<string, string>>
@@ -110,6 +161,10 @@ export type Proglang = {
     proglang_id: string
 }
 
+export type Timezone = {
+    timezone_id: string
+}
+
 export type AllTables = {
     languages: Record<string, Language>
     countries: Record<string, Country>
@@ -118,6 +173,27 @@ export type AllTables = {
     verdicts: Record<string, Verdict>
     proglangs: Record<string, Proglang>
 }
+
+export type PublicProfile = {
+    email: string
+    name: string
+    username: string | null
+    nickname: string | null
+}
+
+export type PublicCourse = {
+    course_nm: string
+    title: string
+    description: string
+    public: number
+    official: number
+    icon: string | null
+    lists: string[]
+    problem_count: number
+    owner: PublicProfile
+}
+
+export type PublicCourses = Record<string, PublicCourse>
 
 export type ProblemSummary = {
     summary_1s: string
@@ -137,6 +213,7 @@ export type BriefAbstractProblem = {
     problem_nm: string
     author: string | null
     author_email: string | null
+    icon: string | null
     public: number | null
     official: number | null
     compilers: string | null
@@ -166,6 +243,7 @@ export type AbstractProblem = {
     problem_nm: string
     author: string | null
     author_email: string | null
+    icon: string | null
     public: number | null
     official: number | null
     compilers: string | null
@@ -182,6 +260,8 @@ export type AbstractProblemSuppl = {
     compilers_with_ac: string[]
     proglangs_with_ac: string[]
 }
+
+export type AbstractProblemSuppls = Record<string, AbstractProblemSuppl>
 
 export type ProblemSuppl = {
     compilers_with_ac: string[]
@@ -231,6 +311,11 @@ export type SearchResult = {
 
 export type SearchResults = SearchResult[]
 
+export type GetSomeAbstractProblemsIn = {
+    regexp: string
+    limit: number
+}
+
 export type AllKeys = {
     problems: string[]
     enrolled_courses: string[]
@@ -252,6 +337,7 @@ export type Profile = {
     max_subsxday: number
     administrator: number
     instructor: number
+    tutor: number
     parent_email: string | null
     country_id: string | null
     timezone_id: string
@@ -261,13 +347,15 @@ export type Profile = {
 
 export type NewProfile = {
     name: string
-    birth_year: number
-    nickname: string
-    webpage: string
-    affiliation: string
-    description: string
-    country_id: string
-    timezone_id: string
+    birth_year: number | null
+    nickname: string | null
+    webpage: string | null
+    affiliation: string | null
+    description: string | null
+    country_id: string | null
+    timezone_id: string | null
+    compiler_id: string | null
+    language_id: string | null
 }
 
 export type NewPassword = {
@@ -298,6 +386,11 @@ export type Dashboard = {
     distributions: AllDistributions
 }
 
+export type DateRange2 = {
+    start_time: string
+    end_time: string
+}
+
 export type Submission = {
     problem_id: string
     submission_id: string
@@ -315,10 +408,18 @@ export type NewSubmissionIn = {
     problem_id: string
     compiler_id: string
     annotation: string
+    extraSubmissionInfo: any
 }
 
 export type NewSubmissionOut = {
     submission_id: string
+}
+
+export type CompilationErrors = {
+    compilation1: string | null
+    compilation2: string | null
+    linkage: string | null
+    interface: string | null
 }
 
 export type SubmissionAnalysis = {
@@ -402,29 +503,56 @@ export type CodeMetrics = {
     tiobe_standard: number
 }
 
-export type PublicProfile = {
-    email: string
-    name: string
-    username: string | null
+export type CodeMetricsResult = {
+    userMetrics: CodeMetrics | null
+    solutionMetrics: CodeMetrics | null
+}
+
+export type ScoringPart = {
+    testcase: string
+    verdict: string
+    verdict_info: string | null
+    points: number
+    correct_points: number
+}
+
+export type Scoring = ScoringPart[] | null
+
+export type DebugDirectories = {
+    problem: string
+    submission: string
+    correction: string
+    submission_uid: string
+}
+
+export type DebugInformation = {
+    correction: any
+    solution: any
+    stderr: string | null
+    stdout: string | null
+    directories: DebugDirectories | null
 }
 
 export type BriefCourse = {
     course_nm: string
     title: string | null
     description: string | null
-    annotation: string | null
     public: number
     official: number
+    icon: string | null
+    owner: PublicProfile
+    enrollment: string | string | string
 }
 
 export type Course = {
     course_nm: string
     title: string | null
     description: string | null
-    annotation: string | null
     public: number
     official: number
+    icon: string | null
     owner: PublicProfile
+    enrollment: string | string | string
     lists: string[]
 }
 
@@ -489,6 +617,42 @@ export type RunningExam = {
     documents: RunningExamDocument[]
 }
 
+export type BriefExam = {
+    exam_key: string
+    title: string
+    place: string
+    description: string
+    contest: boolean
+    course: { course_nm: string; title: string; icon: string | null }
+    owner: PublicProfile
+    visible_submissions: boolean
+    status: string
+    exp_time_start: string | string | string | number
+    running_time: string | string | string | number
+    time_start: string | string | string | number | null
+    time_end: string | string | string | number | null
+}
+
+export type BriefExams = Record<string, BriefExam>
+
+export type Exam = {
+    exam_key: string
+    title: string
+    place: string
+    description: string
+    contest: boolean
+    course: { course_nm: string; title: string; icon: string | null }
+    owner: PublicProfile
+    visible_submissions: boolean
+    status: string
+    exp_time_start: string | string | string | number
+    running_time: string | string | string | number
+    time_start: string | string | string | number | null
+    time_end: string | string | string | number | null
+    problems: string[]
+    submissions: Submission[]
+}
+
 export type AbstractStatus = {
     problem_nm: string
     nb_submissions: number
@@ -531,10 +695,58 @@ export type BriefAward = {
     youtube: string | null
 }
 
+export type Settings = Record<string, any>
+
+export type Setting = {
+    key: string
+    value: any
+}
+
+export type TradingCard = {
+    card_id: string
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
+}
+
+export type TradingCards = TradingCard[]
+
+export type EnrolledStudent = {
+    name: string
+    email: string
+}
+
+export type EnrolledTutor = EnrolledStudent
+
+export type CourseSubmission = {
+    time: string
+    user_uid: string
+    email: string
+    problem_id: string
+    submission_id: string
+    verdict: string
+    compiler_id: string
+    proglang: string
+}
+
+export type TutorSubmission = {
+    problem_id: string
+    submission_id: string
+    compiler_id: string
+    annotation: string | null
+    state: string
+    time_in: string | string | string | number
+    veredict: string | null
+    veredict_info: string | null
+    veredict_publics: string | null
+    ok_publics_but_wrong: number
+    exam_submission_id: string | null
+}
+
 export type Document = {
     document_nm: string
     title: string
     description: string
+    type: string
     created_at: string | string | string | number
     updated_at: string | string | string | number
 }
@@ -596,6 +808,7 @@ export type InstructorBriefCourse = {
     annotation: string
     official: number
     public: number
+    icon: string | null
     created_at: string | string | string | number
     updated_at: string | string | string | number
 }
@@ -613,6 +826,7 @@ export type InstructorCourse = {
     annotation: string
     official: number
     public: number
+    icon: string | null
     created_at: string | string | string | number
     updated_at: string | string | string | number
     lists: string[]
@@ -647,6 +861,11 @@ export type InstructorCourseUpdate = {
     lists: string[] | null
     students: CourseMembers | null
     tutors: CourseMembers | null
+}
+
+export type InstructorCourseUpdateIconInput = {
+    course_nm: string
+    icon: string
 }
 
 export type InstructorExamCourse = {
@@ -910,28 +1129,24 @@ export type CreateImageInput = {
     size: string
 }
 
-export type SubmitPlayerInput = {
-    problem_id: string
-    annotation: string
-    source_code: string
-    callback_url: string
+export type SubmitMatchUserPlayer = {
+    name: string
+    user_uid: string
+    submission_id: string
 }
 
-export type SubmitPlayerOutput = NewSubmissionOut
-
-export type SubmitMatchInput = {
-    problem_id: string
-    annotation: string
-    source_codes: string[]
-    callback_url: string
+export type SubmitMatchBotPlayer = {
+    name: string
+    code: string
 }
 
-export type SubmitMatchOutput = NewSubmissionOut
+export type SubmitMatchPlayer = SubmitMatchUserPlayer | SubmitMatchBotPlayer
 
-export type GetMatchSubmissionInput = GetGameResultIn
-
-export type GetMatchSubmissionOutput = {
-    todo: string
+export type SubmitMatchIn = {
+    problem_id: string
+    compiler_id: string
+    annotation: string
+    players: SubmitMatchPlayer[]
 }
 
 export type InstructorEntry = {
@@ -941,6 +1156,33 @@ export type InstructorEntry = {
 }
 
 export type InstructorEntries = InstructorEntry[]
+
+export type AdminCourseInstructor = {
+    username: string | null
+    name: string
+    email: string
+}
+
+export type AdminCourse = {
+    course_id: string
+    course_nm: string
+    title: string
+    description: string
+    official: number
+    public: number
+    created_at: string | string | string | number
+    updated_at: string | string | string | number
+    icon: string | null
+    instructor: AdminCourseInstructor
+}
+
+export type AdminCourses = AdminCourse[]
+
+export type AdminCourseSetPublicAndOfficial = {
+    course_id: string
+    public: number
+    official: number
+}
 
 export type UserCreation = {
     email: string
@@ -1122,6 +1364,7 @@ export type SomeType = {
 
 export interface Meta {
     readonly token: string
+    readonly user_uid: string
 }
 
 export interface Download {
@@ -1305,7 +1548,7 @@ export class JutgeApiClient {
     }): Promise<CredentialsOut> {
         const [credentials, _] = await this.execute("auth.login", { email, password })
         if (credentials.error) throw new UnauthorizedError(credentials.error)
-        this.meta = { token: credentials.token }
+        this.meta = { token: credentials.token, user_uid: credentials.user_uid }
         return credentials
     }
 
@@ -1328,7 +1571,7 @@ export class JutgeApiClient {
             exam_password,
         })
         if (credentials.error) throw new UnauthorizedError(credentials.error)
-        this.meta = { token: credentials.token }
+        this.meta = { token: credentials.token, user_uid: credentials.user_uid }
         return credentials
     }
 
@@ -1373,8 +1616,10 @@ export class JutgeApiClient {
     readonly auth: Module_auth
     readonly misc: Module_misc
     readonly tables: Module_tables
+    readonly courses: Module_courses
     readonly problems: Module_problems
     readonly student: Module_student
+    readonly tutor: Module_tutor
     readonly instructor: Module_instructor
     readonly games: Module_games
     readonly admin: Module_admin
@@ -1385,8 +1630,10 @@ export class JutgeApiClient {
         this.auth = new Module_auth(this)
         this.misc = new Module_misc(this)
         this.tables = new Module_tables(this)
+        this.courses = new Module_courses(this)
         this.problems = new Module_problems(this)
         this.student = new Module_student(this)
+        this.tutor = new Module_tutor(this)
         this.instructor = new Module_instructor(this)
         this.games = new Module_games(this)
         this.admin = new Module_admin(this)
@@ -1395,14 +1642,18 @@ export class JutgeApiClient {
         this.clientTTLs.set("misc.getAvatarPacks", 3600)
         this.clientTTLs.set("misc.getExamIcons", 3600)
         this.clientTTLs.set("misc.getDemosForCompiler", 3600)
-        this.clientTTLs.set("tables.get", 300)
-        this.clientTTLs.set("tables.getLanguages", 300)
-        this.clientTTLs.set("tables.getCountries", 300)
-        this.clientTTLs.set("tables.getCompilers", 300)
-        this.clientTTLs.set("tables.getDrivers", 300)
-        this.clientTTLs.set("tables.getVerdicts", 300)
-        this.clientTTLs.set("tables.getProglangs", 300)
+        this.clientTTLs.set("tables.get", 3600)
+        this.clientTTLs.set("tables.getLanguages", 3600)
+        this.clientTTLs.set("tables.getCountries", 3600)
+        this.clientTTLs.set("tables.getCompilers", 3600)
+        this.clientTTLs.set("tables.getDrivers", 3600)
+        this.clientTTLs.set("tables.getVerdicts", 3600)
+        this.clientTTLs.set("tables.getProglangs", 3600)
+        this.clientTTLs.set("tables.getTimezones", 3600)
+        this.clientTTLs.set("courses.indexPublic", 300)
         this.clientTTLs.set("problems.getAllAbstractProblems", 3600)
+        this.clientTTLs.set("problems.getAllAbstractProblemsRaw", 3600)
+        this.clientTTLs.set("problems.getSomeAbstractProblems", 600)
     }
 }
 
@@ -1540,6 +1791,18 @@ class Module_auth {
     }
 
     /**
+     * Get list of ready exams for a user, given their credentials.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Validates user credentials and returns the list of ready exams. Does not create a session or return a token.
+     */
+    async getReadyExams(data: CredentialsIn): Promise<ReadyExam[]> {
+        const [output, ofiles] = await this.root.execute("auth.getReadyExams", data)
+        return output
+    }
+
+    /**
      * Login: Get an access token.
      *
      * 🔐 Authentication: any
@@ -1548,6 +1811,90 @@ class Module_auth {
      */
     async loginWithUsername(data: CredentialsWithUsernameIn): Promise<CredentialsOut> {
         const [output, ofiles] = await this.root.execute("auth.loginWithUsername", data)
+        return output
+    }
+
+    /**
+     * Register a new user account.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Creates a new user with the provided profile data. Requires a valid reCAPTCHA v3 token.
+     */
+    async register(data: RegisterIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.register", data)
+        return output
+    }
+
+    /**
+     * Request a password reset link by email.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Sends a reset link to the user if the email is registered. Always succeeds silently for unknown emails. Requires a valid reCAPTCHA v3 token.
+     */
+    async requestPasswordReset(data: RequestPasswordResetIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.requestPasswordReset", data)
+        return output
+    }
+
+    /**
+     * Confirm a password reset and set a new password.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Validates the reset code and sets a new password. Requires a valid reCAPTCHA v3 token.
+     */
+    async confirmPasswordRequest(data: ConfirmPasswordRequestIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.confirmPasswordRequest", data)
+        return output
+    }
+
+    /**
+     * Request account unregistration confirmation link by email.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Verifies the current password and sends an unregistration confirmation link. Requires authentication and a valid reCAPTCHA v3 token.
+     */
+    async requestUnregistration(data: RequestUnregistrationIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.requestUnregistration", data)
+        return output
+    }
+
+    /**
+     * Confirm account unregistration.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Validates the unregistration code, removes the account, unlinks course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token. Warning: This action is irreversible!!!
+     */
+    async confirmUnregistration(data: ConfirmUnregistrationIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.confirmUnregistration", data)
+        return output
+    }
+
+    /**
+     * Request an email address change confirmation link.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Verifies the current password and sends a confirmation link to the new email address. Requires authentication and a valid reCAPTCHA v3 token.
+     */
+    async requestChangeEmail(data: RequestChangeEmailIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.requestChangeEmail", data)
+        return output
+    }
+
+    /**
+     * Confirm an email address change.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Validates the email change code, updates the account email, migrates course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token.
+     */
+    async confirmChangeEmail(data: ConfirmUnregistrationIn): Promise<void> {
+        const [output, ofiles] = await this.root.execute("auth.confirmChangeEmail", data)
         return output
     }
 }
@@ -1795,6 +2142,43 @@ class Module_tables {
         const [output, ofiles] = await this.root.execute("tables.getProglangs", null)
         return output
     }
+
+    /**
+     * Returns all timezones.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Returns all timezones as a dictionary of objects, indexed by id.
+     */
+    async getTimezones(): Promise<Record<string, Timezone>> {
+        const [output, ofiles] = await this.root.execute("tables.getTimezones", null)
+        return output
+    }
+}
+
+/**
+ *
+ * Public course endpoints
+ *
+ */
+class Module_courses {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get all public courses.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Returns all courses marked as public, indexed by course key (`username:course_nm`).
+     */
+    async indexPublic(): Promise<PublicCourses> {
+        const [output, ofiles] = await this.root.execute("courses.indexPublic", null)
+        return output
+    }
 }
 
 /**
@@ -1838,6 +2222,21 @@ class Module_problems {
     }
 
     /**
+     * Test of getting abstract problems
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Bla bla
+     */
+    async getAllAbstractProblemsRaw(): Promise<Record<string, AbstractProblem>> {
+        const [output, ofiles] = await this.root.execute(
+            "problems.getAllAbstractProblemsRaw",
+            null
+        )
+        return output
+    }
+
+    /**
      * Get available abstract problems whose keys are in `problem_nms`.
      *
      * 🔐 Authentication: any
@@ -1848,6 +2247,23 @@ class Module_problems {
         const [output, ofiles] = await this.root.execute(
             "problems.getAbstractProblems",
             problem_nms
+        )
+        return output
+    }
+
+    /**
+     * Get some available abstract problems with a given regexp and a limit.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Includes problems.
+     */
+    async getSomeAbstractProblems(
+        data: GetSomeAbstractProblemsIn
+    ): Promise<Record<string, AbstractProblem>> {
+        const [output, ofiles] = await this.root.execute(
+            "problems.getSomeAbstractProblems",
+            data
         )
         return output
     }
@@ -1900,6 +2316,21 @@ class Module_problems {
     }
 
     /**
+     * Get supplementary information of many abstract problems.
+     *
+     * 🔐 Authentication: any
+     * No warnings
+     * Includes accepted compilers and accepted proglangs. Keys are `problem_nm`s.
+     */
+    async getManyAbstractProblemSuppl(problem_nms: string): Promise<AbstractProblemSuppls> {
+        const [output, ofiles] = await this.root.execute(
+            "problems.getManyAbstractProblemSuppl",
+            problem_nms
+        )
+        return output
+    }
+
+    /**
      * Get a problem.
      *
      * 🔐 Authentication: any
@@ -1916,8 +2347,7 @@ class Module_problems {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Includes accepted compilers, accepted proglangs, official solutions
-    checks and handler specifications
+     * Includes accepted compilers, accepted proglangs, official solutions checks and handler specifications
      */
     async getProblemSuppl(problem_id: string): Promise<ProblemSuppl> {
         const [output, ofiles] = await this.root.execute("problems.getProblemSuppl", problem_id)
@@ -2115,18 +2545,6 @@ class Module_problems {
         const [output, ofiles] = await this.root.execute("problems.fullTextSearch", data)
         return output
     }
-
-    /**
-     * Get solutions for a problem.
-     *
-     * 🔐 Authentication: instructor
-     * No warnings
-     * The keys are the proglangs and the values are the solutions in base64. Pemission is granted to admin, ownerof the problem and instructor when shared solutions are enabled.
-     */
-    async getSolutions(problem_id: string): Promise<Record<string, string>> {
-        const [output, ofiles] = await this.root.execute("problems.getSolutions", problem_id)
-        return output
-    }
 }
 
 /**
@@ -2144,8 +2562,11 @@ class Module_student {
     readonly courses: Module_student_courses
     readonly lists: Module_student_lists
     readonly exam: Module_student_exam
+    readonly exams: Module_student_exams
     readonly statuses: Module_student_statuses
     readonly awards: Module_student_awards
+    readonly settings: Module_student_settings
+    readonly tradingCards: Module_student_tradingCards
 
     constructor(root: JutgeApiClient) {
         this.root = root
@@ -2156,8 +2577,11 @@ class Module_student {
         this.courses = new Module_student_courses(root)
         this.lists = new Module_student_lists(root)
         this.exam = new Module_student_exam(root)
+        this.exams = new Module_student_exams(root)
         this.statuses = new Module_student_statuses(root)
         this.awards = new Module_student_awards(root)
+        this.settings = new Module_student_settings(root)
+        this.tradingCards = new Module_student_tradingCards(root)
     }
 }
 
@@ -2529,14 +2953,41 @@ class Module_student_submissions {
     }
 
     /**
+     * Get all submissions for a list of abstract problems.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Flat array of submissions from newer to older.
+     */
+    async getForAbstractProblems(problem_nms: string): Promise<Submission[]> {
+        const [output, ofiles] = await this.root.execute(
+            "student.submissions.getForAbstractProblems",
+            problem_nms
+        )
+        return output
+    }
+
+    /**
      * Get all submissions.
      *
      * 🔐 Authentication: user
      * No warnings
-     * Flat array of submissions in chronological order.
+     * Flat array of submissions from newer to older.
      */
     async getAll(): Promise<Submission[]> {
         const [output, ofiles] = await this.root.execute("student.submissions.getAll", null)
+        return output
+    }
+
+    /**
+     * Get list of submissions in a range of dates.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Flat array of submissions from newer to older for a given range of dates.
+     */
+    async getRange(data: DateRange2): Promise<Submission[]> {
+        const [output, ofiles] = await this.root.execute("student.submissions.getRange", data)
         return output
     }
 
@@ -2601,17 +3052,44 @@ class Module_student_submissions {
     }
 
     /**
+     * Get compilation errors for a submission.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getCompilationErrors(data: GetGameResultIn): Promise<CompilationErrors> {
+        const [output, ofiles] = await this.root.execute(
+            "student.submissions.getCompilationErrors",
+            data
+        )
+        return output
+    }
+
+    /**
      * Get code metrics for a submission.
      *
      * 🔐 Authentication: user
      * No warnings
      *
      */
-    async getCodeMetrics(data: GetGameResultIn): Promise<CodeMetrics | null> {
+    async getCodeMetrics(data: GetGameResultIn): Promise<CodeMetricsResult> {
         const [output, ofiles] = await this.root.execute(
             "student.submissions.getCodeMetrics",
             data
         )
+        return output
+    }
+
+    /**
+     * Get partial scoring for a submission.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getScoring(data: GetGameResultIn): Promise<Scoring> {
+        const [output, ofiles] = await this.root.execute("student.submissions.getScoring", data)
         return output
     }
 
@@ -2662,6 +3140,51 @@ class Module_student_submissions {
     }
 
     /**
+     * Get the modules of a circuit submission. Only for circuits. Each element is an SVG string.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getCircuitModules(data: GetGameResultIn): Promise<Record<string, string>> {
+        const [output, ofiles] = await this.root.execute(
+            "student.submissions.getCircuitModules",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get the error report traces of a circuit submission.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getCircuitTracesJson(data: GetGameResultIn): Promise<Settings> {
+        const [output, ofiles] = await this.root.execute(
+            "student.submissions.getCircuitTracesJson",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get the error report traces of a circuit submission.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getCircuitTracesSvg(data: GetGameResultIn): Promise<Record<string, string>> {
+        const [output, ofiles] = await this.root.execute(
+            "student.submissions.getCircuitTracesSvg",
+            data
+        )
+        return output
+    }
+
+    /**
      * Get the result of a game submission.
      *
      * 🔐 Authentication: user
@@ -2686,6 +3209,21 @@ class Module_student_submissions {
     async getGameOutput(data: GetGameOutputIn): Promise<string> {
         const [output, ofiles] = await this.root.execute(
             "student.submissions.getGameOutput",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get debug information for a submission.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getDebugInformation(data: GetGameResultIn): Promise<DebugInformation | null> {
+        const [output, ofiles] = await this.root.execute(
+            "student.submissions.getDebugInformation",
             data
         )
         return output
@@ -2781,6 +3319,48 @@ class Module_student_courses {
         const [output, ofiles] = await this.root.execute("student.courses.unenroll", course_key)
         return output
     }
+
+    /**
+     * Get the keys of all archived courses.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getArchivedKeys(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute(
+            "student.courses.getArchivedKeys",
+            null
+        )
+        return output
+    }
+
+    /**
+     * Archive an enrolled course.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async archive(course_key: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("student.courses.archive", course_key)
+        return output
+    }
+
+    /**
+     * Unarchive an archived course.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async unArchive(course_key: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute(
+            "student.courses.unArchive",
+            course_key
+        )
+        return output
+    }
 }
 
 /**
@@ -2818,6 +3398,18 @@ class Module_student_lists {
         const [output, ofiles] = await this.root.execute("student.lists.get", list_key)
         return output
     }
+
+    /**
+     * Get many lists.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Includes items, owner. Keys are `list_key`s.
+     */
+    async getMany(list_keys: string): Promise<Record<string, List>> {
+        const [output, ofiles] = await this.root.execute("student.lists.getMany", list_keys)
+        return output
+    }
 }
 
 /**
@@ -2835,7 +3427,7 @@ class Module_student_exam {
     /**
      * Get list of ready exams.
      *
-     * 🔐 Authentication: any
+     * 🔐 Authentication: user
      * No warnings
      * An exam is ready if the current time is between its expected start time minus two days and its expected end time plus two days. Exams are sorted by their distance to the current time and by title order in case of ties.
      */
@@ -2895,6 +3487,43 @@ class Module_student_exam {
      */
     async getRanking(): Promise<Ranking> {
         const [output, ofiles] = await this.root.execute("student.exam.getRanking", null)
+        return output
+    }
+}
+
+/**
+ *
+ * No description yet
+ *
+ */
+class Module_student_exams {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get all exams linked to the user.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getAll(): Promise<BriefExams> {
+        const [output, ofiles] = await this.root.execute("student.exams.getAll", null)
+        return output
+    }
+
+    /**
+     * Get an exam linked to the user.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async get(exam_key: string): Promise<Exam> {
+        const [output, ofiles] = await this.root.execute("student.exams.get", exam_key)
         return output
     }
 }
@@ -2993,6 +3622,500 @@ class Module_student_awards {
 
 /**
  *
+ * User-specific settings stored as key-value pairs.
+ *
+ */
+class Module_student_settings {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get all user settings.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getAll(): Promise<Settings> {
+        const [output, ofiles] = await this.root.execute("student.settings.getAll", null)
+        return output
+    }
+
+    /**
+     * Get a user setting by key.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async get(key: string): Promise<any> {
+        const [output, ofiles] = await this.root.execute("student.settings.get", key)
+        return output
+    }
+
+    /**
+     * Set a user setting.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async set(data: Setting): Promise<void> {
+        const [output, ofiles] = await this.root.execute("student.settings.set", data)
+        return output
+    }
+}
+
+/**
+ *
+ * No description yet
+ *
+ */
+class Module_student_tradingCards {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get all trading cards.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getAll(): Promise<TradingCards> {
+        const [output, ofiles] = await this.root.execute("student.tradingCards.getAll", null)
+        return output
+    }
+}
+
+/**
+ *
+ * Supervision operations available to tutors.
+ *
+ */
+class Module_tutor {
+    private readonly root: JutgeApiClient
+
+    readonly courses: Module_tutor_courses
+    readonly profile: Module_tutor_profile
+    readonly statuses: Module_tutor_statuses
+    readonly submissions: Module_tutor_submissions
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+        this.courses = new Module_tutor_courses(root)
+        this.profile = new Module_tutor_profile(root)
+        this.statuses = new Module_tutor_statuses(root)
+        this.submissions = new Module_tutor_submissions(root)
+    }
+}
+
+/**
+ *
+ * Course operations for tutors.
+ *
+ */
+class Module_tutor_courses {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get course keys the user can tutorize.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     * Returns courses where the user is enrolled as a tutor.
+     */
+    async getCoursesKeys(): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("tutor.courses.getCoursesKeys", null)
+        return output
+    }
+
+    /**
+     * Get students enrolled in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     * Returns name and email for each student enrolled in the given course. Gated to courses the user can tutorize.
+     */
+    async getEnrolledStudents(course_key: string): Promise<EnrolledStudent[]> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.courses.getEnrolledStudents",
+            course_key
+        )
+        return output
+    }
+
+    /**
+     * Get tutors enrolled in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     * Returns name and email for each tutor enrolled in the given course. Gated to courses the user can tutorize.
+     */
+    async getEnrolledTutors(course_key: string): Promise<EnrolledStudent[]> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.courses.getEnrolledTutors",
+            course_key
+        )
+        return output
+    }
+
+    /**
+     * Get all submissions for a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     * Returns all submissions for all problems in all lists of the course, from all enrolled students. Each submission includes the student user uid, email, time, problem id, verdict, compiler id, and programming language. Gated to courses the user can tutorize.
+     */
+    async getCourseSubmissions(course_key: string): Promise<CourseSubmission[]> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.courses.getCourseSubmissions",
+            course_key
+        )
+        return output
+    }
+}
+
+/**
+ *
+ * Student profile operations for tutors.
+ *
+ */
+class Module_tutor_profile {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get the public profile of a student.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     * Returns the public profile for the given email. Gated to students enrolled in courses the user can tutorize.
+     */
+    async get(email: string): Promise<PublicProfile> {
+        const [output, ofiles] = await this.root.execute("tutor.profile.get", email)
+        return output
+    }
+
+    /**
+     * Returns the avatar of a student as a PNG file.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     * Returns the avatar for the given email. Gated to students enrolled in courses the user can tutorize.
+     */
+    async getAvatar(email: string): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("tutor.profile.getAvatar", email)
+        return ofiles[0]
+    }
+}
+
+/**
+ *
+ * Student status operations for tutors.
+ *
+ */
+class Module_tutor_statuses {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get statuses for all abstract problems in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getAll(data: {
+        course_key: string
+        email: string
+    }): Promise<Record<string, AbstractStatus>> {
+        const [output, ofiles] = await this.root.execute("tutor.statuses.getAll", data)
+        return output
+    }
+
+    /**
+     * Get status for an abstract problem in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getForAbstractProblem(data: {
+        course_key: string
+        email: string
+        problem_nm: string
+    }): Promise<AbstractStatus> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.statuses.getForAbstractProblem",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get status for a problem in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getForProblem(data: {
+        course_key: string
+        email: string
+        problem_id: string
+    }): Promise<Status> {
+        const [output, ofiles] = await this.root.execute("tutor.statuses.getForProblem", data)
+        return output
+    }
+}
+
+/**
+ *
+ * Submission operations for tutors.
+ *
+ */
+class Module_tutor_submissions {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get index of all submissions for an abstract problem in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async indexForAbstractProblem(data: {
+        course_key: string
+        email: string
+        problem_nm: string
+    }): Promise<Record<string, Record<string, TutorSubmission>>> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.submissions.indexForAbstractProblem",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get index of all submissions for a problem in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async indexForProblem(data: {
+        course_key: string
+        email: string
+        problem_id: string
+    }): Promise<Record<string, TutorSubmission>> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.submissions.indexForProblem",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get all submissions for a list of abstract problems in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getForAbstractProblems(data: {
+        course_key: string
+        email: string
+        problem_nms: string
+    }): Promise<TutorSubmission[]> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.submissions.getForAbstractProblems",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get all submissions for a supervised student in a course.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getAll(data: { course_key: string; email: string }): Promise<TutorSubmission[]> {
+        const [output, ofiles] = await this.root.execute("tutor.submissions.getAll", data)
+        return output
+    }
+
+    /**
+     * Get a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async get(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<TutorSubmission> {
+        const [output, ofiles] = await this.root.execute("tutor.submissions.get", data)
+        return output
+    }
+
+    /**
+     * Get code for a submission as a string in base64.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getCodeAsB64(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<string> {
+        const [output, ofiles] = await this.root.execute("tutor.submissions.getCodeAsB64", data)
+        return output
+    }
+
+    /**
+     * Get compilation errors for a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getCompilationErrors(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<CompilationErrors> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.submissions.getCompilationErrors",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get code metrics for a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getCodeMetrics(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<CodeMetrics | null> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.submissions.getCodeMetrics",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get partial scoring for a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getScoring(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<Scoring> {
+        const [output, ofiles] = await this.root.execute("tutor.submissions.getScoring", data)
+        return output
+    }
+
+    /**
+     * Get list of awards ids for a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getAwards(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("tutor.submissions.getAwards", data)
+        return output
+    }
+
+    /**
+     * Get analysis of a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getAnalysis(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+    }): Promise<SubmissionAnalysis[]> {
+        const [output, ofiles] = await this.root.execute("tutor.submissions.getAnalysis", data)
+        return output
+    }
+
+    /**
+     * Get a (public) testcase analysis of a submission.
+     *
+     * 🔐 Authentication: tutor
+     * No warnings
+     *
+     */
+    async getTestcaseAnalysis(data: {
+        course_key: string
+        email: string
+        problem_id: string
+        submission_id: string
+        testcase: string
+    }): Promise<TestcaseAnalysis> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.submissions.getTestcaseAnalysis",
+            data
+        )
+        return output
+    }
+}
+
+/**
+ *
  * This module is meant to be used by instructors
  *
  */
@@ -3050,7 +4173,7 @@ class Module_instructor_documents {
      *
      * 🔐 Authentication: instructor
      * No warnings
-     * The PDF file is not included in the response.
+     * The file content is not included in the response.
      */
     async get(document_nm: string): Promise<Document> {
         const [output, ofiles] = await this.root.execute(
@@ -3070,6 +4193,21 @@ class Module_instructor_documents {
     async getPdf(document_nm: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
             "instructor.documents.getPdf",
+            document_nm
+        )
+        return ofiles[0]
+    }
+
+    /**
+     * Get ZIP of a document.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async getZip(document_nm: string): Promise<Download> {
+        const [output, ofiles] = await this.root.execute(
+            "instructor.documents.getZip",
             document_nm
         )
         return ofiles[0]
@@ -3295,6 +4433,18 @@ class Module_instructor_courses {
      */
     async update(data: InstructorCourseUpdate): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.update", data)
+        return output
+    }
+
+    /**
+     * Update the icon of a course.
+     *
+     * 🔐 Authentication: instructor
+     * No warnings
+     *
+     */
+    async updateIcon(data: InstructorCourseUpdateIconInput): Promise<void> {
+        const [output, ofiles] = await this.root.execute("instructor.courses.updateIcon", data)
         return output
     }
 
@@ -3923,6 +5073,66 @@ class Module_instructor_problems {
     }
 
     /**
+     * Get all testcases of a problem.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     */
+    async getAllTestcases(problem_id: string): Promise<Testcase[]> {
+        const [output, ofiles] = await this.root.execute(
+            "instructor.problems.getAllTestcases",
+            problem_id
+        )
+        return output
+    }
+
+    /**
+     * Get list of proglangs for which the problem has an official solution.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins and instructors who own the problem.
+     */
+    async getSolutions(problem_id: string): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute(
+            "instructor.problems.getSolutions",
+            problem_id
+        )
+        return output
+    }
+
+    /**
+     * Get official solution for a problem in proglang as a string in base64.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins and instructors who own the problem.
+     */
+    async getSolutionAsB64(data: { problem_id: string; proglang: string }): Promise<string> {
+        const [output, ofiles] = await this.root.execute(
+            "instructor.problems.getSolutionAsB64",
+            data
+        )
+        return output
+    }
+
+    /**
+     * Get official solution for a problem in proglang as a file.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins and instructors who own the problem.
+     */
+    async getSolutionAsFile(data: { problem_id: string; proglang: string }): Promise<Download> {
+        const [output, ofiles] = await this.root.execute(
+            "instructor.problems.getSolutionAsFile",
+            data
+        )
+        return ofiles[0]
+    }
+
+    /**
      * Create a problem from a ZIP archive.
      *
      * 🔐 Authentication: instructor
@@ -4196,13 +5406,13 @@ class Module_games {
     }
 
     /**
-     * Submit a match for a game.
+     * Submit a match for a game (combat or competition match).
      *
      * 🔐 Authentication: competitions
      * No warnings
      *
      */
-    async submitMatch(data: SubmitMatchInput): Promise<NewSubmissionOut> {
+    async submitMatch(data: SubmitMatchIn): Promise<NewSubmissionOut> {
         const [output, ofiles] = await this.root.execute("games.submitMatch", data)
         return output
     }
@@ -4217,6 +5427,7 @@ class Module_admin {
     private readonly root: JutgeApiClient
 
     readonly instructors: Module_admin_instructors
+    readonly courses: Module_admin_courses
     readonly users: Module_admin_users
     readonly dashboard: Module_admin_dashboard
     readonly queue: Module_admin_queue
@@ -4227,6 +5438,7 @@ class Module_admin {
     constructor(root: JutgeApiClient) {
         this.root = root
         this.instructors = new Module_admin_instructors(root)
+        this.courses = new Module_admin_courses(root)
         this.users = new Module_admin_users(root)
         this.dashboard = new Module_admin_dashboard(root)
         this.queue = new Module_admin_queue(root)
@@ -4281,6 +5493,46 @@ class Module_admin_instructors {
      */
     async remove(email: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.instructors.remove", email)
+        return output
+    }
+}
+
+/**
+ *
+ * No description yet
+ *
+ */
+class Module_admin_courses {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get all courses from all instructors.
+     *
+     * 🔐 Authentication: admin
+     * No warnings
+     *
+     */
+    async getAll(): Promise<AdminCourses> {
+        const [output, ofiles] = await this.root.execute("admin.courses.getAll", null)
+        return output
+    }
+
+    /**
+     * Set the public and official fields of a course.
+     *
+     * 🔐 Authentication: admin
+     * No warnings
+     *
+     */
+    async setPublicAndOfficial(data: AdminCourseSetPublicAndOfficial): Promise<void> {
+        const [output, ofiles] = await this.root.execute(
+            "admin.courses.setPublicAndOfficial",
+            data
+        )
         return output
     }
 }
@@ -5000,51 +6252,6 @@ class Module_admin_problems {
 
     constructor(root: JutgeApiClient) {
         this.root = root
-    }
-
-    /**
-     * Get list of proglangs for which the problem has an official solution.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async getSolutions(problem_id: string): Promise<string[]> {
-        const [output, ofiles] = await this.root.execute(
-            "admin.problems.getSolutions",
-            problem_id
-        )
-        return output
-    }
-
-    /**
-     * Get official solution for a problem in proglang as a string in base64.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async getSolutionAsB64(data: { problem_id: string; proglang: string }): Promise<string> {
-        const [output, ofiles] = await this.root.execute(
-            "admin.problems.getSolutionAsB64",
-            data
-        )
-        return output
-    }
-
-    /**
-     * Get official solution for a problem in proglang as a file.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async getSolutionAsFile(data: { problem_id: string; proglang: string }): Promise<Download> {
-        const [output, ofiles] = await this.root.execute(
-            "admin.problems.getSolutionAsFile",
-            data
-        )
-        return ofiles[0]
     }
 
     /**

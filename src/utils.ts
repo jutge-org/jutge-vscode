@@ -88,8 +88,14 @@ export const getWorkspaceUri = (): vscode.Uri | null => {
 
 export const getExtensionDirectory = (): string => {
     const uri = getContext().extensionUri
+    let path = uri.path
+
     // TODO: Check that `workspaceUri` is not remote?
-    return uri.path
+    // Windows: remove leading '/'
+    if (isWindows() && path[0] === "/") {
+        path = path.slice(1)
+    }
+    return path
 }
 
 export const getWorkingDirectory = (filename: string) => {
@@ -123,19 +129,14 @@ export function sanitizeTitle(title: string): string {
         ["ùú", "u"],
         ["ñ", "n"],
         ["ç", "c"],
+        [" ", "_"],
     ]
     for (const [chars, repl] of replacements) {
         for (const c of [...chars]) {
-            title = title.replace(c, repl)
+            title = title.replaceAll(c, repl)
         }
     }
-    title = title.replace(/ /g, "_") // Replace spaces with underscores
-    title = title.replace(/[à,á]/g, "a") // Replace accents
-    title = title.replace(/[è,é]/g, "e") // Replace accents
-    title = title.replace(/[í,ï]/g, "i") // Replace accents
-    title = title.replace(/[ò,ó]/g, "o") // Replace accents
-    title = title.replace(/[ú,ü]/g, "u") // Replace accents
-    title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
+    title = title.replaceAll(/[^a-zA-Z0-9_-]/g, "") // Remove other special characters except underscores
     return title
 }
 
