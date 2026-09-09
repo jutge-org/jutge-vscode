@@ -58,7 +58,7 @@ export class JutgeService extends StaticLogger {
     static signedIn_: boolean = false
     static signedInPreExam_: boolean = false
     static apiMode_: ApiMode = "normal"
-    static useDevApi_: boolean = false
+    static useDevApi_: boolean = process.env.MODE === "development"
 
     /* ---------- Context keys ---------- */
 

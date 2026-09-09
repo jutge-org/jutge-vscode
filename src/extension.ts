@@ -363,7 +363,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const isDevelopmentMode = context.extensionMode === vscode.ExtensionMode.Development
 
     // Set JUTGE_API_URL from the start
-    setJutgeApiURL({ mode: "normal", useDevApi: false })
+    // useDevApi only when launching through it's profile
+    setJutgeApiURL({ mode: "normal", useDevApi: process.env.MODE === "development" })
 
     // Initialize sign-in context keys to concrete values so VS Code can
     // evaluate the `when` clauses for the views from the very first frame

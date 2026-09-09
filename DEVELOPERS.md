@@ -22,7 +22,7 @@ cd jutge-vscode
 make
 ```
 
-3. Open the project in VSCode and press `F5` or select `Run > Start Debugging`. There are two launch configurations, `Run Extension (Dev)` and `Run Extension`, both enable special debug options, but the difference is that they point to the pre-production and production environments **of the API**.
+3. Open the project in VSCode and press `F5` or select `Run > Start Debugging`. There are two launch configurations, `Run Extension (Dev API)` and `Run Extension`, both enable special debug options, but the difference is that they point to the pre-production and production environments **of the API**.
 
 ## Project Structure
 
