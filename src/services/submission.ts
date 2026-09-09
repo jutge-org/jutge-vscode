@@ -7,7 +7,7 @@ import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename } from "path"
-import { JutgeService } from "./jutge"
+import { jutgeClient, JutgeService } from "./jutge"
 import { proglangFromFilepath, proglangInfoGet } from "./runners/languages"
 
 export type Veredict = {
@@ -88,6 +88,7 @@ export class SubmissionService extends StaticLogger {
                         problem_id,
                         compiler_id,
                         annotation: `Sent through VSCode on ${nowDate} at ${nowTime}`,
+                        extraSubmissionInfo: "",
                     })
 
                     this.log.info(`Submission successful (${submission_id})`)
@@ -101,12 +102,20 @@ export class SubmissionService extends StaticLogger {
                         progress
                     )
 
+                    const scoring =
+                        verdict === SubmissionStatus.SC
+                            ? await JutgeService.getSubmissionScoring({
+                                  problem_id,
+                                  submission_id,
+                              })
+                            : undefined
+
                     this.emitter_.fire({
                         problem_nm: problem.problem_nm,
                         status: verdict,
                     })
 
-                    return { submission_id, verdict, submission }
+                    return { submission_id, verdict, submission, scoring }
                 } catch (err) {
                     if (err instanceof j.UnauthorizedError) {
                         // Already signed out in JutgeService if this happened
@@ -131,7 +140,8 @@ export class SubmissionService extends StaticLogger {
                 problem,
                 result.submission_id,
                 result.verdict,
-                result.submission
+                result.submission,
+                result.scoring
             )
         }
     }
@@ -171,13 +181,23 @@ export class SubmissionService extends StaticLogger {
         problem: Problem,
         submission_id: string,
         verdict: string,
-        submission: j.Submission
+        submission: j.Submission,
+        scoring: j.Scoring | undefined
     ) {
         let text = (verdict && this._verdictText.get(verdict)) || "❓"
         switch (verdict) {
             case "SC":
                 // NOTE(jma25l): Xapussa until api includes the obtained/maximum score
-                text += ": TBA/TBA"
+                let scored = 0
+                let total = 0
+
+                scoring?.forEach((x) => {
+                    scored += x.points
+                    total += x.correct_points
+                })
+
+                text += `: ${scored}/${total}`
+
                 break
             default: //Mainly for EE
                 if (submission.veredict_info) {

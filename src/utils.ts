@@ -88,8 +88,14 @@ export const getWorkspaceUri = (): vscode.Uri | null => {
 
 export const getExtensionDirectory = (): string => {
     const uri = getContext().extensionUri
+    let path = uri.path
+
     // TODO: Check that `workspaceUri` is not remote?
-    return uri.path
+    // Windows: remove leading '/'
+    if (isWindows() && path[0] === "/") {
+        path = path.slice(1)
+    }
+    return path
 }
 
 export const getWorkingDirectory = (filename: string) => {

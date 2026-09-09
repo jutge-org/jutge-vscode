@@ -47,6 +47,7 @@ const SECRET_SIGN_IN_EMAIL = "jutge-vscode.signIn.email"
 const SECRET_SIGN_IN_PASSWORD = "jutge-vscode.signIn.password"
 
 const KEY_JUTGE_TOKEN = "jutgeToken"
+const KEY_JUTGE_UID = "jutgeUserUID"
 const KEY_PRE_EXAM_TOKEN = "jutgePreExamToken"
 const KEY_EXAM_TOKEN = "jutgeExamToken"
 const KEY_API_MODE = "jutgeApiMode"
@@ -150,6 +151,13 @@ export class JutgeService extends StaticLogger {
         await this.context_.globalState.update(KEY_JUTGE_TOKEN, token)
     }
 
+    public static getUserUID() {
+        return this.context_.globalState.get<string>(KEY_JUTGE_UID)
+    }
+    public static async storeUserUID(token: string | undefined) {
+        await this.context_.globalState.update(KEY_JUTGE_UID, token)
+    }
+
     public static getPreExamToken() {
         return this.context_.globalState.get<string>(KEY_PRE_EXAM_TOKEN)
     }
@@ -210,7 +218,7 @@ export class JutgeService extends StaticLogger {
         this.storeExamToken(undefined)
         this.storePreExamToken(undefined)
         this.storeToken(undefined)
-        jutgeClient.meta = { token: "<invalidated!> XD" }
+        jutgeClient.meta = { token: "<invalidated!> XD", user_uid: "" }
         this.log.info(`Invalidated tokens.`)
     }
 
@@ -229,7 +237,7 @@ export class JutgeService extends StaticLogger {
         const originalUrl = jutgeClient.JUTGE_API_URL
         try {
             setJutgeApiURL({ mode, useDevApi })
-            jutgeClient.meta = { token }
+            jutgeClient.meta = { token, user_uid: originalMeta?.user_uid ?? "" }
             await jutgeClient.student.profile.get()
             return true
         } catch (error) {
@@ -243,11 +251,12 @@ export class JutgeService extends StaticLogger {
 
     /* ---------- State transitions ---------- */
 
-    private static async setSignedInJutge(token: string) {
+    private static async setSignedInJutge(token: string, user_uid: string) {
         this.setApiMode("normal", this.useDevApi_)
         this.signedIn_ = true
         this.signedInPreExam_ = false
         await this.storeToken(token)
+        await this.storeUserUID(user_uid)
         await this.storeApiMode("normal")
         await this.setAllContextKeys({
             courses: true,
@@ -255,11 +264,11 @@ export class JutgeService extends StaticLogger {
             preExam: false,
             contestMode: false,
         })
-        jutgeClient.meta = { token }
+        jutgeClient.meta = { token, user_uid }
         this.log.info(`Signed in (normal).`)
     }
 
-    static async setSignedInPreExam(token: string, mode: ExamMode) {
+    static async setSignedInPreExam(token: string, user_uid: string, mode: ExamMode) {
         this.setApiMode(mode, this.useDevApi_)
         this.signedIn_ = false
         this.signedInPreExam_ = true
@@ -271,11 +280,11 @@ export class JutgeService extends StaticLogger {
             preExam: true,
             contestMode: mode === "contest",
         })
-        jutgeClient.meta = { token }
+        jutgeClient.meta = { token, user_uid }
         this.log.info(`Signed in pre-exam (${mode}).`)
     }
 
-    static async setSignedInExam(examToken: string, mode: ExamMode = "exam") {
+    static async setSignedInExam(examToken: string, user_uid: string, mode: ExamMode = "exam") {
         this.setApiMode(mode, this.useDevApi_)
         this.signedIn_ = true
         this.signedInPreExam_ = false
@@ -289,7 +298,7 @@ export class JutgeService extends StaticLogger {
             preExam: false,
             contestMode: mode === "contest",
         })
-        jutgeClient.meta = { token: examToken }
+        jutgeClient.meta = { token: examToken, user_uid }
         this.log.info(`Signed in to ${mode}.`)
     }
 
@@ -330,7 +339,7 @@ export class JutgeService extends StaticLogger {
         this.setApiMode("normal", this.useDevApi_)
         try {
             const credentials = await jutgeClient.login({ email: trimmedEmail, password })
-            await this.setSignedInJutge(credentials.token)
+            await this.setSignedInJutge(credentials.token, credentials.user_uid)
             await this.storeSignInCredentials(trimmedEmail, password)
             await vscode.commands.executeCommand("jutge-vscode.refreshCoursesTree")
             await vscode.commands.executeCommand("jutge-vscode.refreshProfileTree")
@@ -376,7 +385,7 @@ export class JutgeService extends StaticLogger {
         try {
             const credentials = await jutgeClient.login({ email: trimmedEmail, password })
             await this.storeSignInCredentials(trimmedEmail, password)
-            await this.setSignedInPreExam(credentials.token, mode)
+            await this.setSignedInPreExam(credentials.token, credentials.user_uid, mode)
             return { ok: true }
         } catch (err) {
             this.setApiMode("normal", this.useDevApi_)
@@ -507,16 +516,17 @@ export class JutgeService extends StaticLogger {
                 (await this.isTokenValidOnHost(preExamToken, "normal", this.useDevApi_))
             ) {
                 this.log.info(`Resuming from pre-exam token (intended mode=${storedMode}).`)
-                await this.setSignedInPreExam(preExamToken, storedMode)
+                await this.setSignedInPreExam(preExamToken, "", storedMode)
                 return
             }
         }
 
         // 3) Normal Jutge token.
         const token = this.getToken()
+        const UID = this.getUserUID()
         if (token && (await this.isTokenValidOnHost(token, "normal", this.useDevApi_))) {
             this.log.info(`Resuming from normal token.`)
-            await this.setSignedInJutge(token)
+            await this.setSignedInJutge(token, UID ?? "")
             return
         }
 
@@ -847,6 +857,7 @@ export class JutgeService extends StaticLogger {
             problem_id: string
             compiler_id: string
             annotation: string
+            extraSubmissionInfo: any
         }
     ): Promise<j.NewSubmissionOut> {
         try {
@@ -868,5 +879,11 @@ export class JutgeService extends StaticLogger {
         submission_id: string
     }): Promise<j.Submission> {
         return jutgeClient.student.submissions.get(data)
+    }
+    static async getSubmissionScoring(data: {
+        problem_id: string
+        submission_id: string
+    }): Promise<j.Scoring> {
+        return jutgeClient.student.submissions.getScoring(data)
     }
 }

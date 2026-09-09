@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Extension (Dev)",
+            "name": "Run Extension (Dev API)",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
