@@ -88,6 +88,7 @@ export class SubmissionService extends StaticLogger {
                         problem_id,
                         compiler_id,
                         annotation: `Sent through VSCode on ${nowDate} at ${nowTime}`,
+                        extraSubmissionInfo: null,
                     })
 
                     this.log.info(`Submission successful (${submission_id})`)

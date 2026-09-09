@@ -847,6 +847,7 @@ export class JutgeService extends StaticLogger {
             problem_id: string
             compiler_id: string
             annotation: string
+            extraSubmissionInfo: any
         }
     ): Promise<j.NewSubmissionOut> {
         try {
