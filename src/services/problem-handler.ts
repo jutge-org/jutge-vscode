@@ -66,7 +66,7 @@ export class ProblemHandler extends Logger {
 
     async chooseSourceFile(
         filename: string,
-        extension: string
+        extension?: string
     ): Promise<vscode.Uri | undefined> {
         const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
@@ -92,10 +92,10 @@ export class ProblemHandler extends Logger {
             return
         }
 
-        const { filename, extension } = defaultFilenameForProblem(this.problem_, this.order_)
-        const fileUri = await this.chooseSourceFile(filename, extension)
+        const { filename } = defaultFilenameForProblem(this.problem_)
+        const fileUri = await this.chooseSourceFile(filename)
         if (!fileUri) {
-            throw new Error(`File '${filename}${extension}' does not exist in workspace!`)
+            throw new Error(`File '${filename}' does not exist in workspace!`)
         }
 
         //
@@ -111,7 +111,7 @@ export class ProblemHandler extends Logger {
         showCodeDocument(document)
 
         const { problem_nm } = this.problem_
-        await WebviewPanelRegistry.createOrReveal(problem_nm)
+        await WebviewPanelRegistry.createOrReveal(problem_nm, this.order_)
         await WebviewPanelRegistry.notifyProblemFilesChanges(problem_nm)
     }
 
@@ -233,9 +233,8 @@ export class ProblemHandler extends Logger {
             const document = await this.__getDocument(filePath)
 
             this.log.debug(`Executing code with ${runner.constructor.name}`)
-            const output = runner
-                .run(filePath, testcase.input, document)
-                .replaceAll(/\r\n/g, "\n")
+            const rawOutput = await runner.run(filePath, testcase.input, document)
+            const output = rawOutput.replaceAll(/\r\n/g, "\n")
             this.log.debug(`Code execution completed`)
 
             const handler = this.problem_.handler?.handler || "<unknown>"
@@ -290,9 +289,10 @@ export class ProblemHandler extends Logger {
         const document = await this.__getDocument(filePath)
 
         this.log.debug(`Executing code with ${runner.constructor.name}`)
-        const output = runner.run(filePath, input, document).replaceAll(/\r\n/g, "\n")
-        this.log.debug(`Code execution completed`)
+        const rawOutput = await runner.run(filePath, input, document)
+        const output = rawOutput.replaceAll(/\r\n/g, "\n")
 
+        this.log.debug(`Code execution completed`)
         return output
     }
 

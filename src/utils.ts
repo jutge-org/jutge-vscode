@@ -129,13 +129,14 @@ export function sanitizeTitle(title: string): string {
             title = title.replace(c, repl)
         }
     }
+    title = title.replace(/[àá]/g, "a") // Replace accents
+    title = title.replace(/[èé]/g, "e") // Replace accents
+    title = title.replace(/[íï]/g, "i") // Replace accents
+    title = title.replace(/[òó]/g, "o") // Replace accents
+    title = title.replace(/[úü]/g, "u") // Replace accents
+    title = title.replace(/[^a-zA-Z0-9 ]/g, "") // Remove all special characters
+    title = title.replace(/ +/g, " ") // Remove repeated spaces
     title = title.replace(/ /g, "_") // Replace spaces with underscores
-    title = title.replace(/[à,á]/g, "a") // Replace accents
-    title = title.replace(/[è,é]/g, "e") // Replace accents
-    title = title.replace(/[í,ï]/g, "i") // Replace accents
-    title = title.replace(/[ò,ó]/g, "o") // Replace accents
-    title = title.replace(/[ú,ü]/g, "u") // Replace accents
-    title = title.replace(/[^a-zA-Z0-9_]/g, "") // Remove other special characters except underscores
     return title
 }
 
@@ -188,7 +189,7 @@ export function getProglangFromProblem(problem: Problem): Proglang | null {
     }
 }
 
-export function defaultFilenameForProblem(problem: Problem, order: number) {
+export function defaultFilenameForProblem(problem: Problem) {
     const { problem_id, title } = problem
     const proglang = getProglangFromProblem(problem) || Proglang.CPP
     const langInfo = proglangInfoGet(proglang)
@@ -199,13 +200,15 @@ export function defaultFilenameForProblem(problem: Problem, order: number) {
     }
 }
 
-export async function findPossibleFiles(filename: string, extension: string) {
-    return await vscode.workspace.findFiles(`*${filename}*${extension}`)
+export async function findPossibleFiles(filename: string, extension?: string) {
+    const pattern = extension ? `*${filename}*${extension}` : `*${filename}*.*`
+    console.log("PATTERN -- ", pattern)
+    return await vscode.workspace.findFiles(pattern)
 }
 
-export async function sourceFileExists(problem: Problem, order: number): Promise<boolean> {
-    const { filename, extension } = defaultFilenameForProblem(problem, order)
-    const compatibleUris = await findPossibleFiles(filename, extension)
+export async function sourceFileExists(problem: Problem): Promise<boolean> {
+    const { filename } = defaultFilenameForProblem(problem)
+    const compatibleUris = await findPossibleFiles(filename)
     return compatibleUris.length > 0
 }
 

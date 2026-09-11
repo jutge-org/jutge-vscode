@@ -5,6 +5,16 @@ All notable changes to the "jutge-vscode" extension will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-09-..
+
+## Fixed
+
+- The TreeView does not show Jutge.org quizzes, since the VSCode extension is not capable of running them yet.
+
+- Now the "Open Existing File" button works correctly for multiple languages (worked only for C++ by mistake).
+
+- Fixed a bug in which the order of a problem was not remembered in between sessions (when reloading VSCode).
+
 ## [0.1.7] - 2026-09-06
 
 ## Added

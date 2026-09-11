@@ -22,7 +22,7 @@ export class WebviewPanelRegistry extends StaticLogger {
 
     static async createOrReveal(
         problemNm: string,
-        order: number = -1
+        order: number
     ): Promise<ProblemViewPanel | null> {
         const context = getContext()
         if (!(await isProblemValidAndAccessible(problemNm))) {
@@ -61,7 +61,7 @@ export class WebviewPanelRegistry extends StaticLogger {
             return
         }
         await panel.notifyProblemFilesChanges()
-        const fileExists = await sourceFileExists(panel.problem, panel.order)
+        const fileExists = await sourceFileExists(panel.problem)
         panel.fileExists = fileExists
     }
 
