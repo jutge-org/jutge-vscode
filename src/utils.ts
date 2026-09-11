@@ -202,7 +202,6 @@ export function defaultFilenameForProblem(problem: Problem) {
 
 export async function findPossibleFiles(filename: string, extension?: string) {
     const pattern = extension ? `*${filename}*${extension}` : `*${filename}*.*`
-    console.log("PATTERN -- ", pattern)
     return await vscode.workspace.findFiles(pattern)
 }
 
