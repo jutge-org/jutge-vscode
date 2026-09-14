@@ -1,3 +1,7 @@
+## README
+
+- Review all the details and get rid of `Makefile`, it is not necessary at all.
+
 ## Testcases
 
 - When doing "Custom testcases" in graphics problems, the output
