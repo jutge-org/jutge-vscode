@@ -1,3 +1,13 @@
+## Testcases
+
+- When doing "Custom testcases" in graphics problems, the output
+  should be the image generated, but it assumes text.
+
+- Replicate the fact that Jutge.org does a first "mypy" compilation and errors in mypy have the result of WA (with no output).
+
+- When doing problems which ask just a function, we should be mixing the code written by the student + the main.py given in the
+  problem?? ([P36936_ca](https://jutge.org/problems/P36936_ca))
+
 ## Problems
 
 - Button to download previous submissions to a problem and save them in the directory you are working on.
