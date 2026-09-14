@@ -5,8 +5,7 @@
 
 - Replicate the fact that Jutge.org does a first "mypy" compilation and errors in mypy have the result of WA (with no output).
 
-- When doing problems which ask just a function, we should be mixing the code written by the student + the main.py given in the
-  problem?? ([P36936_ca](https://jutge.org/problems/P36936_ca))
+- When doing problems which ask just a function (`no_main`), we should be mixing the code written by the student + the main.py given in the problem! ([P36936_ca](https://jutge.org/problems/P36936_ca))
 
 ## Problems
 
