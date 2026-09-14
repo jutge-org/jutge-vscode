@@ -1,8 +1,10 @@
 import * as fs from "fs"
-import { readdir } from "fs/promises"
+import { mkdir, mkdtemp, readdir } from "fs/promises"
 import * as os from "os"
 import { basename, dirname, extname, join } from "path"
+import { pipeline } from "stream/promises"
 import * as vscode from "vscode"
+import { getContext } from "./extension"
 import { Testcase } from "./jutge_api_client"
 import {
     Proglang,
@@ -11,7 +13,6 @@ import {
     proglangInfoGet,
 } from "./services/runners/languages"
 import { InputExpected, Problem } from "./types"
-import { getContext } from "./extension"
 
 /**
  * A function that returns whether the os is Windows.
@@ -88,7 +89,7 @@ export const getWorkspaceUri = (): vscode.Uri | null => {
 
 export const getExtensionDirectory = (): string => {
     const uri = getContext().extensionUri
-    // TODO: Check that `workspaceUri` is not remote?
+    // TODO: Check that `workspaceUri` 1 not remote?
     return uri.path
 }
 
@@ -103,7 +104,6 @@ export const getWorkingDirectory = (filename: string) => {
         workingDir = workingDir.slice(1)
     }
 
-    console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
 }
 
@@ -271,4 +271,36 @@ export async function showCodeDocument(document: vscode.TextDocument) {
         preview: false,
         viewColumn: vscode.ViewColumn.One,
     })
+}
+
+export async function withTemporaryDir<T>(func: (tempdir: string) => Promise<T>): Promise<T> {
+    // Create temporary directory
+    const dirname = await mkdtemp("jutge-vscode-")
+    const tmpDir = join(os.tmpdir(), dirname)
+    await mkdir(tmpDir)
+    console.log("Temporary dir is", tmpDir)
+
+    // Run the body function `func`
+    const result: T = await func(tmpDir)
+
+    // Remove the directory
+    // await rimraf(tmpDir)
+
+    // Return same result as body function
+    return result
+}
+
+export async function downloadFile(url: string, targetPath: string): Promise<void> {
+    // Start the fetch and use `response.body`, which is a ReadableStream in a pipeline
+    const response = await fetch(url)
+    if (response.body === null) {
+        throw new Error(`Could not download '${url}'`)
+    }
+
+    // Create a pipeline into a WritableStream to the `targetPath`
+    try {
+        await pipeline(response.body, fs.createWriteStream(targetPath))
+    } catch (err: any) {
+        throw new Error(`Could not download '${url}': ${err}`)
+    }
 }

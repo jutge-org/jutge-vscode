@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.8] - 2026-09-..
 
+## New
+
+- The Python runner (which runs programs in the background) now uses `uv` to prepare a directory called `.jutge-org.python-runner` to deal with the `yogi` library independently of the rest of the system.
+
 ## Fixed
 
 - The TreeView does not show Jutge.org quizzes, since the VSCode extension is not capable of running them yet.

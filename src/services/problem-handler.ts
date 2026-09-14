@@ -242,17 +242,15 @@ export class ProblemHandler extends Logger {
                 case "std": {
                     const expected = testcase.expected.toString("utf-8")
                     const passed = output !== null && output === expected
-                    return {
-                        status: passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED,
-                        output,
-                    }
+                    const status = passed ? TestcaseStatus.PASSED : TestcaseStatus.FAILED
+                    return { status, output }
                 }
                 case "graphic": {
-                    const workingDir = getWorkingDirectory(`output.png`)
+                    const runningDir = runner.getRunningDir()
 
                     // 1. The program has produced the 'output.png' file as output.
-                    const outputPath = join(workingDir, `output.png`)
-                    const expectedPath = join(workingDir, `expected.png`)
+                    const outputPath = join(runningDir, `output.png`)
+                    const expectedPath = join(runningDir, `expected.png`)
                     const buf = (await readFile(outputPath)).buffer
                     const output = Buffer.from(buf)
                     const output_b64 = output.toString("base64")
@@ -263,7 +261,7 @@ export class ProblemHandler extends Logger {
                     // 3. Compare the two files using ImageMagick 'compare'
                     const rmse = await FileService.compareImages(outputPath, expectedPath)
 
-                    const THRESHOLD = 0.05
+                    const THRESHOLD = 0.0
                     const failed = rmse === null || rmse > THRESHOLD
                     return {
                         status: failed ? TestcaseStatus.FAILED : TestcaseStatus.PASSED,

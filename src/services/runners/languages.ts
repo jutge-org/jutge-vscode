@@ -10,7 +10,8 @@ export enum Proglang {
     GHC = "GHC", // Haskell
 }
 export interface LanguageRunner {
-    run(codePath: string, input: string, document: vscode.TextDocument): string
+    run(codePath: string, input: string, document: vscode.TextDocument): Promise<string>
+    getRunningDir(): string
 }
 
 export type LanguageInfo = {
