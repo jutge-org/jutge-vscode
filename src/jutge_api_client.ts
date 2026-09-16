@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * This file has been automatically generated at 2026-09-09T16:46:48.433Z
+ * This file has been automatically generated at 2026-09-16T06:48:53.252Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -10,6 +10,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
+// Type for dates
+type Iso8601Date = string // Example: "2026-12-31T11:00:00.000+01:00" is the 31st of December 2026 at 11:00:00 in Barcelona in Winter Time
 
 // Models
 
@@ -27,7 +30,7 @@ export type ExamCredentialsIn = {
 
 export type CredentialsOut = {
     token: string
-    expiration: string | string | string | number
+    expiration: Iso8601Date
     user_uid: string
     error: string
 }
@@ -90,18 +93,20 @@ export type Time = {
     date: string
 }
 
+export type RecentSubmissions = {
+    latest_01_minutes: number
+    latest_05_minutes: number
+    latest_15_minutes: number
+    latest_60_minutes: number
+}
+
 export type HomepageStats = {
     users: number
     problems: number
     submissions: number
     exams: number
     contests: number
-    recent_submissions: {
-        latest_01_minutes: number
-        latest_05_minutes: number
-        latest_15_minutes: number
-        latest_60_minutes: number
-    }
+    recent_submissions: RecentSubmissions
 }
 
 export type ColorMapping = Record<string, Record<string, string>>
@@ -220,8 +225,8 @@ export type BriefAbstractProblem = {
     driver_id: string | null
     type: string | null
     deprecation: string | null
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
     solution_tags: SolutionTags | null
 }
 
@@ -250,8 +255,8 @@ export type AbstractProblem = {
     driver_id: string | null
     type: string | null
     deprecation: string | null
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
     solution_tags: SolutionTags | null
     problems: BriefProblemDict
 }
@@ -397,7 +402,7 @@ export type Submission = {
     compiler_id: string
     annotation: string | null
     state: string
-    time_in: string | string | string | number
+    time_in: Iso8601Date
     veredict: string | null
     veredict_info: string | null
     veredict_publics: string | null
@@ -586,7 +591,7 @@ export type ReadyExam = {
     title: string
     place: string
     description: string
-    exp_time_start: string | string | string | number
+    exp_time_start: Iso8601Date
     running_time: number
     contest: boolean
 }
@@ -608,13 +613,19 @@ export type RunningExam = {
     title: string
     description: string
     instructions: string
-    time_start: string | string | string | number | null
-    exp_time_start: string | string | string | number
+    time_start: Iso8601Date | null
+    exp_time_start: Iso8601Date
     running_time: number
     contest: number
     problems: RunningExamProblem[]
     compilers: string[]
     documents: RunningExamDocument[]
+}
+
+export type StudentExamCourse = {
+    course_nm: string
+    title: string
+    icon: string | null
 }
 
 export type BriefExam = {
@@ -623,14 +634,14 @@ export type BriefExam = {
     place: string
     description: string
     contest: boolean
-    course: { course_nm: string; title: string; icon: string | null }
+    course: StudentExamCourse
     owner: PublicProfile
     visible_submissions: boolean
     status: string
-    exp_time_start: string | string | string | number
-    running_time: string | string | string | number
-    time_start: string | string | string | number | null
-    time_end: string | string | string | number | null
+    exp_time_start: Iso8601Date
+    running_time: Iso8601Date
+    time_start: Iso8601Date | null
+    time_end: Iso8601Date | null
 }
 
 export type BriefExams = Record<string, BriefExam>
@@ -641,14 +652,14 @@ export type Exam = {
     place: string
     description: string
     contest: boolean
-    course: { course_nm: string; title: string; icon: string | null }
+    course: StudentExamCourse
     owner: PublicProfile
     visible_submissions: boolean
     status: string
-    exp_time_start: string | string | string | number
-    running_time: string | string | string | number
-    time_start: string | string | string | number | null
-    time_end: string | string | string | number | null
+    exp_time_start: Iso8601Date
+    running_time: Iso8601Date
+    time_start: Iso8601Date | null
+    time_end: Iso8601Date | null
     problems: string[]
     submissions: Submission[]
 }
@@ -676,7 +687,7 @@ export type Status = {
 
 export type Award = {
     award_id: string
-    time: string | string | string | number
+    time: Iso8601Date
     type: string
     icon: string
     title: string
@@ -687,7 +698,7 @@ export type Award = {
 
 export type BriefAward = {
     award_id: string
-    time: string | string | string | number
+    time: Iso8601Date
     type: string
     icon: string
     title: string
@@ -704,8 +715,8 @@ export type Setting = {
 
 export type TradingCard = {
     card_id: string
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
 }
 
 export type TradingCards = TradingCard[]
@@ -734,7 +745,7 @@ export type TutorSubmission = {
     compiler_id: string
     annotation: string | null
     state: string
-    time_in: string | string | string | number
+    time_in: Iso8601Date
     veredict: string | null
     veredict_info: string | null
     veredict_publics: string | null
@@ -747,8 +758,8 @@ export type Document = {
     title: string
     description: string
     type: string
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
 }
 
 export type DocumentCreation = {
@@ -766,8 +777,8 @@ export type InstructorBriefList = {
     annotation: string
     official: number
     public: number
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
 }
 
 export type InstructorListItem = {
@@ -784,8 +795,8 @@ export type InstructorList = {
     annotation: string
     official: number
     public: number
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
     items: InstructorListItems
 }
 
@@ -809,8 +820,8 @@ export type InstructorBriefCourse = {
     official: number
     public: number
     icon: string | null
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
 }
 
 export type CourseMembers = {
@@ -827,8 +838,8 @@ export type InstructorCourse = {
     official: number
     public: number
     icon: string | null
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
     lists: string[]
     students: CourseMembers
     tutors: CourseMembers
@@ -908,7 +919,7 @@ export type InstructorExamCreation = {
     exam_nm: string
     course_nm: string
     title: string
-    exp_time_start: string | string | string | number
+    exp_time_start: Iso8601Date
 }
 
 export type InstructorExamUpdate = {
@@ -918,8 +929,8 @@ export type InstructorExamUpdate = {
     place: string
     code: string
     description: string
-    time_start: string | string | string | number | null
-    exp_time_start: string | string | string | number
+    time_start: Iso8601Date | null
+    exp_time_start: Iso8601Date
     running_time: number
     visible_submissions: number
     started_by: string | null
@@ -960,8 +971,8 @@ export type InstructorBriefExam = {
     place: string | null
     description: string | null
     code: string | null
-    time_start: string | string | string | number | null
-    exp_time_start: string | string | string | number
+    time_start: Iso8601Date | null
+    exp_time_start: Iso8601Date
     running_time: number
     visible_submissions: number
     started_by: string | null
@@ -970,8 +981,8 @@ export type InstructorBriefExam = {
     avatars: string | null
     anonymous: number
     course: InstructorExamCourse
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
 }
 
 export type InstructorExam = {
@@ -980,8 +991,8 @@ export type InstructorExam = {
     place: string | null
     description: string | null
     code: string | null
-    time_start: string | string | string | number | null
-    exp_time_start: string | string | string | number
+    time_start: Iso8601Date | null
+    exp_time_start: Iso8601Date
     running_time: number
     visible_submissions: number
     started_by: string | null
@@ -990,8 +1001,8 @@ export type InstructorExam = {
     avatars: string | null
     anonymous: number
     course: InstructorExamCourse
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
     documents: RunningExamDocument[]
     compilers: InstructorExamCompiler[]
     problems: InstructorExamProblem[]
@@ -1090,7 +1101,7 @@ export type SubmissionQuery = {
     email: string
     problem_nm: string
     problem_id: string
-    time: string | string | string | number
+    time: Iso8601Date
     ip: string
     verdict: string
 }
@@ -1113,7 +1124,7 @@ export type ChatPrompt = {
 
 export type LlmUsageEntry = {
     id: string
-    created_at: string | string | string | number
+    created_at: Iso8601Date
     model: string
     label: string
     duration: number
@@ -1170,8 +1181,8 @@ export type AdminCourse = {
     description: string
     official: number
     public: number
-    created_at: string | string | string | number
-    updated_at: string | string | string | number
+    created_at: Iso8601Date
+    updated_at: Iso8601Date
     icon: string | null
     instructor: AdminCourseInstructor
 }
@@ -1224,13 +1235,13 @@ export type ProfileForAdmin = {
     banned: number
     nb_bans: number
     reason: string | null
-    creation_date: string | string | string | number
+    creation_date: Iso8601Date
 }
 
 export type DatabasesInfoItem = {
     name: string
     size: number
-    mtime: string | string | string | number
+    mtime: Iso8601Date
 }
 
 export type DatabasesInfo = DatabasesInfoItem[]
@@ -1255,13 +1266,6 @@ export type RecentConnectedUsers = {
     latest_week: number
     latest_month: number
     latest_year: number
-}
-
-export type RecentSubmissions = {
-    latest_01_minutes: number
-    latest_05_minutes: number
-    latest_15_minutes: number
-    latest_60_minutes: number
 }
 
 export type RecentLoadAverages = {
@@ -1295,7 +1299,7 @@ export type UpcomingExam = {
     title: string
     username: string
     email: string
-    exp_time_start: string | string | string | number
+    exp_time_start: Iso8601Date
     running_time: number
     students: number
     name: string
@@ -1309,7 +1313,7 @@ export type SubmissionQueueItem = {
     submission_id: string
     problem_id: string
     compiler_id: string
-    time_in: string | string | string | number
+    time_in: Iso8601Date
     exam_id: string | null
     veredict: string | null
     user_id: string
@@ -1364,6 +1368,7 @@ export type SomeType = {
 
 export interface Meta {
     readonly token: string
+    readonly user_uid: string
 }
 
 export interface Download {
@@ -1423,14 +1428,24 @@ type CacheEntry = {
 export class JutgeApiClient {
     //
 
-    /** Client TTL values (in seconds) */
-    clientTTLs: Map<string, number> = new Map()
-
     /** Whether to use cache or not */
     useCache: boolean = true
 
+    /** Whether to log API calls or not */
+    logApiCalls: boolean = false
+
     /** Whether to log cache or not */
     logCache: boolean = false
+
+    /**
+     * User agent to include in the API requests.
+     * This is a metadata included in the request that identifies the client making the call to the server)
+     * You should set this to a value that identifies your client, such as the name of the client and its version.
+     **/
+    userAgent: string = "typescript-client"
+
+    /** Client TTL values (in seconds) */
+    clientTTLs: Map<string, number> = new Map()
 
     /** The cache */
     private cache: Map<string, CacheEntry> = new Map()
@@ -1448,6 +1463,23 @@ export class JutgeApiClient {
 
     /** Function that sends a request to the API and returns the response. **/
     async execute(func: string, input: any, ifiles: File[] = []): Promise<[any, Download[]]> {
+        //
+
+        let startTime = new Date()
+        let endTime: Date
+        try {
+            return await this.execute2(func, input, ifiles)
+        } finally {
+            endTime = new Date()
+            if (this.logApiCalls) {
+                const duration = Math.round(endTime.getTime() - startTime.getTime())
+                console.log(`${func}: ${duration}ms`)
+            }
+        }
+    }
+
+    /** Function that sends a request to the API and returns the response. **/
+    async execute2(func: string, input: any, ifiles: File[] = []): Promise<[any, Download[]]> {
         //
 
         const caching = this.useCache && this.clientTTLs.has(func) && ifiles.length === 0
@@ -1472,7 +1504,7 @@ export class JutgeApiClient {
 
         // prepare form
         const iform = new FormData()
-        const idata = { func, input, meta: this.meta }
+        const idata = { func, input, meta: this.meta, userAgent: this.userAgent }
         iform.append("data", JSON.stringify(idata))
         for (const index in ifiles) iform.append(`file_${index}`, ifiles[index])
 
@@ -1547,7 +1579,7 @@ export class JutgeApiClient {
     }): Promise<CredentialsOut> {
         const [credentials, _] = await this.execute("auth.login", { email, password })
         if (credentials.error) throw new UnauthorizedError(credentials.error)
-        this.meta = { token: credentials.token }
+        this.meta = { token: credentials.token, user_uid: credentials.user_uid }
         return credentials
     }
 
@@ -1570,7 +1602,7 @@ export class JutgeApiClient {
             exam_password,
         })
         if (credentials.error) throw new UnauthorizedError(credentials.error)
-        this.meta = { token: credentials.token }
+        this.meta = { token: credentials.token, user_uid: credentials.user_uid }
         return credentials
     }
 
