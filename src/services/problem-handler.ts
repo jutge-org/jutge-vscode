@@ -68,7 +68,7 @@ export class ProblemHandler extends Logger {
 
     async chooseSourceFile(
         filename: string,
-        extension: string
+        extension?: string
     ): Promise<vscode.Uri | undefined> {
         const workspaceFolder = await getWorkspaceFolderOrPickOne()
         if (!workspaceFolder) {
@@ -94,10 +94,10 @@ export class ProblemHandler extends Logger {
             return
         }
 
-        const { filename, extension } = defaultFilenameForProblem(this.problem_, this.order_)
-        const fileUri = await this.chooseSourceFile(filename, extension)
+        const { filename } = defaultFilenameForProblem(this.problem_)
+        const fileUri = await this.chooseSourceFile(filename)
         if (!fileUri) {
-            throw new Error(`File '${filename}${extension}' does not exist in workspace!`)
+            throw new Error(`File '${filename}' does not exist in workspace!`)
         }
 
         //
@@ -113,7 +113,7 @@ export class ProblemHandler extends Logger {
         showCodeDocument(document)
 
         const { problem_nm } = this.problem_
-        await WebviewPanelRegistry.createOrReveal(problem_nm)
+        await WebviewPanelRegistry.createOrReveal(problem_nm, this.order_)
         await WebviewPanelRegistry.notifyProblemFilesChanges(problem_nm)
     }
 
@@ -267,7 +267,8 @@ export class ProblemHandler extends Logger {
             const document = await this.__getDocument(filePath)
 
             this.log.debug(`Executing code with ${runner.constructor.name}`)
-            const output = runner.run(filePath, testcase.input, document)
+            const rawOutput = await runner.run(filePath, testcase.input, document)
+            const output = rawOutput.replaceAll(/\r\n/g, "\n")
             this.log.debug(`Code execution completed`)
 
             const handler = this.problem_.handler?.handler || "<unknown>"
@@ -283,11 +284,11 @@ export class ProblemHandler extends Logger {
                     }
                 }
                 case "graphic": {
-                    const workingDir = getWorkingDirectory(`output.png`)
+                    const runningDir = runner.getRunningDir()
 
                     // 1. The program has produced the 'output.png' file as output.
-                    const outputPath = join(workingDir, `output.png`)
-                    const expectedPath = join(workingDir, `expected.png`)
+                    const outputPath = join(runningDir, `output.png`)
+                    const expectedPath = join(runningDir, `expected.png`)
                     const buf = (await readFile(outputPath)).buffer
                     const output = Buffer.from(buf)
                     const output_b64 = output.toString("base64")
@@ -298,7 +299,7 @@ export class ProblemHandler extends Logger {
                     // 3. Compare the two files using ImageMagick 'compare'
                     const rmse = await FileService.compareImages(outputPath, expectedPath)
 
-                    const THRESHOLD = 0.05
+                    const THRESHOLD = 0.0
                     const failed = rmse === null || rmse > THRESHOLD
                     return {
                         status: failed ? TestcaseStatus.FAILED : TestcaseStatus.PASSED,
@@ -324,9 +325,10 @@ export class ProblemHandler extends Logger {
         const document = await this.__getDocument(filePath)
 
         this.log.debug(`Executing code with ${runner.constructor.name}`)
-        const output = runner.run(filePath, input, document).replaceAll(/\r\n/g, "\n")
-        this.log.debug(`Code execution completed`)
+        const rawOutput = await runner.run(filePath, input, document)
+        const output = rawOutput.replaceAll(/\r\n/g, "\n")
 
+        this.log.debug(`Code execution completed`)
         return output
     }
 

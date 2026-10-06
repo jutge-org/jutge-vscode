@@ -80,7 +80,7 @@ export class ProblemViewPanel extends Logger {
     }
 
     public async notifyProblemFilesChanges() {
-        this.fileExists = await sourceFileExists(this.problem, this.order)
+        this.fileExists = await sourceFileExists(this.problem)
         this.customTestcases = await FileService.loadCustomTestcases(this.problem)
         await this.panel.webview.postMessage({
             command: VSCodeToWebviewCommand.UPDATE_PROBLEM_FILES,
@@ -183,7 +183,7 @@ export class ProblemViewPanel extends Logger {
     }
 
     private async _loadProblem() {
-        this.fileExists = await sourceFileExists(this.problem, this.order)
+        this.fileExists = await sourceFileExists(this.problem)
         const updateWebview = async () => {
             const problemUrl = JutgeService.isExamMode()
                 ? `https://exam.jutge.org/problems/${this.problem.problem_id}`

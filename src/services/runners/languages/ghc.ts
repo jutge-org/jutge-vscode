@@ -9,6 +9,8 @@ import { handleCompilationErrors, handleRuntimeErrors } from "../errors"
 import { LanguageRunner } from "../languages"
 
 export class GHCRunner extends Logger implements LanguageRunner {
+    runningDir: string = ""
+
     compile(codePath: string, binaryPath: string, document: vscode.TextDocument): void {
         this.log.debug(`Compiling: ${codePath}`)
         const command = ConfigService.getGHCCommand()
@@ -41,10 +43,15 @@ export class GHCRunner extends Logger implements LanguageRunner {
         handleCompilationErrors(result, document)
     }
 
-    run(codePath: string, input: string, document: vscode.TextDocument): string {
+    getRunningDir(): string {
+        return this.runningDir
+    }
+
+    async run(codePath: string, input: string, document: vscode.TextDocument): Promise<string> {
         this.log.debug(`Running: ${codePath}`)
         const binaryPath = codePath + ".out"
         const workingDir = getWorkingDirectory(codePath)
+        this.runningDir
 
         // Compile first - this will show terminal if compile errors
         this.compile(codePath, binaryPath, document)
@@ -75,6 +82,7 @@ export class GHCRunner extends Logger implements LanguageRunner {
         if (!result.stdout) {
             throw new Error(`No output from execution`)
         }
+
         this.log.debug(`Execution completed successfully`)
         return result.stdout.toString()
     }

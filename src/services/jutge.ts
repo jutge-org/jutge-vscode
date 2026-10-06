@@ -12,7 +12,7 @@ import deepEqual from "deep-equal"
 import * as vscode from "vscode"
 
 export const jutgeClient = new j.JutgeApiClient()
-jutgeClient.useCache = false
+jutgeClient.userAgent = "jutge-vscode"
 
 type SwrResult<T> = {
     data: T | undefined

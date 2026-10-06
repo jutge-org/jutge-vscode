@@ -1,8 +1,10 @@
 import * as fs from "fs"
-import { readdir } from "fs/promises"
+import { mkdir, mkdtemp, readdir } from "fs/promises"
 import * as os from "os"
 import { basename, dirname, extname, join } from "path"
+import { pipeline } from "stream/promises"
 import * as vscode from "vscode"
+import { getContext } from "./extension"
 import { Testcase } from "./jutge_api_client"
 import {
     Proglang,
@@ -11,7 +13,6 @@ import {
     proglangInfoGet,
 } from "./services/runners/languages"
 import { InputExpected, Problem } from "./types"
-import { getContext } from "./extension"
 
 /**
  * A function that returns whether the os is Windows.
@@ -109,7 +110,6 @@ export const getWorkingDirectory = (filename: string) => {
         workingDir = workingDir.slice(1)
     }
 
-    console.debug(`[Helpers] Working dir: "${workingDir}"`)
     return workingDir
 }
 
@@ -136,7 +136,14 @@ export function sanitizeTitle(title: string): string {
             title = title.replaceAll(c, repl)
         }
     }
-    title = title.replaceAll(/[^a-zA-Z0-9_-]/g, "") // Remove other special characters except underscores
+    title = title.replace(/[àá]/g, "a") // Replace accents
+    title = title.replace(/[èé]/g, "e") // Replace accents
+    title = title.replace(/[íï]/g, "i") // Replace accents
+    title = title.replace(/[òó]/g, "o") // Replace accents
+    title = title.replace(/[úü]/g, "u") // Replace accents
+    title = title.replace(/[^a-zA-Z0-9 ]/g, "") // Remove all special characters
+    title = title.replace(/ +/g, " ") // Remove repeated spaces
+    title = title.replace(/ /g, "_") // Replace spaces with underscores
     return title
 }
 
@@ -189,7 +196,7 @@ export function getProglangFromProblem(problem: Problem): Proglang | null {
     }
 }
 
-export function defaultFilenameForProblem(problem: Problem, order: number) {
+export function defaultFilenameForProblem(problem: Problem) {
     const { problem_id, title } = problem
     const proglang = getProglangFromProblem(problem) || Proglang.CPP
     const langInfo = proglangInfoGet(proglang)
@@ -200,13 +207,14 @@ export function defaultFilenameForProblem(problem: Problem, order: number) {
     }
 }
 
-export async function findPossibleFiles(filename: string, extension: string) {
-    return await vscode.workspace.findFiles(`*${filename}*${extension}`)
+export async function findPossibleFiles(filename: string, extension?: string) {
+    const pattern = extension ? `*${filename}*${extension}` : `*${filename}*.*`
+    return await vscode.workspace.findFiles(pattern)
 }
 
-export async function sourceFileExists(problem: Problem, order: number): Promise<boolean> {
-    const { filename, extension } = defaultFilenameForProblem(problem, order)
-    const compatibleUris = await findPossibleFiles(filename, extension)
+export async function sourceFileExists(problem: Problem): Promise<boolean> {
+    const { filename } = defaultFilenameForProblem(problem)
+    const compatibleUris = await findPossibleFiles(filename)
     return compatibleUris.length > 0
 }
 
@@ -270,4 +278,36 @@ export async function showCodeDocument(document: vscode.TextDocument) {
         preview: false,
         viewColumn: vscode.ViewColumn.One,
     })
+}
+
+export async function withTemporaryDir<T>(func: (tempdir: string) => Promise<T>): Promise<T> {
+    // Create temporary directory
+    const dirname = await mkdtemp("jutge-vscode-")
+    const tmpDir = join(os.tmpdir(), dirname)
+    await mkdir(tmpDir)
+    console.log("Temporary dir is", tmpDir)
+
+    // Run the body function `func`
+    const result: T = await func(tmpDir)
+
+    // Remove the directory
+    // await rimraf(tmpDir)
+
+    // Return same result as body function
+    return result
+}
+
+export async function downloadFile(url: string, targetPath: string): Promise<void> {
+    // Start the fetch and use `response.body`, which is a ReadableStream in a pipeline
+    const response = await fetch(url)
+    if (response.body === null) {
+        throw new Error(`Could not download '${url}'`)
+    }
+
+    // Create a pipeline into a WritableStream to the `targetPath`
+    try {
+        await pipeline(response.body, fs.createWriteStream(targetPath))
+    } catch (err: any) {
+        throw new Error(`Could not download '${url}': ${err}`)
+    }
 }

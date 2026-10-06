@@ -9,6 +9,8 @@ import { handleCompilationErrors, handleRuntimeErrors } from "../errors"
 import { LanguageRunner } from "../languages"
 
 export class CppRunner extends Logger implements LanguageRunner {
+    runningDir: string = ""
+
     compile(codePath: string, binaryPath: string, document: vscode.TextDocument): void {
         this.log.debug(`Compiling: ${codePath}`)
         const command = ConfigService.getCppCommand()
@@ -47,10 +49,15 @@ export class CppRunner extends Logger implements LanguageRunner {
         handleCompilationErrors(result, document)
     }
 
-    run(codePath: string, input: string, document: vscode.TextDocument): string {
+    getRunningDir(): string {
+        return this.runningDir
+    }
+
+    async run(codePath: string, input: string, document: vscode.TextDocument): Promise<string> {
         this.log.debug(`Running: ${codePath}`)
         const binaryPath = codePath + ".out"
         const workingDir = getWorkingDirectory(codePath)
+        this.runningDir = workingDir
 
         // Compile first - this will show terminal if compile errors
         this.compile(codePath, binaryPath, document)

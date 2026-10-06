@@ -69,7 +69,7 @@ export class WebviewPanelRegistry extends StaticLogger {
             return
         }
         await panel.notifyProblemFilesChanges()
-        const fileExists = await sourceFileExists(panel.problem, panel.order)
+        const fileExists = await sourceFileExists(panel.problem)
         panel.fileExists = fileExists
     }
 
