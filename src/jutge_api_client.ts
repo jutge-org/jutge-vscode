@@ -1,6 +1,5 @@
-// @ts-nocheck
 /**
- * This file has been automatically generated at 2026-09-16T06:48:53.252Z
+ * This file has been automatically generated at 2026-10-06T14:02:43.682Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -47,13 +46,12 @@ export type RegisterIn = {
     parent_email: string | null
     country_id: string
     policies_agreement: boolean
-    recaptcha_token: string
     password: string
+    recaptcha_token: string
 }
 
 export type RequestPasswordResetIn = {
     email: string
-    hostname: string
     recaptcha_token: string
 }
 
@@ -66,24 +64,26 @@ export type ConfirmPasswordRequestIn = {
 
 export type RequestUnregistrationIn = {
     password: string
-    hostname: string
     recaptcha_token: string
 }
 
-export type ConfirmUnregistrationIn = {
-    email: string
-    code: string
-    recaptcha_token: string
-}
+export type ConfirmUnregistrationIn = ConfirmPasswordRequestIn
 
 export type RequestChangeEmailIn = {
+    old_email: string
     new_email: string
     password: string
-    hostname: string
     recaptcha_token: string
 }
 
-export type ConfirmChangeEmailIn = ConfirmUnregistrationIn
+export type ConfirmChangeEmailIn = {
+    old_email: string
+    new_email: string
+    old_email_code: string
+    new_email_code: string
+    password: string
+    recaptcha_token: string
+}
 
 export type Time = {
     full_time: string
@@ -125,19 +125,30 @@ export type RequestInformation = {
     domain: string
 }
 
+export type TranslationIn = {
+    text: string // Text to translate.
+    from: string // Source language code (ISO 639-1), or "auto" to detect it.
+    to: string // Target language code (ISO 639-1).
+}
+
+export type TranslationOut = {
+    text: string // Translated text.
+    from: string // Source language code used. Detected when the request used "auto".
+}
+
 export type Language = {
-    language_id: string
-    eng_name: string
-    own_name: string
+    language_id: string // Id of the language
+    eng_name: string // English name of the language
+    own_name: string // Name of the language in its own language
 }
 
 export type Country = {
-    country_id: string
-    eng_name: string
+    country_id: string // Id of the country
+    eng_name: string // English name of the country
 }
 
 export type Compiler = {
-    compiler_id: string
+    compiler_id: string // Id of the compiler
     name: string
     language: string
     extension: string
@@ -152,22 +163,22 @@ export type Compiler = {
 }
 
 export type Driver = {
-    driver_id: string
+    driver_id: string // Id of the driver
 }
 
 export type Verdict = {
-    verdict_id: string
+    verdict_id: string // Id of the verdict
     name: string
     description: string
     emoji: string
 }
 
 export type Proglang = {
-    proglang_id: string
+    proglang_id: string // Id of the proglang
 }
 
 export type Timezone = {
-    timezone_id: string
+    timezone_id: string // Id of the timezone
 }
 
 export type AllTables = {
@@ -187,31 +198,31 @@ export type PublicProfile = {
 }
 
 export type PublicCourse = {
-    course_nm: string
-    title: string
-    description: string
-    public: number
-    official: number
+    course_nm: string // The name of the course
+    title: string // The title of the course
+    description: string // The description of the course
+    public: number // Indicates if the course is public (1) or private (0)
+    official: number // Indicates if the course is official (1) or not (0)
     icon: string | null
     lists: string[]
-    problem_count: number
+    problem_count: number // Total number of problems in the course lists
     owner: PublicProfile
 }
 
 export type PublicCourses = Record<string, PublicCourse>
 
 export type ProblemSummary = {
-    summary_1s: string
-    summary_1p: string
-    keywords: string
-    model: string
-    duration: number
+    summary_1s: string // One sentence summary
+    summary_1p: string // One paragraph summary
+    keywords: string // Comma separated keywords
+    model: string // system/model
+    duration: number // Time in seconds to generate
 }
 
 export type SolutionTags = {
-    tags: string
-    model: string
-    duration: number
+    tags: string // Comma separated tags
+    model: string // system/model
+    duration: number // Time in seconds to generate
 }
 
 export type BriefAbstractProblem = {
@@ -228,6 +239,8 @@ export type BriefAbstractProblem = {
     created_at: Iso8601Date
     updated_at: Iso8601Date
     solution_tags: SolutionTags | null
+    shared_solutions: number // Whether the solutions are shared with instructors
+    shared_testcases: number // Whether the testcases are shared with instructors
 }
 
 export type BriefProblem = {
@@ -258,6 +271,8 @@ export type AbstractProblem = {
     created_at: Iso8601Date
     updated_at: Iso8601Date
     solution_tags: SolutionTags | null
+    shared_solutions: number // Whether the solutions are shared with instructors
+    shared_testcases: number // Whether the testcases are shared with instructors
     problems: BriefProblemDict
 }
 
@@ -586,8 +601,13 @@ export type List = {
     owner: PublicProfile
 }
 
+export type Passcode = {
+    problem_nm: string
+    passcode: string
+}
+
 export type ReadyExam = {
-    exam_key: string
+    exam_key: string // Unique key for the exam, in the format "username:exam_nm"
     title: string
     place: string
     description: string
@@ -629,17 +649,17 @@ export type StudentExamCourse = {
 }
 
 export type BriefExam = {
-    exam_key: string
-    title: string
-    place: string
-    description: string
-    contest: boolean
+    exam_key: string // Unique key for the exam, in the format "username:exam_nm"
+    title: string // Title of the exam
+    place: string // Place of the exam
+    description: string // Description of the exam in Markdown format
+    contest: boolean // Whether the exam is a contest
     course: StudentExamCourse
     owner: PublicProfile
-    visible_submissions: boolean
-    status: string
-    exp_time_start: Iso8601Date
-    running_time: Iso8601Date
+    visible_submissions: boolean // Whether submissions are visible to the user outside the exam
+    status: string // Status of the exam: upcoming|started|finished
+    exp_time_start: Iso8601Date // Expected start time of the exam
+    running_time: number // Nomimal running time of the exam (in minutes)
     time_start: Iso8601Date | null
     time_end: Iso8601Date | null
 }
@@ -647,20 +667,20 @@ export type BriefExam = {
 export type BriefExams = Record<string, BriefExam>
 
 export type Exam = {
-    exam_key: string
-    title: string
-    place: string
-    description: string
-    contest: boolean
+    exam_key: string // Unique key for the exam, in the format "username:exam_nm"
+    title: string // Title of the exam
+    place: string // Place of the exam
+    description: string // Description of the exam in Markdown format
+    contest: boolean // Whether the exam is a contest
     course: StudentExamCourse
     owner: PublicProfile
-    visible_submissions: boolean
-    status: string
-    exp_time_start: Iso8601Date
-    running_time: Iso8601Date
+    visible_submissions: boolean // Whether submissions are visible to the user outside the exam
+    status: string // Status of the exam: upcoming|started|finished
+    exp_time_start: Iso8601Date // Expected start time of the exam
+    running_time: number // Nomimal running time of the exam (in minutes)
     time_start: Iso8601Date | null
     time_end: Iso8601Date | null
-    problems: string[]
+    problems: string[] // List of problem_nms
     submissions: Submission[]
 }
 
@@ -754,31 +774,31 @@ export type TutorSubmission = {
 }
 
 export type Document = {
-    document_nm: string
-    title: string
-    description: string
-    type: string
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
+    document_nm: string // Document name
+    title: string // The title of the document
+    description: string // The description of the document
+    type: string // The type of the document: pdf|zip
+    created_at: Iso8601Date // The date when the document was created
+    updated_at: Iso8601Date // The date when the document was last updated
 }
 
 export type DocumentCreation = {
-    document_nm: string
-    title: string
-    description: string
+    document_nm: string // Document name
+    title: string // The title of the document
+    description: string // The description of the document
 }
 
 export type DocumentUpdate = DocumentCreation
 
 export type InstructorBriefList = {
-    list_nm: string
-    title: string
-    description: string
-    annotation: string
-    official: number
-    public: number
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
+    list_nm: string // The name of the list
+    title: string // The title of the list
+    description: string // The description of the list
+    annotation: string // Additional private annotations for the list
+    official: number // Indicates if the list is official (1) or not (0) TODO
+    public: number // Indicates if the list is public (1) or private (0) TODO
+    created_at: Iso8601Date // Creation date of the list
+    updated_at: Iso8601Date // Last update date of the list
 }
 
 export type InstructorListItem = {
@@ -789,39 +809,39 @@ export type InstructorListItem = {
 export type InstructorListItems = InstructorListItem[]
 
 export type InstructorList = {
-    list_nm: string
-    title: string
-    description: string
-    annotation: string
-    official: number
-    public: number
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
+    list_nm: string // The name of the list
+    title: string // The title of the list
+    description: string // The description of the list
+    annotation: string // Additional private annotations for the list
+    official: number // Indicates if the list is official (1) or not (0) TODO
+    public: number // Indicates if the list is public (1) or private (0) TODO
+    created_at: Iso8601Date // Creation date of the list
+    updated_at: Iso8601Date // Last update date of the list
     items: InstructorListItems
 }
 
 export type InstructorListCreation = {
-    list_nm: string
-    title: string
-    description: string
-    annotation: string
-    official: number
-    public: number
+    list_nm: string // The name of the list
+    title: string // The title of the list
+    description: string // The description of the list
+    annotation: string // Additional private annotations for the list
+    official: number // Indicates if the list is official (1) or not (0) TODO
+    public: number // Indicates if the list is public (1) or private (0) TODO
     items: InstructorListItems
 }
 
 export type InstructorListUpdate = InstructorListCreation
 
 export type InstructorBriefCourse = {
-    course_nm: string
-    title: string
-    description: string
-    annotation: string
-    official: number
-    public: number
+    course_nm: string // The name of the course
+    title: string // The title of the course
+    description: string // The description of the course
+    annotation: string // Additional private annotations for the course
+    official: number // Indicates if the course is official (1) or not (0) TODO
+    public: number // Indicates if the course is public (1) or private (0) TODO
     icon: string | null
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
+    created_at: Iso8601Date // Creation date of the course
+    updated_at: Iso8601Date // Last update date of the course
 }
 
 export type CourseMembers = {
@@ -831,39 +851,39 @@ export type CourseMembers = {
 }
 
 export type InstructorCourse = {
-    course_nm: string
-    title: string
-    description: string
-    annotation: string
-    official: number
-    public: number
+    course_nm: string // The name of the course
+    title: string // The title of the course
+    description: string // The description of the course
+    annotation: string // Additional private annotations for the course
+    official: number // Indicates if the course is official (1) or not (0) TODO
+    public: number // Indicates if the course is public (1) or private (0) TODO
     icon: string | null
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
+    created_at: Iso8601Date // Creation date of the course
+    updated_at: Iso8601Date // Last update date of the course
     lists: string[]
     students: CourseMembers
     tutors: CourseMembers
 }
 
 export type StudentProfile = {
-    name: string
-    email: string
+    name: string // The name of the student
+    email: string // The email of the student
 }
 
 export type InstructorCourseCreation = {
-    course_nm: string
-    title: string
-    description: string
-    annotation: string
-    official: number
-    public: number
+    course_nm: string // The name of the course
+    title: string // The title of the course
+    description: string // The description of the course
+    annotation: string // Additional private annotations for the course
+    official: number // Indicates if the course is official (1) or not (0) TODO
+    public: number // Indicates if the course is public (1) or private (0) TODO
     lists: string[] | null
     students: CourseMembers | null
     tutors: CourseMembers | null
 }
 
 export type InstructorCourseUpdate = {
-    course_nm: string
+    course_nm: string // Name of the course
     title: string | null
     description: string | null
     annotation: string | null
@@ -874,90 +894,89 @@ export type InstructorCourseUpdate = {
     tutors: CourseMembers | null
 }
 
-export type InstructorCourseUpdateIconInput = {
-    course_nm: string
-    icon: string
-}
-
 export type InstructorExamCourse = {
-    course_nm: string
-    title: string
+    course_nm: string // Course name
+    title: string // Title of the course
 }
 
-export type InstructorExamDocument = RunningExamDocument
+export type InstructorExamDocument = {
+    document_nm: string // Document name
+    title: string // Title of the document
+    description: string // Description of the document
+}
 
 export type InstructorExamCompiler = {
-    compiler_id: string
-    name: string
+    compiler_id: string // Compiler ID
+    name: string // Name of the compiler
 }
 
 export type InstructorExamProblem = {
-    problem_nm: string
+    problem_nm: string // Problem nm
     weight: number | null
     icon: string | null
     caption: string | null
 }
 
 export type InstructorExamStudent = {
-    email: string
+    email: string // Email of the student
     name: string | null
     code: string | null
-    restricted: number
+    restricted: number // Whether the student is restricted
     annotation: string | null
     result: string | null
-    finished: number
-    banned: number
+    finished: number // Whether the student has finished the exam
+    banned: number // Whether the student is banned from the exam
     reason_ban: string | null
     inc: number | null
     reason_inc: string | null
-    taken_exam: number
+    taken_exam: number // Whether the student has logged in to the exam
     emergency_password: string | null
-    invited: number
+    invited: number // Whether the student is invited (excluded from the ranking)
 }
 
 export type InstructorExamCreation = {
-    exam_nm: string
-    course_nm: string
-    title: string
-    exp_time_start: Iso8601Date
+    exam_nm: string // Exam name
+    course_nm: string // Course name
+    title: string // Title of the exam
+    exp_time_start: Iso8601Date // Expected start time of the exam
 }
 
 export type InstructorExamUpdate = {
-    exam_nm: string
-    course_nm: string
-    title: string
-    place: string
-    code: string
-    description: string
+    exam_nm: string // Exam name
+    course_nm: string // Course name
+    title: string // Title of the exam
+    place: string // Place of the exam
+    code: string // Code of the exam (the one that is used for all students to access the exam)
+    description: string // Description of the exam
     time_start: Iso8601Date | null
-    exp_time_start: Iso8601Date
-    running_time: number
-    visible_submissions: number
+    exp_time_start: Iso8601Date // Expected start time of the exam
+    running_time: number // Nomimal running time of the exam (in minutes)
+    visible_submissions: number // Whether submissions are visible to the students outside the exam
     started_by: string | null
-    contest: number
-    instructions: string
+    contest: number // Whether the exam is a contest
+    instructions: string // Instructions of the exam
     avatars: string | null
-    anonymous: number
+    anonymous: number // Whether the contest is anonymous (no names shown in the ranking)
 }
 
 export type InstructorNewExamStudent = {
-    email: string
-    invited: number
-    restricted: number
-    code: string
-    emergency_password: string
-    annotation: string
+    email: string // Email of the student
+    invited: number // Whether the student is invited (excluded from the ranking)
+    restricted: number // Whether the student is restricted
+    code: string // Code used by the student to access the exam
+    emergency_password: string // Emergency password of the student
+    annotation: string // Annotation about the student
 }
 
 export type InstructorExamSubmissionsOptions = {
-    problems: string
-    include_source: boolean
-    include_pdf: boolean
-    include_metadata: boolean
-    only_last: boolean
-    font_size: number
-    layout: string
-    obscure_private_testcases_names: boolean
+    problems: string // Comma-separated list of problem names (without language). Use `all` to include all problems.
+    include_source: boolean // Include source code
+    include_pdf: boolean // Include source code formated in PDF
+    include_metadata: boolean // Include metadata in the code
+    only_last: boolean // Only include last submission of each problem for each student
+    font_size: number // Font size on the PDF
+    layout: string // Layout (vertical|horizontal|double)
+    obscure_private_testcases_names: boolean // Obscure private testcases names
 }
 
 export type Pack = {
@@ -966,82 +985,82 @@ export type Pack = {
 }
 
 export type InstructorBriefExam = {
-    exam_nm: string
-    title: string
+    exam_nm: string // Exam name
+    title: string // Title of the exam
     place: string | null
     description: string | null
     code: string | null
     time_start: Iso8601Date | null
-    exp_time_start: Iso8601Date
-    running_time: number
-    visible_submissions: number
+    exp_time_start: Iso8601Date // Expected start time of the exam
+    running_time: number // Nomimal running time of the exam (in minutes)
+    visible_submissions: number // Whether submissions are visible to the students outside the exam
     started_by: string | null
-    contest: number
+    contest: number // Whether the exam is a contest
     instructions: string | null
     avatars: string | null
-    anonymous: number
+    anonymous: number // Whether the contest is anonymous (no names shown in the ranking)
     course: InstructorExamCourse
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
+    created_at: Iso8601Date // Creation date of the exam
+    updated_at: Iso8601Date // Last update date of the exam
 }
 
 export type InstructorExam = {
-    exam_nm: string
-    title: string
+    exam_nm: string // Exam name
+    title: string // Title of the exam
     place: string | null
     description: string | null
     code: string | null
     time_start: Iso8601Date | null
-    exp_time_start: Iso8601Date
-    running_time: number
-    visible_submissions: number
+    exp_time_start: Iso8601Date // Expected start time of the exam
+    running_time: number // Nomimal running time of the exam (in minutes)
+    visible_submissions: number // Whether submissions are visible to the students outside the exam
     started_by: string | null
-    contest: number
+    contest: number // Whether the exam is a contest
     instructions: string | null
     avatars: string | null
-    anonymous: number
+    anonymous: number // Whether the contest is anonymous (no names shown in the ranking)
     course: InstructorExamCourse
-    created_at: Iso8601Date
-    updated_at: Iso8601Date
-    documents: RunningExamDocument[]
-    compilers: InstructorExamCompiler[]
-    problems: InstructorExamProblem[]
-    students: InstructorExamStudent[]
+    created_at: Iso8601Date // Creation date of the exam
+    updated_at: Iso8601Date // Last update date of the exam
+    documents: InstructorExamDocument[] // Documents of the exam
+    compilers: InstructorExamCompiler[] // Compilers of the exam
+    problems: InstructorExamProblem[] // Problems of the exam
+    students: InstructorExamStudent[] // Students of the exam
 }
 
 export type ExamStatisticsEntry = {
-    minute: number
-    ok: number
-    ko: number
+    minute: number // Minute offset of the bucket from the first submission
+    ok: number // Number of accepted submissions in the bucket
+    ko: number // Number of non-accepted submissions in the bucket
 }
 
 export type ExamStatistics = {
-    submissions: Record<string, Record<string, number>>
-    statuses: Record<string, Record<string, number>>
-    timeline: ExamStatisticsEntry[]
-    compilers: Record<string, Record<string, number>>
-    proglangs: Record<string, Record<string, number>>
+    submissions: Record<string, Record<string, number>> // Verdict counts by problem
+    statuses: Record<string, Record<string, number>> // Student status counts (OK, KO, NT) by problem
+    timeline: ExamStatisticsEntry[] // Submission counts bucketed over time
+    compilers: Record<string, Record<string, number>> // Compiler counts by problem
+    proglangs: Record<string, Record<string, number>> // Programming language counts by problem
 }
 
 export type RankingResult = {
-    problem_nm: string
-    submissions: number
+    problem_nm: string // Problem name
+    submissions: number // Number of submissions
     verdict: string | null
-    score: number
-    time: number
-    penalty: number
-    wrongs: number
+    score: number // Score without weights (0-1)
+    time: number // Time of the best submission (in minutes)
+    penalty: number // Penalty (in minutes)
+    wrongs: number // Number of wrong submissions
 }
 
 export type RankingRow = {
     position: number | null
-    name: string
+    name: string // Name of the student
     avatar: string | null
-    score: number
-    time: number
-    invited: boolean
-    submissions: number
-    rankingResults: RankingResult[]
+    score: number // Total weighted score
+    time: number // Total penalty time (in minutes)
+    invited: boolean // Whether the student is invited (excluded from the ranking)
+    submissions: number // Number of submissions
+    rankingResults: RankingResult[] // Results per problem
 }
 
 export type Ranking = RankingRow[]
@@ -1111,15 +1130,15 @@ export type SubmissionsQuery = SubmissionQuery[]
 export type TagsDict = Record<string, string[]>
 
 export type ChatMessage = {
-    role: string
-    content: string
+    role: string // The role of the message: system|user|assistant.
+    content: string // The content of the message.
 }
 
 export type ChatPrompt = {
-    model: string
-    label: string
+    model: string // The model to use. Models are listed in the `supportedModels` endpoint.
+    label: string // A label for the chat. This is used to identify the chat in the usage audit.
     messages: ChatMessage[]
-    addUsage: boolean
+    addUsage: boolean // If true, the usage of the model will be added at the end of the response as a JSON object between `---USAGE_JSON_START---` and `---USAGE_JSON_END---`.
 }
 
 export type LlmUsageEntry = {
@@ -1134,10 +1153,10 @@ export type LlmUsageEntry = {
 }
 
 export type CreateImageInput = {
-    model: string
-    label: string
-    prompt: string
-    size: string
+    model: string // The image model to use. See supportedImageModels.
+    label: string // A label for the request (usage audit).
+    prompt: string // The prompt to generate the image from.
+    size: string // Size (e.g. 1024x1024) or aspect ratio (e.g. 16:9).
 }
 
 export type SubmitMatchUserPlayer = {
@@ -1341,27 +1360,6 @@ export type UserRanking = UserRankingEntry[]
 export type DateRange = {
     start: string
     end: string
-}
-
-export type TwoFloats = {
-    a: number
-    b: number
-}
-
-export type TwoInts = {
-    a: number
-    b: number
-}
-
-export type Name = {
-    name: string
-}
-
-export type SomeType = {
-    a: string
-    b: number
-    c: boolean
-    d: boolean
 }
 
 // Client types
@@ -1654,7 +1652,6 @@ export class JutgeApiClient {
     readonly instructor: Module_instructor
     readonly games: Module_games
     readonly admin: Module_admin
-    readonly testing: Module_testing
 
     constructor() {
         this.clients = new Module_clients(this)
@@ -1668,7 +1665,6 @@ export class JutgeApiClient {
         this.instructor = new Module_instructor(this)
         this.games = new Module_games(this)
         this.admin = new Module_admin(this)
-        this.testing = new Module_testing(this)
 
         this.clientTTLs.set("misc.getAvatarPacks", 3600)
         this.clientTTLs.set("misc.getExamIcons", 3600)
@@ -1802,7 +1798,7 @@ class Module_auth {
      *
      * 🔐 Authentication: user
      * No warnings
-     *
+     * Discards the access token so that the user cannot use it anymore. Requires authentication.
      */
     async logout(): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.logout", null)
@@ -1838,7 +1834,7 @@ class Module_auth {
      *
      * 🔐 Authentication: any
      * No warnings
-     * Returns a token on success. Throws UnauthorizedError on failure. Created for backward compatibility, do not use.
+     * Returns a token on success. Throws UnauthorizedError on failure. Created for backward compatibility, do not use anymore.
      */
     async loginWithUsername(data: CredentialsWithUsernameIn): Promise<CredentialsOut> {
         const [output, ofiles] = await this.root.execute("auth.loginWithUsername", data)
@@ -1858,11 +1854,11 @@ class Module_auth {
     }
 
     /**
-     * Request a password reset link by email.
+     * Request a password reset.
      *
      * 🔐 Authentication: any
      * No warnings
-     * Sends a reset link to the user if the email is registered. Always succeeds silently for unknown emails. Requires a valid reCAPTCHA v3 token.
+     * Emails a reset code if the address is registered. Always succeeds silently for unknown emails. Requires a valid reCAPTCHA v3 token.
      */
     async requestPasswordReset(data: RequestPasswordResetIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.requestPasswordReset", data)
@@ -1882,11 +1878,11 @@ class Module_auth {
     }
 
     /**
-     * Request account unregistration confirmation link by email.
+     * Request account unregistration confirmation.
      *
      * 🔐 Authentication: user
      * No warnings
-     * Verifies the current password and sends an unregistration confirmation link. Requires authentication and a valid reCAPTCHA v3 token.
+     * Verifies the current password and emails an unregistration confirmation code. Requires authentication and a valid reCAPTCHA v3 token.
      */
     async requestUnregistration(data: RequestUnregistrationIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.requestUnregistration", data)
@@ -1898,19 +1894,19 @@ class Module_auth {
      *
      * 🔐 Authentication: user
      * No warnings
-     * Validates the unregistration code, removes the account, unlinks course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token. Warning: This action is irreversible!!!
+     * Validates the current password and the unregistration code, removes the account, unlinks course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token. Warning: This action is irreversible!!!
      */
-    async confirmUnregistration(data: ConfirmUnregistrationIn): Promise<void> {
+    async confirmUnregistration(data: ConfirmPasswordRequestIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.confirmUnregistration", data)
         return output
     }
 
     /**
-     * Request an email address change confirmation link.
+     * Request an email address change.
      *
      * 🔐 Authentication: user
      * No warnings
-     * Verifies the current password and sends a confirmation link to the new email address. Requires authentication and a valid reCAPTCHA v3 token.
+     * Verifies the current password and emails a confirmation code to the current address and another to the new address. Requires authentication and a valid reCAPTCHA v3 token.
      */
     async requestChangeEmail(data: RequestChangeEmailIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.requestChangeEmail", data)
@@ -1922,9 +1918,9 @@ class Module_auth {
      *
      * 🔐 Authentication: user
      * No warnings
-     * Validates the email change code, updates the account email, migrates course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token.
+     * Validates the current password and both email confirmation codes, updates the account email, migrates course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token.
      */
-    async confirmChangeEmail(data: ConfirmUnregistrationIn): Promise<void> {
+    async confirmChangeEmail(data: ConfirmChangeEmailIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.confirmChangeEmail", data)
         return output
     }
@@ -2074,6 +2070,18 @@ class Module_misc {
             "misc.getDemosForCompiler",
             compiler_id
         )
+        return output
+    }
+
+    /**
+     * Translate text from one language to another.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Source and target languages are ISO 639-1 codes. Use "auto" as the source language to detect it.
+     */
+    async translate(data: TranslationIn): Promise<TranslationOut> {
+        const [output, ofiles] = await this.root.execute("misc.translate", data)
         return output
     }
 }
@@ -2548,9 +2556,93 @@ class Module_problems {
      * No warnings
      *
      */
-    async getTemplate(data: { problem_id: string; template: string }): Promise<Download> {
+    async getTemplate(data: {
+        problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
+        template: string /* The template file name. */
+    }): Promise<Download> {
         const [output, ofiles] = await this.root.execute("problems.getTemplate", data)
         return ofiles[0]
+    }
+
+    /**
+     * Get list of proglangs for which the problem has an official solution.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if solutions are shared.
+     */
+    async getSolutions(problem_id: string): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("problems.getSolutions", problem_id)
+        return output
+    }
+
+    /**
+     * Get official solution for a problem in proglang as a string in base64.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if solutions are shared.
+     */
+    async getSolutionAsB64(data: {
+        problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
+        proglang: string
+    }): Promise<string> {
+        const [output, ofiles] = await this.root.execute("problems.getSolutionAsB64", data)
+        return output
+    }
+
+    /**
+     * Get official solution for a problem in proglang as a file.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if solutions are shared.
+     */
+    async getSolutionAsFile(data: {
+        problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
+        proglang: string
+    }): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("problems.getSolutionAsFile", data)
+        return ofiles[0]
+    }
+
+    /**
+     * Get names of all testcases of a problem.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     */
+    async getTestcases(problem_id: string): Promise<string[]> {
+        const [output, ofiles] = await this.root.execute("problems.getTestcases", problem_id)
+        return output
+    }
+
+    /**
+     * Get one testcase of a problem (input and correct output as base64).
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     */
+    async getTestcase(data: {
+        problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
+        testcase: string /* The testcase name (as returned by `getTestcases`). */
+    }): Promise<Testcase> {
+        const [output, ofiles] = await this.root.execute("problems.getTestcase", data)
+        return output
+    }
+
+    /**
+     * Get all testcases of a problem.
+     *
+     * 🔐 Authentication: instructorOrAdmin
+     * No warnings
+     * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     */
+    async getAllTestcases(problem_id: string): Promise<Testcase[]> {
+        const [output, ofiles] = await this.root.execute("problems.getAllTestcases", problem_id)
+        return output
     }
 
     /**
@@ -2560,7 +2652,10 @@ class Module_problems {
      * No warnings
      *
      */
-    async semanticSearch(data: { query: string; limit: number }): Promise<SearchResults> {
+    async semanticSearch(data: {
+        query: string /* The query string to search for. */
+        limit: number /* Maximum number of problems to return. */
+    }): Promise<SearchResults> {
         const [output, ofiles] = await this.root.execute("problems.semanticSearch", data)
         return output
     }
@@ -2572,7 +2667,10 @@ class Module_problems {
      * No warnings
      *
      */
-    async fullTextSearch(data: { query: string; limit: number }): Promise<SearchResults> {
+    async fullTextSearch(data: {
+        query: string /* The query string to search for. */
+        limit: number /* Maximum number of problems to return. */
+    }): Promise<SearchResults> {
         const [output, ofiles] = await this.root.execute("problems.fullTextSearch", data)
         return output
     }
@@ -2592,6 +2690,7 @@ class Module_student {
     readonly submissions: Module_student_submissions
     readonly courses: Module_student_courses
     readonly lists: Module_student_lists
+    readonly passcodes: Module_student_passcodes
     readonly exam: Module_student_exam
     readonly exams: Module_student_exams
     readonly statuses: Module_student_statuses
@@ -2607,6 +2706,7 @@ class Module_student {
         this.submissions = new Module_student_submissions(root)
         this.courses = new Module_student_courses(root)
         this.lists = new Module_student_lists(root)
+        this.passcodes = new Module_student_passcodes(root)
         this.exam = new Module_student_exam(root)
         this.exams = new Module_student_exams(root)
         this.statuses = new Module_student_statuses(root)
@@ -2728,6 +2828,33 @@ class Module_student_profile {
      */
     async getAvatar(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("student.profile.getAvatar", null)
+        return ofiles[0]
+    }
+
+    /**
+     * Download a zip archive with all submissions.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Entries sit under a folder named with the user email. Each problem directory contains a YAML summary and, when the source is stored, the program.
+     */
+    async downloadSubmissions(): Promise<Download> {
+        const [output, ofiles] = await this.root.execute(
+            "student.profile.downloadSubmissions",
+            null
+        )
+        return ofiles[0]
+    }
+
+    /**
+     * Download a zip archive with all trading cards.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Entries sit under a folder named with the user email. Images of owned cards are placed in a cards folder.
+     */
+    async downloadCards(): Promise<Download> {
+        const [output, ofiles] = await this.root.execute("student.profile.downloadCards", null)
         return ofiles[0]
     }
 
@@ -3445,6 +3572,55 @@ class Module_student_lists {
 
 /**
  *
+ * Manage problem passcodes stored for the current user.
+ *
+ */
+class Module_student_passcodes {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Store the passcode of a problem.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     * Fails if the problem does not exist, has no passcode, or the given passcode does not match.
+     */
+    async add(data: Passcode): Promise<void> {
+        const [output, ofiles] = await this.root.execute("student.passcodes.add", data)
+        return output
+    }
+
+    /**
+     * Remove the stored problem passcode of a problem.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async remove(problem_nm: string): Promise<void> {
+        const [output, ofiles] = await this.root.execute("student.passcodes.remove", problem_nm)
+        return output
+    }
+
+    /**
+     * Get all problem passcodes stored, sorted by problem name.
+     *
+     * 🔐 Authentication: user
+     * No warnings
+     *
+     */
+    async getAll(): Promise<Passcode[]> {
+        const [output, ofiles] = await this.root.execute("student.passcodes.getAll", null)
+        return output
+    }
+}
+
+/**
+ *
  * ‼️ The state of this module is UNDER CONSTRUCTION. It is not ready for production use. The output of some function is capped if the exam has not started yet.
  *
  */
@@ -3518,6 +3694,18 @@ class Module_student_exam {
      */
     async getRanking(): Promise<Ranking> {
         const [output, ofiles] = await this.root.execute("student.exam.getRanking", null)
+        return output
+    }
+
+    /**
+     * Mark the current exam as finished.
+     *
+     * 🔐 Authentication: exam
+     * No warnings
+     *
+     */
+    async finishExam(): Promise<void> {
+        const [output, ofiles] = await this.root.execute("student.exam.finishExam", null)
         return output
     }
 }
@@ -3977,7 +4165,7 @@ class Module_tutor_submissions {
     async getForAbstractProblems(data: {
         course_key: string
         email: string
-        problem_nms: string
+        problem_nms: string /* A comma separated list of `problem_nm`s */
     }): Promise<TutorSubmission[]> {
         const [output, ofiles] = await this.root.execute(
             "tutor.submissions.getForAbstractProblems",
@@ -4468,18 +4656,6 @@ class Module_instructor_courses {
     }
 
     /**
-     * Update the icon of a course.
-     *
-     * 🔐 Authentication: instructor
-     * No warnings
-     *
-     */
-    async updateIcon(data: InstructorCourseUpdateIconInput): Promise<void> {
-        const [output, ofiles] = await this.root.execute("instructor.courses.updateIcon", data)
-        return output
-    }
-
-    /**
      * Delete an existing course.
      *
      * 🔐 Authentication: instructor
@@ -4642,7 +4818,7 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async getDocuments(exam_nm: string): Promise<RunningExamDocument[]> {
+    async getDocuments(exam_nm: string): Promise<InstructorExamDocument[]> {
         const [output, ofiles] = await this.root.execute(
             "instructor.exams.getDocuments",
             exam_nm
@@ -4687,7 +4863,10 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async getStudent(data: { exam_nm: string; email: string }): Promise<InstructorExamStudent> {
+    async getStudent(data: {
+        exam_nm: string /* Exam name */
+        email: string /* Email of the student */
+    }): Promise<InstructorExamStudent> {
         const [output, ofiles] = await this.root.execute("instructor.exams.getStudent", data)
         return output
     }
@@ -4700,7 +4879,7 @@ class Module_instructor_exams {
      * Meant for real-time streaming of submissions, most instructors will possibly prefer getSubmissionsPack.
      */
     async getSubmissions(data: {
-        exam_nm: string
+        exam_nm: string /* Exam name */
         options: InstructorExamSubmissionsOptions
     }): Promise<WebStream> {
         const [output, ofiles] = await this.root.execute(
@@ -4718,7 +4897,7 @@ class Module_instructor_exams {
      * This endpoint will prepare the pack in the background and return a link to download it later. Packs take some time to be prepared, and are deleted after 24 hours. This is the preferred endpoint for most instructors, as it is simpler to use than getSubmissions.
      */
     async getSubmissionsPack(data: {
-        exam_nm: string
+        exam_nm: string /* Exam name */
         options: InstructorExamSubmissionsOptions
     }): Promise<Pack> {
         const [output, ofiles] = await this.root.execute(
@@ -4774,7 +4953,10 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async updateDocuments(data: { exam_nm: string; document_nms: string[] }): Promise<void> {
+    async updateDocuments(data: {
+        exam_nm: string /* Exam name */
+        document_nms: string[] /* Document names */
+    }): Promise<void> {
         const [output, ofiles] = await this.root.execute(
             "instructor.exams.updateDocuments",
             data
@@ -4789,7 +4971,10 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async updateCompilers(data: { exam_nm: string; compiler_ids: string[] }): Promise<void> {
+    async updateCompilers(data: {
+        exam_nm: string /* Exam name */
+        compiler_ids: string[] /* Compiler IDs */
+    }): Promise<void> {
         const [output, ofiles] = await this.root.execute(
             "instructor.exams.updateCompilers",
             data
@@ -4805,8 +4990,8 @@ class Module_instructor_exams {
      *
      */
     async updateProblems(data: {
-        exam_nm: string
-        problems: InstructorExamProblem[]
+        exam_nm: string /* Exam name */
+        problems: InstructorExamProblem[] /* Problems of the exam */
     }): Promise<void> {
         const [output, ofiles] = await this.root.execute(
             "instructor.exams.updateProblems",
@@ -4823,8 +5008,8 @@ class Module_instructor_exams {
      *
      */
     async updateStudents(data: {
-        exam_nm: string
-        students: InstructorExamStudent[]
+        exam_nm: string /* Exam name */
+        students: InstructorExamStudent[] /* Students of the exam */
     }): Promise<void> {
         const [output, ofiles] = await this.root.execute(
             "instructor.exams.updateStudents",
@@ -4841,8 +5026,8 @@ class Module_instructor_exams {
      *
      */
     async addStudents(data: {
-        exam_nm: string
-        students: InstructorExamStudent[]
+        exam_nm: string /* Exam name */
+        students: InstructorExamStudent[] /* Students of the exam */
     }): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.addStudents", data)
         return output
@@ -4855,7 +5040,10 @@ class Module_instructor_exams {
      * No warnings
      *
      */
-    async removeStudents(data: { exam_nm: string; emails: string[] }): Promise<void> {
+    async removeStudents(data: {
+        exam_nm: string /* Exam name */
+        emails: string[] /* emails */
+    }): Promise<void> {
         const [output, ofiles] = await this.root.execute(
             "instructor.exams.removeStudents",
             data
@@ -5099,66 +5287,6 @@ class Module_instructor_problems {
         const [output, ofiles] = await this.root.execute(
             "instructor.problems.download",
             problem_nm
-        )
-        return ofiles[0]
-    }
-
-    /**
-     * Get all testcases of a problem.
-     *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
-     * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
-     */
-    async getAllTestcases(problem_id: string): Promise<Testcase[]> {
-        const [output, ofiles] = await this.root.execute(
-            "instructor.problems.getAllTestcases",
-            problem_id
-        )
-        return output
-    }
-
-    /**
-     * Get list of proglangs for which the problem has an official solution.
-     *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
-     * Permission is granted to admins and instructors who own the problem.
-     */
-    async getSolutions(problem_id: string): Promise<string[]> {
-        const [output, ofiles] = await this.root.execute(
-            "instructor.problems.getSolutions",
-            problem_id
-        )
-        return output
-    }
-
-    /**
-     * Get official solution for a problem in proglang as a string in base64.
-     *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
-     * Permission is granted to admins and instructors who own the problem.
-     */
-    async getSolutionAsB64(data: { problem_id: string; proglang: string }): Promise<string> {
-        const [output, ofiles] = await this.root.execute(
-            "instructor.problems.getSolutionAsB64",
-            data
-        )
-        return output
-    }
-
-    /**
-     * Get official solution for a problem in proglang as a file.
-     *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
-     * Permission is granted to admins and instructors who own the problem.
-     */
-    async getSolutionAsFile(data: { problem_id: string; proglang: string }): Promise<Download> {
-        const [output, ofiles] = await this.root.execute(
-            "instructor.problems.getSolutionAsFile",
-            data
         )
         return ofiles[0]
     }
@@ -6374,246 +6502,6 @@ class Module_admin_problems {
             "admin.problems.getAbstractProblemsWithoutSolutionTags",
             null
         )
-        return output
-    }
-}
-
-/**
- *
- * Module with testing endpoints. Not meant for regular users.
- *
- */
-class Module_testing {
-    private readonly root: JutgeApiClient
-
-    readonly check: Module_testing_check
-    readonly playground: Module_testing_playground
-
-    constructor(root: JutgeApiClient) {
-        this.root = root
-        this.check = new Module_testing_check(root)
-        this.playground = new Module_testing_playground(root)
-    }
-}
-
-/**
- *
- * This module is intended for internal use and contains functions to check the actor of the query. General public should not rely on it.
- *
- */
-class Module_testing_check {
-    private readonly root: JutgeApiClient
-
-    constructor(root: JutgeApiClient) {
-        this.root = root
-    }
-
-    /**
-     * Checks that query actor is a user.
-     *
-     * 🔐 Authentication: user
-     * No warnings
-     *
-     */
-    async checkUser(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("testing.check.checkUser", null)
-        return output
-    }
-
-    /**
-     * Checks that query actor is an instructor.
-     *
-     * 🔐 Authentication: instructor
-     * No warnings
-     *
-     */
-    async checkInstructor(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("testing.check.checkInstructor", null)
-        return output
-    }
-
-    /**
-     * Checks that query actor is an admin.
-     *
-     * 🔐 Authentication: admin
-     * No warnings
-     *
-     */
-    async checkAdmin(): Promise<void> {
-        const [output, ofiles] = await this.root.execute("testing.check.checkAdmin", null)
-        return output
-    }
-
-    /**
-     * Throw an exception of the given type.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async throwError(exception: string): Promise<void> {
-        const [output, ofiles] = await this.root.execute("testing.check.throwError", exception)
-        return output
-    }
-}
-
-/**
- *
- * This module is intended for internal use. General users should not rely on it.
- *
- */
-class Module_testing_playground {
-    private readonly root: JutgeApiClient
-
-    constructor(root: JutgeApiClient) {
-        this.root = root
-    }
-
-    /**
-     * Upload a file.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async upload(data: Name, ifile: File): Promise<string> {
-        const [output, ofiles] = await this.root.execute("testing.playground.upload", data, [
-            ifile,
-        ])
-        return output
-    }
-
-    /**
-     * Get negative of an image.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async negate(ifile: File): Promise<Download> {
-        const [output, ofiles] = await this.root.execute("testing.playground.negate", null, [
-            ifile,
-        ])
-        return ofiles[0]
-    }
-
-    /**
-     * Download a file.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async download(data: Name): Promise<Download> {
-        const [output, ofiles] = await this.root.execute("testing.playground.download", data)
-        return ofiles[0]
-    }
-
-    /**
-     * Download a file with a string.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async download2(data: Name): Promise<[string, Download]> {
-        const [output, ofiles] = await this.root.execute("testing.playground.download2", data)
-        return [output, ofiles[0]]
-    }
-
-    /**
-     * Ping the server to get a pong string.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async ping(): Promise<string> {
-        const [output, ofiles] = await this.root.execute("testing.playground.ping", null)
-        return output
-    }
-
-    /**
-     * Returns the given string in uppercase.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async toUpperCase(s: string): Promise<string> {
-        const [output, ofiles] = await this.root.execute("testing.playground.toUpperCase", s)
-        return output
-    }
-
-    /**
-     * Returns the sum of two integers.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async add2i(data: TwoInts): Promise<number> {
-        const [output, ofiles] = await this.root.execute("testing.playground.add2i", data)
-        return output
-    }
-
-    /**
-     * Returns the sum of two floats.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async add2f(data: TwoFloats): Promise<number> {
-        const [output, ofiles] = await this.root.execute("testing.playground.add2f", data)
-        return output
-    }
-
-    /**
-     * increment two numbers.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async inc(data: TwoInts): Promise<TwoInts> {
-        const [output, ofiles] = await this.root.execute("testing.playground.inc", data)
-        return output
-    }
-
-    /**
-     * Returns the sum of three integers.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async add3i(data: { a: number; b: number; c: number }): Promise<number> {
-        const [output, ofiles] = await this.root.execute("testing.playground.add3i", data)
-        return output
-    }
-
-    /**
-     * Returns a type with defaults.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async something(data: SomeType): Promise<SomeType> {
-        const [output, ofiles] = await this.root.execute("testing.playground.something", data)
-        return output
-    }
-
-    /**
-     * Get a webstream with clok data.
-     *
-     * 🔐 Authentication: any
-     * No warnings
-     *
-     */
-    async clock(): Promise<WebStream> {
-        const [output, ofiles] = await this.root.execute("testing.playground.clock", null)
         return output
     }
 }
