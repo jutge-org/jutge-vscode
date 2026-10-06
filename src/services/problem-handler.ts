@@ -37,16 +37,23 @@ import { checkerInfoByName } from "./runners/checkers"
 export class ProblemHandler extends Logger {
     panel_: ProblemViewPanel
     problem_: Problem
+    compilers: string[] | null
     order_: number
     proglang_: Proglang | undefined
     langInfo_: LanguageInfo | undefined
 
-    constructor(panel: ProblemViewPanel, problem: Problem, order: number) {
+    constructor(
+        panel: ProblemViewPanel,
+        problem: Problem,
+        compilers: string[] | null,
+        order: number
+    ) {
         super()
 
         this.panel_ = panel
         this.problem_ = problem
         this.order_ = order
+        this.compilers = compilers
 
         // Launch loading of testcases already
         if (!this.problem_.testcases) {
@@ -266,8 +273,15 @@ export class ProblemHandler extends Logger {
             const runner = proglangInfoGet(proglang).runner
             const document = await this.__getDocument(filePath)
 
+            // Take first compiler in the list.
+            // NOTE(pauek): Are there any problems listing more than one??? What to do about it???
+            let compiler: string | null = null
+            if (this.compilers && this.compilers.length > 0) {
+                compiler = this.compilers[0]
+            }
+
             this.log.debug(`Executing code with ${runner.constructor.name}`)
-            const rawOutput = await runner.run(filePath, testcase.input, document)
+            const rawOutput = await runner.run(compiler, filePath, testcase.input, document)
             const output = rawOutput.replaceAll(/\r\n/g, "\n")
             this.log.debug(`Code execution completed`)
 
@@ -321,11 +335,14 @@ export class ProblemHandler extends Logger {
 
     async __run(input: string, filePath: string): Promise<string> {
         const proglang = proglangFromFilepath(filePath)
-        const runner = proglangInfoGet(proglang).runner
+        const {
+            compilers: [compiler],
+        } = this.problem_.handler!
+        const { runner } = proglangInfoGet(proglang)
         const document = await this.__getDocument(filePath)
 
         this.log.debug(`Executing code with ${runner.constructor.name}`)
-        const rawOutput = await runner.run(filePath, input, document)
+        const rawOutput = await runner.run(compiler, filePath, input, document)
         const output = rawOutput.replaceAll(/\r\n/g, "\n")
 
         this.log.debug(`Code execution completed`)

@@ -10,7 +10,12 @@ export enum Proglang {
     GHC = "GHC", // Haskell
 }
 export interface LanguageRunner {
-    run(codePath: string, input: string, document: vscode.TextDocument): Promise<string>
+    run(
+        compiler: string | null,
+        codePath: string,
+        input: string,
+        document: vscode.TextDocument
+    ): Promise<string>
     getRunningDir(): string
 }
 
@@ -30,7 +35,7 @@ const __languages: Record<Proglang, LanguageInfo> = {
         extensions: [".py"],
         commentPrefix: "#",
         mimeType: "text/x-script.phyton",
-        compilers: ["Python3"],
+        compilers: ["Python3", "RunPython"],
     },
     [Proglang.CPP]: {
         proglang: Proglang.CPP,

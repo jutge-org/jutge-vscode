@@ -1,7 +1,7 @@
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
 import { TerminalService } from "@/services/terminal"
-import { downloadFile, getExtensionDirectory, getWorkingDirectory } from "@/utils"
+import { appendToFile, downloadFile, getExtensionDirectory, getWorkingDirectory } from "@/utils"
 import * as childProcess from "child_process"
 import decompress from "decompress"
 import { copyFileSync, existsSync, mkdirSync } from "fs"
@@ -217,8 +217,13 @@ export class PythonRunner extends Logger implements LanguageRunner {
         copyFileSync(turtlePySourcePath, turtlePyDestPath)
     }
 
-    async run(codePath: string, input: string, document: vscode.TextDocument): Promise<string> {
-        this.log.debug(`Running code: ${codePath}`)
+    async run(
+        compiler: string | null,
+        codePath: string,
+        input: string,
+        document: vscode.TextDocument
+    ): Promise<string> {
+        this.log.debug(`Running code: ${codePath} [compiler: "${compiler}"]`)
 
         const command = ConfigService.getPythonCommand()
         const flags = ConfigService.getPythonFlags()
@@ -231,6 +236,17 @@ export class PythonRunner extends Logger implements LanguageRunner {
         // Copy program
         const destPath = join(this.runningDir, "main.py")
         copyFileSync(codePath, destPath)
+
+        // NOTE(pauek):
+        // If the compiler is "RunPython", what we have to do is copy the
+        // input file _as code_ at the end of the program. This type of
+        // problem is just a hack to be able to run arbitrary instructions
+        // instead of relying on a particular input to exercise the program
+        // code
+        if (compiler === "RunPython") {
+            const twoEmptyLines = "\n\n"
+            appendToFile(destPath, twoEmptyLines + input)
+        }
 
         // First run via spawnSync to check for errors
         const result = childProcess.spawnSync(

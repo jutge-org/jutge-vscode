@@ -253,7 +253,14 @@ export class ProblemViewPanel extends Logger {
                         _loadStatementHtml(),
                         _loadCustomTestcases(),
                     ])
-                    this.problemHandler = new ProblemHandler(this, this.problem, this.order)
+
+                    const compilers = absProb.compilers?.split(",") || null
+                    this.problemHandler = new ProblemHandler(
+                        this,
+                        this.problem,
+                        compilers,
+                        this.order
+                    )
                 } catch (e) {
                     console.error(e)
                 }

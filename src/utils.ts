@@ -311,3 +311,7 @@ export async function downloadFile(url: string, targetPath: string): Promise<voi
         throw new Error(`Could not download '${url}': ${err}`)
     }
 }
+
+export async function appendToFile(filepath: string, code: string) {
+    return fs.appendFileSync(filepath, code)
+}

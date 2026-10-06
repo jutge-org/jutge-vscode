@@ -47,7 +47,12 @@ export class GHCRunner extends Logger implements LanguageRunner {
         return this.runningDir
     }
 
-    async run(codePath: string, input: string, document: vscode.TextDocument): Promise<string> {
+    async run(
+        compiler: string | null,
+        codePath: string,
+        input: string,
+        document: vscode.TextDocument
+    ): Promise<string> {
         this.log.debug(`Running: ${codePath}`)
         const binaryPath = codePath + ".out"
         const workingDir = getWorkingDirectory(codePath)
