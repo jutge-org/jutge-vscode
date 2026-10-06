@@ -139,8 +139,12 @@ export class FileService extends StaticLogger {
         return `${prefix}${problem.problem_id}_${sanitizeTitle(problem.title)}${defaultExtension}`
     }
 
-    static makeTestcaseFilename({ problem_id, title }: Problem, index: number = 1) {
-        return `${problem_id}_${sanitizeTitle(title)}.test-${index}.inp`
+    static makeTestcaseFilename(
+        { problem_id, title }: Problem,
+        index: number = 1,
+        solution: boolean = false
+    ) {
+        return `${problem_id}_${sanitizeTitle(title)}.test-${index}.${solution ? "cor" : "inp"}`
     }
 
     static async findFirstUnusedCustomTestcase(problem: Problem): Promise<vscode.Uri | null> {
@@ -180,12 +184,33 @@ export class FileService extends StaticLogger {
             fileContent = Buffer.from(testcase.input_b64, "base64").toString("utf-8")
         }
         try {
-            fs.writeFileSync(fileUri.fsPath, fileContent, { flag: "w" })
+            await fs.writeFileSync(fileUri.fsPath, fileContent, { flag: "w" })
         } catch (error) {
             vscode.window.showErrorMessage(`Couldn't create file '${fileUri.fsPath}'`)
             throw error
         }
         return fileUri
+    }
+    static async createNewTestcaseSolutionFile(
+        problem: Problem,
+        index: number,
+        contents: string
+    ): Promise<string | undefined> {
+        let filename = this.makeTestcaseFilename(problem, index, true)
+        const workspace = getWorkspaceFolder()
+        if (!workspace) {
+            return undefined
+        }
+        const filePath = vscode.Uri.joinPath(workspace.uri, filename)
+        const fileContent = new Uint8Array([...string2Uint8Array(contents)])
+
+        try {
+            await vscode.workspace.fs.writeFile(filePath, fileContent)
+        } catch (error) {
+            vscode.window.showErrorMessage(`Couldn't create file '${filePath.fsPath}'`)
+            throw error
+        }
+        return filePath.fsPath
     }
 
     static async loadCustomTestcases(problem: Problem): Promise<CustomTestcase[]> {
@@ -202,9 +227,24 @@ export class FileService extends StaticLogger {
             const { fsPath } = vscode.Uri.joinPath(workspace.uri, filename)
             if (existsSync(fsPath)) {
                 const fileContent = await readFile(fsPath)
+                let correction: string | undefined = undefined
+
+                const solPath = vscode.Uri.joinPath(
+                    workspace.uri,
+                    this.makeTestcaseFilename(problem, i, true)
+                ).fsPath
+                if (existsSync(solPath)) {
+                    console.log(solPath)
+                    correction = (await readFile(solPath)).toString().replaceAll(/\r\n/g, "\n")
+                    if (!correction.endsWith("\n")) {
+                        correction += "\n"
+                    }
+                }
+
                 customTestcases.push({
-                    input: fileContent.toString(),
+                    input: fileContent.toString().replaceAll(/\r\n/g, "\n"),
                     index: i,
+                    solution: correction,
                 })
             }
         }

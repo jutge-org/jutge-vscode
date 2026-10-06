@@ -1,7 +1,8 @@
 import { Testcase } from "@/jutge_api_client"
+import { checkerInfoByName } from "@/services/runners/checkers"
 import { CustomTestcase, ProblemHandler } from "@/types"
 import { Button as htmlButton } from "@/webview/components/button"
-import { chevronDown, icons, warningIcon } from "@/webview/components/icons"
+import { chevronDown, icons, warningCard, warningIcon } from "@/webview/components/icons"
 import { makeSpacesVisible } from "@/webview/utils"
 import { Uri } from "vscode"
 
@@ -131,10 +132,15 @@ export function htmlForGraphicTestcase(testcase: Testcase, index: number): strin
 }
 
 export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
-    const { index, input: text } = customTestcase
+    const { index, input: text, solution: text_solution } = customTestcase
     const input = {
         actual: text,
         displayed: makeSpacesVisible(text),
+    }
+
+    const solution = {
+        actual: text_solution || "",
+        displayed: makeSpacesVisible(text_solution || ""),
     }
 
     return /*html*/ `
@@ -146,6 +152,10 @@ export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
                     <div class="icon">${icons["edit"]()}</div>
                     <span>Edit</span>
                 </div>
+                <div id="edit-solution-testcase-${index}" class="small-button" title="Edit solution">
+                    <div class="icon">${icons["edit"]()}</div>
+                    <span>Edit sol</span>
+                </div>
                 <div id="run-custom-testcase-${index}" class="small-button" title="Run this testcase only">
                     <div class="icon">${icons["run"]()}</div>
                     <span>Run</span>
@@ -154,6 +164,8 @@ export function htmlForCustomTestcase(customTestcase: CustomTestcase) {
             <div class="content">
                 <div class="two-column">
                     ${htmlTestcaseRawTextContainer("Input", input, { copyToClipboard: true })}
+                    ${text_solution ? htmlTestcaseRawTextContainer("Expected Output:", solution, { copyToClipboard: true }) : ""}
+
                     <div class="container received">
                         <div class="title">Received Output:</div>
                         <div id="received" class="selectable textarea"><pre></pre></div>
@@ -171,13 +183,16 @@ export function htmlNotSupportedHandler() {
                 <h2 class="flex-grow-1">Testcases</h2>
             </div>
             <div class="panels">
-                <div class="warning">
-                    ${warningIcon()}
-                    <span>Local testcase running is not supported for this problem.</span>
-                </div>
+                ${warningCard("Local testcase running is not supported for this problem.")}
             </div>
         </div>
       `
+}
+
+export function htmlNotSupportedChecker() {
+    return warningCard(
+        "Local testcase checking is not fully supported for this problem, the <i>expected output</i> may not be the only valid solution."
+    )
 }
 
 export function htmlTestcaseHeader(title: string) {
@@ -212,6 +227,7 @@ export function htmlTestcases(
                     </div>
                 </div>
                 <div class="panels">
+                    ${!checkerInfoByName(problemHandler?.checker).implemented ? htmlNotSupportedChecker() : ""}
                     ${testcases.map(htmlForTestcase).join("") || "No testcases found."}
                 </div>
             `

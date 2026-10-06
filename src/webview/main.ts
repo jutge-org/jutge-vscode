@@ -64,8 +64,8 @@ function onEvent(event: MessageEvent<any>) {
             break
         }
         case VSCodeToWebviewCommand.UPDATE_CUSTOM_TESTCASE_STATUS: {
-            const { testcaseId, status, output } = message.data
-            updateTestcaseStatus(testcaseId, status, output, "custom")
+            const { testcaseId, status, output, withSolution } = message.data
+            updateTestcaseStatus(testcaseId, status, output, "custom", withSolution)
             updateCollapseButton("custom")
             break
         }
@@ -105,6 +105,9 @@ const postMessageForTestcase = (command: WebviewToVSCodeCommand) =>
 
 const runTestcase = postMessageForTestcase(WebviewToVSCodeCommand.RUN_TESTCASE)
 const editTestcase = postMessageForTestcase(WebviewToVSCodeCommand.EDIT_TESTCASE)
+const editTestcaseSolution = postMessageForTestcase(
+    WebviewToVSCodeCommand.EDIT_TESTCASE_SOLUTION
+)
 const runCustomTestcase = postMessageForTestcase(WebviewToVSCodeCommand.RUN_CUSTOM_TESTCASE)
 
 function copyToClipboard() {
@@ -235,6 +238,9 @@ function addEventListeners() {
     document.querySelectorAll('[id^="run-testcase-"]').forEach(onClick(runTestcase))
     document.querySelectorAll('[id^="edit-testcase-"]').forEach(onClick(editTestcase))
     document
+        .querySelectorAll('[id^="edit-solution-testcase-"]')
+        .forEach(onClick(editTestcaseSolution))
+    document
         .querySelectorAll('[id^="run-custom-testcase-"]')
         .forEach(onClick(runCustomTestcase))
 
@@ -265,6 +271,9 @@ function updateCustomTestcases(customTestcases: string[] /* html for testcases *
     customTestcasesDiv.innerHTML = htmlCustomTestcases(customTestcases)
 
     customTestcasesDiv.querySelectorAll('[id^="edit-testcase-"]').forEach(onClick(editTestcase))
+    customTestcasesDiv
+        .querySelectorAll('[id^="edit-solution-testcase-"]')
+        .forEach(onClick(editTestcaseSolution))
 
     customTestcasesDiv
         .querySelectorAll('[id^="run-custom-testcase-"]')
@@ -285,7 +294,8 @@ function updateTestcaseStatus(
     testcaseIndex: number,
     status: string,
     outputText: string,
-    testcaseType: "custom" | "normal"
+    testcaseType: "custom" | "normal",
+    withSolution: boolean = true
 ) {
     const testcaseId =
         testcaseType === "normal"
@@ -335,7 +345,7 @@ function updateTestcaseStatus(
         case "passed":
             setTestcaseAppearance(testcaseType === "normal" ? "Passed" : "Done", "green")
             setOutput(outputText)
-            content.style.display = testcaseType === "normal" ? "none" : "flex"
+            content.style.display = testcaseType === "normal" || withSolution ? "none" : "flex"
             content.classList.remove("compare")
             passedTestcases.set(testcaseId, true)
             break

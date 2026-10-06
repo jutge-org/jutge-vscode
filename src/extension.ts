@@ -280,6 +280,14 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
         }
     }
 
+    // Handle non-abstract problem_nms
+    let language = ""
+    if (problemNm.includes("_")) {
+        let split = problemNm.replaceAll(" ", "").split("_")
+        problemNm = split[0]
+        language = split[1]
+    }
+
     // Check that the problem really exists
     if (!(await JutgeService.problemExists(problemNm))) {
         vscode.window.showErrorMessage(`Problem ${problemNm} does not exist`)
@@ -294,7 +302,7 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
         }
     })
 
-    await WebviewPanelRegistry.createOrReveal(problemNm, order)
+    await WebviewPanelRegistry.createOrReveal(problemNm, order, language)
     // Force update on "Open Existing File" button + custom testcases
     await WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
 }
@@ -355,7 +363,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const isDevelopmentMode = context.extensionMode === vscode.ExtensionMode.Development
 
     // Set JUTGE_API_URL from the start
-    setJutgeApiURL({ mode: "normal", useDevApi: false })
+    // useDevApi only when launching through it's profile
+    setJutgeApiURL({ mode: "normal", useDevApi: process.env.MODE === "development" })
 
     // Initialize sign-in context keys to concrete values so VS Code can
     // evaluate the `when` clauses for the views from the very first frame
@@ -477,7 +486,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await vscode.commands.executeCommand(
         "setContext",
         "jutge-vscode.isDevMode",
-        process.env.MODE === "development"
+        ["development", "semidevelopment"].includes(process.env.MODE || "production")
     )
 
     if (isDevelopmentMode) {
