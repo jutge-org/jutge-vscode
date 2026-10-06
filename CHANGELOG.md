@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.10] - 2026-10-06
 
 - Added support for "RunPython" programs.
+- Fixed regression bug in generating problem filenames from title.
 - Awesome work by `jma25l`:
     - Many bug fixes.
     - When clicking "Run All", also run custom test cases.
