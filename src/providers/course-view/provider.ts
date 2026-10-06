@@ -279,7 +279,7 @@ export class JutgeCourseTreeProvider
                         continue
                     }
 
-                    const item = this.abstractProblemToElement_(problem, allStatuses)
+                    const item = this.abstractProblemToElement_(problem, order, allStatuses)
                     item.order = order
                     item.parent = listElem
                     items.push(item)
