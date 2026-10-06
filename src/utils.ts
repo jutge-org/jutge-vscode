@@ -119,31 +119,34 @@ export async function waitMilliseconds(time_ms: number): Promise<void> {
     })
 }
 
+//
+// Convert a normal title to a suitable name for a file.
+// 1. Map special characters (accented, ç and ñ).
+// 2. Remove other non-space characters.
+// 3. Reduce spaces to one, and swap for '_'.
+//
 export function sanitizeTitle(title: string): string {
     // Replacements for accented characters
-    const replacements = [
-        ["àá", "a"],
-        ["èé", "e"],
-        ["ìí", "i"],
-        ["òó", "o"],
-        ["ùú", "u"],
-        ["ñ", "n"],
-        ["ç", "c"],
-        [" ", "_"],
+    const replacements: [RegExp, string][] = [
+        // 1.
+        [/[àá]/g, "a"],
+        [/[èé]/g, "e"],
+        [/[íï]/g, "i"],
+        [/[òó]/g, "o"],
+        [/[úü]/g, "u"],
+        [/ñ/g, "n"],
+        [/ç/g, "c"],
+
+        // 2.
+        [/[^a-zA-Z0-9 ]/g, ""],
+
+        // 3.
+        [/ +/g, " "],
+        [/ /g, "_"],
     ]
-    for (const [chars, repl] of replacements) {
-        for (const c of [...chars]) {
-            title = title.replaceAll(c, repl)
-        }
+    for (const [regexp, repl] of replacements) {
+        title = title.replaceAll(regexp, repl)
     }
-    title = title.replace(/[àá]/g, "a") // Replace accents
-    title = title.replace(/[èé]/g, "e") // Replace accents
-    title = title.replace(/[íï]/g, "i") // Replace accents
-    title = title.replace(/[òó]/g, "o") // Replace accents
-    title = title.replace(/[úü]/g, "u") // Replace accents
-    title = title.replace(/[^a-zA-Z0-9 ]/g, "") // Remove all special characters
-    title = title.replace(/ +/g, " ") // Remove repeated spaces
-    title = title.replace(/ /g, "_") // Replace spaces with underscores
     return title
 }
 
