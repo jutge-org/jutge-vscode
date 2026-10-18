@@ -39,3 +39,8 @@ When doing an exam:
 
 - Showing the time available (as a progress bar?).
 - Showing a list of documentation items during the exam.
+
+## Good error messages
+
+- For any language supported for local execution, give clear messages when the compiler
+  is not found, and, if possible, install things internally also notifying the user.
