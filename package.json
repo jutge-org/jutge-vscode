@@ -383,7 +383,6 @@
         "@vscode/python-extension": "^1.0.6",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "dayjs": "^1.11.23",
-        "decompress": "^4.2.1",
         "deep-equal": "^2.2.3",
         "glob": "^13.0.6",
         "rimraf": "^6.1.3",
