@@ -1,9 +1,14 @@
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
 import { TerminalService } from "@/services/terminal"
-import { appendToFile, downloadFile, getExtensionDirectory, getWorkingDirectory } from "@/utils"
+import {
+    appendToFile,
+    decompress,
+    downloadFile,
+    getExtensionDirectory,
+    getWorkingDirectory,
+} from "@/utils"
 import * as childProcess from "child_process"
-import decompress from "decompress"
 import { copyFileSync, existsSync, mkdirSync } from "fs"
 import { opendir } from "fs/promises"
 import { rename, rm, rmdir } from "node:fs/promises"

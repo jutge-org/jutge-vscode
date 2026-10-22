@@ -1,5 +1,7 @@
+import { gunzipSync, unzipSync } from "fflate"
+import * as tar from "tar-stream"
 import * as fs from "fs"
-import { mkdir, mkdtemp, readdir } from "fs/promises"
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from "fs/promises"
 import * as os from "os"
 import { basename, dirname, extname, join } from "path"
 import { pipeline } from "stream/promises"
@@ -298,6 +300,58 @@ export async function withTemporaryDir<T>(func: (tempdir: string) => Promise<T>)
 
     // Return same result as body function
     return result
+}
+
+/**
+ * Extracts the contents of a (possibly gzipped) tarball into a directory.
+ *
+ * @param data the tarball contents
+ * @param outputDir directory where the tarball contents are extracted
+ */
+async function untar(data: Uint8Array, outputDir: string): Promise<void> {
+    for await (const entry of tar.extract().end(data)) {
+        if (entry.header.type !== "file") {
+            entry.resume() // discard non-file entries
+            continue
+        }
+        const destPath = join(outputDir, entry.header.name)
+        await mkdir(dirname(destPath), { recursive: true })
+        // Preserve the permissions stored in the tarball (e.g. executable bit)
+        await pipeline(entry, fs.createWriteStream(destPath, { mode: entry.header.mode }))
+    }
+}
+
+/**
+ * Extracts an archive (`.zip`, `.tar` or `.tar.gz`/`.tgz`) into a directory.
+ *
+ * Drop-in replacement for the `decompress` package, implemented with
+ * `fflate` (zip/gzip) and `tar-stream` (tar).
+ *
+ * @param archivePath path of the archive file to extract
+ * @param outputDir directory where the archive contents are extracted
+ */
+export async function decompress(archivePath: string, outputDir: string): Promise<void> {
+    // `fflate` and `tar-stream` work with `Uint8Array`s, so read the whole
+    // archive into memory
+    const data = new Uint8Array(await readFile(archivePath))
+
+    const lowerPath = archivePath.toLowerCase()
+    if (lowerPath.endsWith(".zip")) {
+        for (const [name, contents] of Object.entries(unzipSync(data))) {
+            if (name.endsWith("/")) {
+                continue // directory entry
+            }
+            const destPath = join(outputDir, name)
+            await mkdir(dirname(destPath), { recursive: true })
+            await writeFile(destPath, contents)
+        }
+    } else if (lowerPath.endsWith(".tar.gz") || lowerPath.endsWith(".tgz")) {
+        await untar(gunzipSync(data), outputDir)
+    } else if (lowerPath.endsWith(".tar")) {
+        await untar(data, outputDir)
+    } else {
+        throw new Error(`Unsupported archive format: '${archivePath}'`)
+    }
 }
 
 export async function downloadFile(url: string, targetPath: string): Promise<void> {
