@@ -5,7 +5,7 @@
     background.
 */
 
-import { setJutgeApiURL } from "@/extension"
+import { isDevelopmentMode, setJutgeAPIMode } from "@/extension"
 import * as j from "@/jutge_api_client"
 import { StaticLogger } from "@/loggers"
 import deepEqual from "deep-equal"
@@ -22,6 +22,17 @@ type SwrResult<T> = {
 
 export type ApiMode = "normal" | "exam" | "contest"
 export type ExamMode = "exam" | "contest"
+
+export const stringToApiMode = (s: string): ApiMode => {
+    if (s === "normal") {
+        return "normal"
+    } else if (s === "exam") {
+        return "exam"
+    } else if (s === "contest") {
+        return "contest"
+    }
+    throw new Error("ApiMode should be 'normal', 'exam' or 'contest'!")
+}
 
 type SignInJutgeParams = {
     email: string
@@ -52,14 +63,12 @@ const KEY_PRE_EXAM_TOKEN = "jutgePreExamToken"
 const KEY_PRE_EXAM_CREDENTIALS = "jutgePreExamCredentials"
 const KEY_EXAM_TOKEN = "jutgeExamToken"
 const KEY_API_MODE = "jutgeApiMode"
-const KEY_USE_DEV_API = "jutgeUseDevApi"
 
 export class JutgeService extends StaticLogger {
     static context_: vscode.ExtensionContext
     static signedIn_: boolean = false
     static signedInPreExam_: boolean = false
     static apiMode_: ApiMode = "normal"
-    static useDevApi_: boolean = process.env.MODE === "development"
 
     /* ---------- Context keys ---------- */
 
@@ -86,10 +95,6 @@ export class JutgeService extends StaticLogger {
     public static async initialize(context: vscode.ExtensionContext): Promise<void> {
         this.log.info("Initializing...")
         this.context_ = context
-        const storedUseDevApi = context.globalState.get<boolean>(KEY_USE_DEV_API)
-        if (typeof storedUseDevApi === "boolean") {
-            this.useDevApi_ = storedUseDevApi
-        }
         await this.resumeFromStorage()
         this.log.info("Initialization complete")
     }
@@ -125,13 +130,6 @@ export class JutgeService extends StaticLogger {
     }
 
     /* ---------- API mode ---------- */
-
-    static setApiMode(mode: ApiMode, useDevApi: boolean = this.useDevApi_) {
-        this.apiMode_ = mode
-        this.useDevApi_ = useDevApi
-        setJutgeApiURL({ mode, useDevApi })
-        this.log.info(`API mode set to '${mode}' (dev=${useDevApi}).`)
-    }
 
     private static normalizeMode(mode: string | undefined): ApiMode {
         if (mode === "exam" || mode === "contest" || mode === "normal") {
@@ -187,10 +185,6 @@ export class JutgeService extends StaticLogger {
         await this.context_.globalState.update(KEY_API_MODE, mode)
     }
 
-    public static async storeUseDevApi(useDevApi: boolean) {
-        await this.context_.globalState.update(KEY_USE_DEV_API, useDevApi)
-    }
-
     /** Last successful sign-in email (SecretStorage). Migrates legacy globalState `email` on first read. */
     public static async getStoredSignInEmail(): Promise<string | undefined> {
         const fromSecret = await this.context_.secrets.get(SECRET_SIGN_IN_EMAIL)
@@ -239,18 +233,18 @@ export class JutgeService extends StaticLogger {
      */
     private static async isTokenValidOnHost(
         token: string,
-        mode: ApiMode,
-        useDevApi: boolean
+        api_mode: ApiMode
     ): Promise<boolean> {
         const originalMeta = jutgeClient.meta
         const originalUrl = jutgeClient.JUTGE_API_URL
         try {
-            setJutgeApiURL({ mode, useDevApi })
+            setJutgeAPIMode(api_mode)
             jutgeClient.meta = { token, user_uid: originalMeta?.user_uid ?? "" }
             await jutgeClient.student.profile.get()
             return true
         } catch (error) {
-            this.log.info(`Token validation failed (mode=${mode}, dev=${useDevApi}): ${error}`)
+            const mode = isDevelopmentMode() ? "development" : "production"
+            this.log.info(`Token validation failed (${jutgeClient.JUTGE_API_URL}): ${error}`)
             return false
         } finally {
             jutgeClient.meta = originalMeta
@@ -261,7 +255,7 @@ export class JutgeService extends StaticLogger {
     /* ---------- State transitions ---------- */
 
     private static async setSignedInJutge(token: string, user_uid: string) {
-        this.setApiMode("normal", this.useDevApi_)
+        setJutgeAPIMode("normal")
         this.signedIn_ = true
         this.signedInPreExam_ = false
         await this.storeToken(token)
@@ -280,7 +274,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static async setSignedInPreExam(mode: ExamMode) {
-        this.setApiMode(mode, this.useDevApi_)
+        setJutgeAPIMode(mode)
         this.signedIn_ = false
         this.signedInPreExam_ = true
         // Pre-exam authentication is now credentials-based and lives entirely
@@ -300,7 +294,7 @@ export class JutgeService extends StaticLogger {
     }
 
     static async setSignedInExam(examToken: string, user_uid: string, mode: ExamMode = "exam") {
-        this.setApiMode(mode, this.useDevApi_)
+        setJutgeAPIMode(mode)
         this.signedIn_ = true
         this.signedInPreExam_ = false
         await this.storeExamToken(examToken)
@@ -330,7 +324,7 @@ export class JutgeService extends StaticLogger {
         this.signedInPreExam_ = false
         await this.storePreExamToken(undefined)
         await this.storePreExamCredentials(false)
-        this.setApiMode("normal", this.useDevApi_)
+        setJutgeAPIMode("normal")
         await this.storeApiMode("normal")
         await this.setAllContextKeys({
             courses: false,
@@ -354,7 +348,7 @@ export class JutgeService extends StaticLogger {
         if (!password) {
             return { ok: false, error: "Please enter your password." }
         }
-        this.setApiMode("normal", this.useDevApi_)
+        setJutgeAPIMode("normal")
         try {
             const credentials = await jutgeClient.login({ email: trimmedEmail, password })
             await this.setSignedInJutge(credentials.token, credentials.user_uid)
@@ -394,22 +388,20 @@ export class JutgeService extends StaticLogger {
             return { ok: false, error: "Please enter your password." }
         }
         const originalMode = this.apiMode_
-        const originalUseDevApi = this.useDevApi_
         const nextUseDevApi = Boolean(useDevApi)
-        this.setApiMode(mode, nextUseDevApi)
+        setJutgeAPIMode(mode)
         try {
             await jutgeClient.auth.getReadyExams({
                 email: trimmedEmail,
                 password,
             })
             await this.storeSignInCredentials(trimmedEmail, password)
-            await this.storeUseDevApi(nextUseDevApi)
             await this.setSignedInPreExam(mode)
             return { ok: true }
         } catch (err) {
             // Keep the mode the user selected in the sign-in view, so the
             // next attempt (and the rest of the extension) stays on that host.
-            this.setApiMode(originalMode, originalUseDevApi)
+            setJutgeAPIMode(originalMode)
             return { ok: false, error: this.normalizeError(err) }
         }
     }
@@ -448,7 +440,7 @@ export class JutgeService extends StaticLogger {
             }
         }
 
-        this.setApiMode(mode, this.useDevApi_)
+        setJutgeAPIMode(mode)
         try {
             const credentials = await jutgeClient.loginExam({
                 email,
@@ -495,26 +487,22 @@ export class JutgeService extends StaticLogger {
      * the exam/contest hosts, which means this call stays inside the exam
      * network and never needs `api.jutge.org`.
      */
-    static async getReadyExamsForMode(
-        mode: ExamMode,
-        useDevApi: boolean = this.useDevApi_
-    ): Promise<string[] | undefined> {
+    static async getReadyExamsForMode(mode: ExamMode): Promise<string[] | undefined> {
         const originalMode = this.apiMode_
-        const originalUseDevApi = this.useDevApi_
         try {
             const email = await this.getStoredSignInEmail()
             const password = await this.getStoredSignInPassword()
             if (!email || !password) {
                 return
             }
-            this.setApiMode(mode, useDevApi)
+            setJutgeAPIMode(mode)
             const exams = await jutgeClient.auth.getReadyExams({ email, password })
             return exams.map((e) => e.exam_key)
         } catch (error) {
             this.log.error(`Could not get exams: ${error}`)
             return
         } finally {
-            this.setApiMode(originalMode, originalUseDevApi)
+            setJutgeAPIMode(originalMode)
         }
     }
 
@@ -527,7 +515,7 @@ export class JutgeService extends StaticLogger {
         const examToken = this.getExamToken()
         if (examToken) {
             const examMode: ExamMode = storedMode === "contest" ? "contest" : "exam"
-            if (await this.isTokenValidOnHost(examToken, examMode, this.useDevApi_)) {
+            if (await this.isTokenValidOnHost(examToken, examMode)) {
                 this.log.info(`Resuming from exam token (${examMode}).`)
                 await this.setSignedInExam(examToken, examMode)
                 return
@@ -542,7 +530,7 @@ export class JutgeService extends StaticLogger {
             const wasPreExam =
                 this.hasPreExamCredentials() || this.getPreExamToken() !== undefined
             if (wasPreExam) {
-                const items = await this.getReadyExamsForMode(storedMode, this.useDevApi_)
+                const items = await this.getReadyExamsForMode(storedMode)
                 if (items !== undefined) {
                     this.log.info(`Resuming pre-exam credentials (mode=${storedMode}).`)
                     await this.setSignedInPreExam(storedMode)
@@ -560,7 +548,7 @@ export class JutgeService extends StaticLogger {
         // 3) Normal Jutge token.
         const token = this.getToken()
         const UID = this.getUserUID()
-        if (token && (await this.isTokenValidOnHost(token, "normal", this.useDevApi_))) {
+        if (token && (await this.isTokenValidOnHost(token, "normal"))) {
             this.log.info(`Resuming from normal token.`)
             await this.setSignedInJutge(token, UID ?? "")
             return

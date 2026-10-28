@@ -6,6 +6,7 @@ import {
     SignInMode,
 } from "@/services/host-availability"
 import { ApiMode, ExamMode, JutgeService } from "@/services/jutge"
+import { setJutgeAPIMode } from "@/extension"
 
 export const signInWebviewViewType = "jutge-sign-in"
 
@@ -813,7 +814,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
         if (!JutgeService.isSignedIn() && !JutgeService.isSignedInPreExam()) {
             if (!availability[selectedMode]) {
                 selectedMode = SIGN_IN_MODES.find((mode) => availability[mode]) ?? selectedMode
-                JutgeService.setApiMode(modeToApiMode(selectedMode))
+                setJutgeAPIMode(modeToApiMode(selectedMode))
             }
         }
 
@@ -831,7 +832,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
         if (this.hostAvailability_ && !this.hostAvailability_[mode]) {
             return
         }
-        JutgeService.setApiMode(modeToApiMode(mode))
+        setJutgeAPIMode(modeToApiMode(mode))
     }
 
     private async pushInitialState_(): Promise<void> {

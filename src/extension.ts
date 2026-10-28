@@ -39,26 +39,10 @@ import {
     signInWebviewViewType,
 } from "./providers/sign-in-view/provider"
 import { CourseTreeElement } from "./providers/course-view/element"
-import { ApiMode, jutgeClient, JutgeService } from "./services/jutge"
+import { ApiMode, jutgeClient, JutgeService, stringToApiMode } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
 import * as path from "path"
-
-export const setJutgeApiURL = ({ mode, useDevApi }: { mode: ApiMode; useDevApi: boolean }) => {
-    const apiBaseByMode: Record<ApiMode, string> = {
-        normal: "api.jutge.org/api",
-        exam: "exam.api.jutge.org/api",
-        contest: "contest.api.jutge.org/api",
-    }
-    const devApiBaseByMode: Record<ApiMode, string> = {
-        normal: "dev.api.jutge.org/api",
-        exam: "dev.exam.api.jutge.org/api",
-        contest: "dev.contest.api.jutge.org/api",
-    }
-    const apiBase = useDevApi ? devApiBaseByMode[mode] : apiBaseByMode[mode]
-    jutgeClient.JUTGE_API_URL = `https://${apiBase}`
-    console.log(`[Extension]: JUTGE_API_URL = '${jutgeClient.JUTGE_API_URL}'`)
-}
 
 /**
  * Get the webview options for the webview panel.
@@ -94,6 +78,44 @@ export const getContext = (): vscode.ExtensionContext => {
     }
     return context_
 }
+
+//
+//   API_MODES
+//   ---------
+//
+//   The API can be in 6 different modes, 3 x 2 for two dimensions:
+//   - API_MODE: normal, exam, contest (user environment).
+//   - MODE: development, production (development environment)
+//
+
+const URLTable: Record<"development" | "production", Record<ApiMode, string>> = {
+    production: {
+        normal: "https://api.jutge.org/api",
+        exam: "https://exam.api.jutge.org/api",
+        contest: "https://contest.api.jutge.org/api",
+    },
+    development: {
+        normal: "https://dev.api.jutge.org/api",
+        exam: "https://dev.exam.api.jutge.org/api",
+        contest: "https://dev.contest.api.jutge.org/api",
+    },
+}
+
+export const isDevelopmentMode = () => {
+    return context_?.extensionMode === vscode.ExtensionMode.Development
+}
+
+export const setJutgeAPIMode = (strApiMode: string) => {
+    const apiMode = stringToApiMode(strApiMode)
+    const mode = isDevelopmentMode() ? "development" : "production"
+    console.log("setJutgeApiURL", strApiMode, mode)
+
+    jutgeClient.JUTGE_API_URL = URLTable[mode][apiMode]
+
+    console.log(`[Extension]: Setting JUTGE_API_URL to '${jutgeClient.JUTGE_API_URL}'`)
+}
+
+/// Workspace folder
 
 export async function whenWorkspaceFolder(
     bodyFunc: (workspace: vscode.WorkspaceFolder) => Promise<void>
@@ -159,7 +181,7 @@ const showExtensionInfo = () => {
     console.info(`Operating System:  ${os.type()} ${os.release()} ${os.arch()}`)
     console.info(`Node.js Version:   ${process.version}`)
     console.info(`Date:              ${new Date().toISOString()}`)
-    console.info(`MODE:              ${process.env.MODE}`)
+    console.info(`Development:       ${isDevelopmentMode()}`)
     console.info(`JUTGE_API_URL:     ${jutgeClient.JUTGE_API_URL}`)
     console.info("===================================")
 }
@@ -360,11 +382,11 @@ const commandOpenExamDocument = async (
  */
 export async function activate(context: vscode.ExtensionContext) {
     setContext_(context)
-    const isDevelopmentMode = context.extensionMode === vscode.ExtensionMode.Development
 
     // Set JUTGE_API_URL from the start
     // useDevApi only when launching through it's profile
-    setJutgeApiURL({ mode: "normal", useDevApi: process.env.MODE === "development" })
+    console.log("process.env.API_MODE", process.env.API_MODE)
+    setJutgeAPIMode(process.env.API_MODE ?? "normal")
 
     // Initialize sign-in context keys to concrete values so VS Code can
     // evaluate the `when` clauses for the views from the very first frame
@@ -486,10 +508,10 @@ export async function activate(context: vscode.ExtensionContext) {
     await vscode.commands.executeCommand(
         "setContext",
         "jutge-vscode.isDevMode",
-        ["development", "semidevelopment"].includes(process.env.MODE || "production")
+        ["development"].includes(process.env.MODE || "production")
     )
 
-    if (isDevelopmentMode) {
+    if (isDevelopmentMode()) {
         await vscode.commands.executeCommand("workbench.view.extension.jutge")
     }
 }
