@@ -49,6 +49,7 @@ const SECRET_SIGN_IN_PASSWORD = "jutge-vscode.signIn.password"
 const KEY_JUTGE_TOKEN = "jutgeToken"
 const KEY_JUTGE_UID = "jutgeUserUID"
 const KEY_PRE_EXAM_TOKEN = "jutgePreExamToken"
+const KEY_PRE_EXAM_CREDENTIALS = "jutgePreExamCredentials"
 const KEY_EXAM_TOKEN = "jutgeExamToken"
 const KEY_API_MODE = "jutgeApiMode"
 const KEY_USE_DEV_API = "jutgeUseDevApi"
@@ -165,6 +166,13 @@ export class JutgeService extends StaticLogger {
         await this.context_.globalState.update(KEY_PRE_EXAM_TOKEN, token)
     }
 
+    private static hasPreExamCredentials(): boolean {
+        return this.context_.globalState.get<boolean>(KEY_PRE_EXAM_CREDENTIALS) === true
+    }
+    private static async storePreExamCredentials(value: boolean) {
+        await this.context_.globalState.update(KEY_PRE_EXAM_CREDENTIALS, value)
+    }
+
     public static getExamToken() {
         return this.context_.globalState.get<string>(KEY_EXAM_TOKEN)
     }
@@ -217,6 +225,7 @@ export class JutgeService extends StaticLogger {
     public static invalidateToken() {
         this.storeExamToken(undefined)
         this.storePreExamToken(undefined)
+        this.storePreExamCredentials(false)
         this.storeToken(undefined)
         jutgeClient.meta = { token: "<invalidated!> XD", user_uid: "" }
         this.log.info(`Invalidated tokens.`)
@@ -257,6 +266,8 @@ export class JutgeService extends StaticLogger {
         this.signedInPreExam_ = false
         await this.storeToken(token)
         await this.storeUserUID(user_uid)
+        await this.storePreExamToken(undefined)
+        await this.storePreExamCredentials(false)
         await this.storeApiMode("normal")
         await this.setAllContextKeys({
             courses: true,
@@ -268,11 +279,15 @@ export class JutgeService extends StaticLogger {
         this.log.info(`Signed in (normal).`)
     }
 
-    static async setSignedInPreExam(token: string, user_uid: string, mode: ExamMode) {
+    static async setSignedInPreExam(mode: ExamMode) {
         this.setApiMode(mode, this.useDevApi_)
         this.signedIn_ = false
         this.signedInPreExam_ = true
-        await this.storePreExamToken(token)
+        // Pre-exam authentication is now credentials-based and lives entirely
+        // on the exam/contest API. There is no token at this stage.
+        await this.storeExamToken(undefined)
+        await this.storePreExamToken(undefined)
+        await this.storePreExamCredentials(true)
         await this.storeApiMode(mode)
         await this.setAllContextKeys({
             courses: false,
@@ -280,7 +295,7 @@ export class JutgeService extends StaticLogger {
             preExam: true,
             contestMode: mode === "contest",
         })
-        jutgeClient.meta = { token, user_uid }
+        jutgeClient.meta = null
         this.log.info(`Signed in pre-exam (${mode}).`)
     }
 
@@ -290,8 +305,9 @@ export class JutgeService extends StaticLogger {
         this.signedInPreExam_ = false
         await this.storeExamToken(examToken)
         await this.storeApiMode(mode)
-        // Once we're in the exam, the pre-exam token is no longer needed.
+        // Once we're in the exam, the pre-exam state is no longer needed.
         await this.storePreExamToken(undefined)
+        await this.storePreExamCredentials(false)
         await this.setAllContextKeys({
             courses: false,
             exam: true,
@@ -312,6 +328,8 @@ export class JutgeService extends StaticLogger {
         }
         this.signedIn_ = false
         this.signedInPreExam_ = false
+        await this.storePreExamToken(undefined)
+        await this.storePreExamCredentials(false)
         this.setApiMode("normal", this.useDevApi_)
         await this.storeApiMode("normal")
         await this.setAllContextKeys({
@@ -351,20 +369,16 @@ export class JutgeService extends StaticLogger {
     }
 
     /**
-     * Step 1 of the exam/contest sign-in: authenticate with the user's normal
-     * Jutge credentials so we can list the user's exams in step 2.
+     * Step 1 of the exam/contest sign-in: validate the user's credentials and
+     * make sure the exam/contest ready list can be obtained.
      *
-     * NOTE: `auth.login` only exists on the **normal** Jutge domain — the
-     * `exam` and `contest` hosts only accept `auth.loginExam`. So we call
-     * `auth.login` against `api.jutge.org` (using `setApiMode("normal")`),
-     * and then `setSignedInPreExam` swaps the URL to the exam/contest host
-     * with the same token loaded into `meta`. Later calls — `getReadyExams`
-     * (auth: any, cross-host token OK) and `auth.loginExam` (available on
-     * the exam/contest hosts) — then talk to the right server.
+     * This intentionally uses `auth.getReadyExams`, which is available on the
+     * exam/contest hosts and only needs the credentials (no token). In
+     * particular, it never contacts `api.jutge.org`: inside a firewalled exam
+     * network that host is unreachable, and only the exam/contest API is
+     * allowed.
      *
-     * Caveat: this requires reachability of `api.jutge.org` during step 1.
-     * Inside a firewalled exam network only the exam/contest host is
-     * reachable; that case needs a different flow we haven't designed yet.
+     * Step 2 (`enterExam`) then calls `auth.loginExam` on the same host.
      */
     public static async signInPreExam({
         email,
@@ -379,16 +393,23 @@ export class JutgeService extends StaticLogger {
         if (!password) {
             return { ok: false, error: "Please enter your password." }
         }
+        const originalMode = this.apiMode_
+        const originalUseDevApi = this.useDevApi_
         const nextUseDevApi = Boolean(useDevApi)
-        this.setApiMode("normal", nextUseDevApi)
-        await this.storeUseDevApi(nextUseDevApi)
+        this.setApiMode(mode, nextUseDevApi)
         try {
-            const credentials = await jutgeClient.login({ email: trimmedEmail, password })
+            await jutgeClient.auth.getReadyExams({
+                email: trimmedEmail,
+                password,
+            })
             await this.storeSignInCredentials(trimmedEmail, password)
-            await this.setSignedInPreExam(credentials.token, credentials.user_uid, mode)
+            await this.storeUseDevApi(nextUseDevApi)
+            await this.setSignedInPreExam(mode)
             return { ok: true }
         } catch (err) {
-            this.setApiMode("normal", this.useDevApi_)
+            // Keep the mode the user selected in the sign-in view, so the
+            // next attempt (and the rest of the extension) stays on that host.
+            this.setApiMode(originalMode, originalUseDevApi)
             return { ok: false, error: this.normalizeError(err) }
         }
     }
@@ -396,7 +417,7 @@ export class JutgeService extends StaticLogger {
     /**
      * Step 2 of the exam/contest sign-in: actually enter the chosen exam,
      * using the email/password we stored during step 1. On success, the
-     * pre-exam token is discarded and the exam token is what we'll use
+     * pre-exam state is discarded and the exam token is what we'll use
      * from then on.
      */
     public static async enterExam({
@@ -467,9 +488,12 @@ export class JutgeService extends StaticLogger {
     /* ---------- Ready exams ---------- */
 
     /**
-     * List the exams (or contests) the currently signed-in user is allowed to
-     * enter. Requires either a pre-exam token, an exam token, or a normal
-     * Jutge token already loaded into `jutgeClient.meta` for the right host.
+     * List the exams (or contests) the user is allowed to enter.
+     *
+     * During the pre-exam stage there is no token yet, so this uses
+     * `auth.getReadyExams` with the stored credentials. That endpoint lives on
+     * the exam/contest hosts, which means this call stays inside the exam
+     * network and never needs `api.jutge.org`.
      */
     static async getReadyExamsForMode(
         mode: ExamMode,
@@ -478,8 +502,13 @@ export class JutgeService extends StaticLogger {
         const originalMode = this.apiMode_
         const originalUseDevApi = this.useDevApi_
         try {
+            const email = await this.getStoredSignInEmail()
+            const password = await this.getStoredSignInPassword()
+            if (!email || !password) {
+                return
+            }
             this.setApiMode(mode, useDevApi)
-            const exams = await jutgeClient.student.exam.getReadyExams()
+            const exams = await jutgeClient.auth.getReadyExams({ email, password })
             return exams.map((e) => e.exam_key)
         } catch (error) {
             this.log.error(`Could not get exams: ${error}`)
@@ -505,20 +534,27 @@ export class JutgeService extends StaticLogger {
             }
         }
 
-        // 2) Pre-exam token — only meaningful when the stored mode is exam/contest.
-        //    The token was issued by `auth.login` on the **normal** host (see
-        //    `signInPreExam`), so we validate it against that host even though
-        //    the user intends to use it on the exam/contest host.
+        // 2) Pre-exam state. It is credentials-based (no token): validate the
+        //    stored credentials against the exam/contest API only. A pre-exam
+        //    token from older versions is used as a migration marker, but we
+        //    do not validate it against the normal host.
         if (storedMode === "exam" || storedMode === "contest") {
-            const preExamToken = this.getPreExamToken()
-            if (
-                preExamToken &&
-                (await this.isTokenValidOnHost(preExamToken, "normal", this.useDevApi_))
-            ) {
-                this.log.info(`Resuming from pre-exam token (intended mode=${storedMode}).`)
-                await this.setSignedInPreExam(preExamToken, "", storedMode)
-                return
+            const wasPreExam =
+                this.hasPreExamCredentials() || this.getPreExamToken() !== undefined
+            if (wasPreExam) {
+                const items = await this.getReadyExamsForMode(storedMode, this.useDevApi_)
+                if (items !== undefined) {
+                    this.log.info(`Resuming pre-exam credentials (mode=${storedMode}).`)
+                    await this.setSignedInPreExam(storedMode)
+                    return
+                }
+                this.log.info(`Could not resume pre-exam credentials (mode=${storedMode}).`)
             }
+
+            // We are (or were) in exam/contest mode: never fall back to the
+            // normal Jutge host, which may be blocked by an exam firewall.
+            this.log.debug(`No valid exam/pre-exam state for mode '${storedMode}'.`)
+            return
         }
 
         // 3) Normal Jutge token.
