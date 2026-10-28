@@ -5,26 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Extension (Dev API)",
-            "type": "extensionHost",
-            "request": "launch",
-            "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-            "env": {
-                "MODE": "development"
-            },
-            "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-            "preLaunchTask": "npm: compile"
-        },
-        {
             "name": "Run Extension",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-            "env": {
-                "MODE": "semidevelopment"
-            },
+            "env": {},
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
             "preLaunchTask": "npm: compile"
         }
