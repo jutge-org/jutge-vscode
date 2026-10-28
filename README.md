@@ -6,20 +6,23 @@ _Ready to level up your programming practice? [Install the Jutge VSCode Extensio
 
 The main features of the extension include:
 
-- Log in to Jutge.org.
-- View lists of problems from Jutge.org organized by courses.
+- Log in to the platform (in regular, exam or contest mode).
+- View lists of problems organized by courses.
 - View problem statements and test cases.
-- Check solutions against public test cases in the local environment.
-- Submit solutions to the Jutge.org server.
-- View submission results and feedback.
-- Support for the C++, Python, and Haskell programming languages.
+- Check solutions against public test cases in the local environment (for problems in C++, Python, and Haskell).
+- Submit solutions to the server.
+- View submission results and feedback. This includes `graphical` problems and `turtle` problems as of today.
 
-The extension is still in its early stages, and we are actively working on improving its functionality and user experience. In the near future, we plan to add more features such as:
+In the case of Python, the extension downloads and uses `uv` which in turn downloads Python3 automatically, so in this case there is no need to install anything except VSCode itself and the extension.
+
+This extension is in its early stages, and we are actively working on improving its functionality and user experience.
+
+In the near future, we plan to add more features such as:
 
 - Support for more programming languages.
-- Automatic installation of compilers and interpreters to ease new users' setup.
+- Automatic installation of more compilers and interpreters to ease new users' setup.
 - Enhanced problem browsing and filtering.
-- Copying with more types of problems in Jutge.org (problems with functions, quiz problems, graphical problems, ...).
+- Supporting more types of problems in Jutge.org (notably missing are: PRO2, MakePRO2, ).
 - Support for exams and contests.
 
 The extension is built using TypeScript and leverages the VSCode API to provide a rich user experience. It uses webviews to display problem statements and test cases, and it integrates with [Jutge.org's API](https://api.jutge.org/) to manage authentication, problem retrieval, and submission handling.
