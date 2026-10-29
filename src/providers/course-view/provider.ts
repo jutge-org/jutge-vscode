@@ -42,10 +42,10 @@ export class JutgeCourseTreeProvider
     }
 
     async getChildren(parent?: CourseTreeElement): Promise<CourseTreeElement[]> {
-        if (!JutgeService.isSignedIn()) {
+        if (!JutgeService.isState("signed-in")) {
             return []
         } else if (!parent) {
-            return JutgeService.isExamMode() ? [] : this.getEnrolledCourseList_()
+            return JutgeService.isMode("normal") ? [] : this.getEnrolledCourseList_()
         } else if (parent.type === "course") {
             return this.getListsFromCourseNm_(parent)
         } else if (parent.type === "list") {

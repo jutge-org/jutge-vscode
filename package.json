@@ -77,13 +77,6 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
-                    "id": "jutge-exam-properties",
-                    "name": "Exam properties",
-                    "visibility": "visible",
-                    "contextualTitle": "Jutge.org",
-                    "when": "jutge-vscode.isSignedIn.Exam"
-                },
-                {
                     "id": "jutge-exam-documents",
                     "name": "Documents",
                     "visibility": "visible",
@@ -138,16 +131,6 @@
                 {
                     "command": "jutge-vscode.refreshExamsTree",
                     "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
-                    "group": "navigation"
-                },
-                {
-                    "command": "jutge-vscode.refreshExamPropertiesTree",
-                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-properties",
-                    "group": "navigation"
-                },
-                {
-                    "command": "jutge-vscode.openDashboardPanel",
-                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-properties",
                     "group": "navigation"
                 },
                 {
@@ -247,14 +230,6 @@
             {
                 "command": "jutge-vscode.refreshApiTree",
                 "title": "Jutge.org: Refresh Jutge API View",
-                "icon": {
-                    "light": "resources/light/refresh.svg",
-                    "dark": "resources/dark/refresh.svg"
-                }
-            },
-            {
-                "command": "jutge-vscode.refreshExamPropertiesTree",
-                "title": "Jutge.org: Refresh Exam Properties View",
                 "icon": {
                     "light": "resources/light/refresh.svg",
                     "dark": "resources/dark/refresh.svg"

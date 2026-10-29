@@ -7,10 +7,6 @@ import {
     examDocumentsTreeViewType,
 } from "@/providers/exam-documents-view/provider"
 import {
-    ExamPropertiesTreeProvider,
-    examPropertiesTreeViewType,
-} from "@/providers/exam-properties-view/provider"
-import {
     RankingPanel,
     RankingTreeProvider,
     rankingTreeViewType,
@@ -79,40 +75,8 @@ export const getContext = (): vscode.ExtensionContext => {
     return context_
 }
 
-//
-//   API_MODES
-//   ---------
-//
-//   The API can be in 6 different modes, 3 x 2 for two dimensions:
-//   - API_MODE: normal, exam, contest (user environment).
-//   - MODE: development, production (development environment)
-//
-
-const URLTable: Record<"development" | "production", Record<ApiMode, string>> = {
-    production: {
-        normal: "https://api.jutge.org/api",
-        exam: "https://exam.api.jutge.org/api",
-        contest: "https://contest.api.jutge.org/api",
-    },
-    development: {
-        normal: "https://dev.api.jutge.org/api",
-        exam: "https://dev.exam.api.jutge.org/api",
-        contest: "https://dev.contest.api.jutge.org/api",
-    },
-}
-
 export const isDevelopmentMode = () => {
     return context_?.extensionMode === vscode.ExtensionMode.Development
-}
-
-export const setJutgeAPIMode = (strApiMode: string) => {
-    const apiMode = stringToApiMode(strApiMode)
-    const mode = isDevelopmentMode() ? "development" : "production"
-    console.log("setJutgeApiURL", strApiMode, mode)
-
-    jutgeClient.JUTGE_API_URL = URLTable[mode][apiMode]
-
-    console.log(`[Extension]: Setting JUTGE_API_URL to '${jutgeClient.JUTGE_API_URL}'`)
 }
 
 /// Workspace folder
@@ -239,15 +203,6 @@ const initAboutTreeView = () => {
     return { aboutViewProvider }
 }
 
-const initExamPropertiesTreeView = () => {
-    const examPropertiesTreeProvider = new ExamPropertiesTreeProvider()
-    const examPropertiesView = vscode.window.createTreeView(examPropertiesTreeViewType, {
-        showCollapseAll: true,
-        treeDataProvider: examPropertiesTreeProvider,
-    })
-    return { examPropertiesTreeProvider, examPropertiesView }
-}
-
 const initExamDocumentsTreeView = () => {
     const examDocumentsTreeProvider = new ExamDocumentsTreeProvider()
     const examDocumentsView = vscode.window.createTreeView(examDocumentsTreeViewType, {
@@ -284,7 +239,7 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
 
     // If the command is called from the command palette, ask for the problem number.
     if (problemNm === undefined) {
-        if (JutgeService.isExamMode()) {
+        if (JutgeService.isMode()) {
             vscode.window.showErrorMessage(
                 "In exam mode you can only see problems from the exam"
             )
@@ -333,7 +288,7 @@ const commandOpenExamDocument = async (
     documentNm: string | undefined,
     displayTitle?: string
 ) => {
-    if (!JutgeService.isSignedInExam()) {
+    if (!JutgeService.isSignedInExamOrContest()) {
         vscode.window.showErrorMessage("You need to be signed in to an exam or contest.")
         return
     }
@@ -382,11 +337,8 @@ const commandOpenExamDocument = async (
  */
 export async function activate(context: vscode.ExtensionContext) {
     setContext_(context)
-
-    // Set JUTGE_API_URL from the start
-    // useDevApi only when launching through it's profile
-    console.log("process.env.API_MODE", process.env.API_MODE)
-    setJutgeAPIMode(process.env.API_MODE ?? "normal")
+    await JutgeService.initialize(context)
+    ConfigService.initialize()
 
     // Initialize sign-in context keys to concrete values so VS Code can
     // evaluate the `when` clauses for the views from the very first frame
@@ -429,11 +381,7 @@ export async function activate(context: vscode.ExtensionContext) {
         examsWebviewViewProvider.refreshProblem(veredict)
     })
 
-    await JutgeService.initialize(context)
-    ConfigService.initialize()
-
     const { courseTreeProvider } = initCoursesTreeView()
-    const { examPropertiesTreeProvider, examPropertiesView } = initExamPropertiesTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { rankingTreeProvider, rankingView } = initRankingTreeView()
     const { jutgeStatsTreeProvider, jutgeStatsView } = initHomeTreeView()
@@ -442,7 +390,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(jutgeStatsView)
     context.subscriptions.push(jutgeApiView)
-    context.subscriptions.push(examPropertiesView)
     context.subscriptions.push(examDocumentsView)
     context.subscriptions.push(rankingView)
     context.subscriptions.push(rankingTreeProvider)
@@ -470,10 +417,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
         ["jutge-vscode.refreshCoursesTree", courseTreeProvider.refresh],
         ["jutge-vscode.refreshExamsTree", examsWebviewViewProvider.refresh],
-        [
-            "jutge-vscode.refreshExamPropertiesTree",
-            examPropertiesTreeProvider.refresh.bind(examPropertiesTreeProvider),
-        ],
         [
             "jutge-vscode.refreshProfileTree",
             profileWebviewViewProvider.refresh.bind(profileWebviewViewProvider),

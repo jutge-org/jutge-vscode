@@ -3,22 +3,10 @@ import {
     HostAvailability,
     HostAvailabilityService,
     SIGN_IN_MODES,
-    SignInMode,
 } from "@/services/host-availability"
 import { ApiMode, ExamMode, JutgeService } from "@/services/jutge"
-import { setJutgeAPIMode } from "@/extension"
 
 export const signInWebviewViewType = "jutge-sign-in"
-
-type Mode = SignInMode
-
-function modeToApiMode(mode: Mode): ApiMode {
-    return mode === "jutge" ? "normal" : mode
-}
-
-function apiModeToMode(mode: ApiMode): Mode {
-    return mode === "normal" ? "jutge" : mode
-}
 
 type SignInHtmlOptions = {
     scriptUri: string
@@ -301,14 +289,26 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
     <!-- ===== NOT_SIGNED_IN ===== -->
     <div class="state-not-signed-in">
         <div class="tabs" role="tablist">
-            <button type="button" class="tab tab--primary is-active" role="tab" data-mode="jutge" aria-selected="true" aria-disabled="true" disabled>Jutge.org</button>
+            <button type="button" class="tab tab--primary is-active" role="tab" data-mode="normal" aria-selected="true" aria-disabled="true" disabled>Jutge.org</button>
             <button type="button" class="tab" role="tab" data-mode="exam" aria-selected="false" aria-label="Exam" aria-disabled="true" disabled>
                 <span class="tab-text">Exam</span>
-                <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+                <span class="tab-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>
+                        <path d="M22 10v6"/>
+                        <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+                    </svg>
+                </span>
             </button>
             <button type="button" class="tab" role="tab" data-mode="contest" aria-selected="false" aria-label="Contest" aria-disabled="true" disabled>
                 <span class="tab-text">Contest</span>
-                <span class="tab-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg></span>
+                <span class="tab-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/>
+                        <path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/>
+                        <path d="M6 9H4.5a1 1 0 0 1 0-5H6"/>
+                    </svg>
+                </span>
             </button>
         </div>
         <div class="hosts-status is-visible" id="hosts-status" role="status" aria-live="polite">
@@ -412,11 +412,11 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
             let hostAvailability = null; // null while the extension is still checking
 
             const HOST_URL_BY_MODE = {
-                jutge: "https://jutge.org",
+                normal: "https://jutge.org",
                 exam: "https://exam.jutge.org",
                 contest: "https://contest.jutge.org"
             };
-            const CUSTOM_KEY_VALUE = "—Custom name—";
+            const CUSTOM_KEY_VALUE = "— Choose exam —";
 
             // ----- Banner helpers -----
             function setBanner(el, text, kind) {
@@ -438,20 +438,20 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
             // ----- Tabs -----
             function activeMode() {
                 const t = document.querySelector(".tab.is-active");
-                return t ? t.getAttribute("data-mode") : "jutge";
+                return t ? t.getAttribute("data-mode") : "normal";
             }
             function isModeAvailable(mode) {
                 return hostAvailability !== null && hostAvailability[mode] === true;
             }
             function chooseActiveMode(preferredMode) {
-                const preferred = preferredMode || "jutge";
+                const preferred = preferredMode || "normal";
                 if (hostAvailability === null) {
                     return preferred;
                 }
                 if (hostAvailability[preferred]) {
                     return preferred;
                 }
-                for (const mode of ["jutge", "exam", "contest"]) {
+                for (const mode of ["normal", "exam", "contest"]) {
                     if (hostAvailability[mode]) {
                         return mode;
                     }
@@ -488,7 +488,7 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
                     hostsRetryEl.hidden = true;
                     return;
                 }
-                const anyAvailable = ["jutge", "exam", "contest"].some(isModeAvailable);
+                const anyAvailable = ["normal", "exam", "contest"].some(isModeAvailable);
                 if (anyAvailable) {
                     hostsStatusEl.classList.remove("is-visible", "hosts-status--error");
                     hostsRetryEl.hidden = true;
@@ -501,7 +501,7 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
             }
             function updateHostUrl() {
                 const m = activeMode();
-                const url = HOST_URL_BY_MODE[m] || HOST_URL_BY_MODE.jutge;
+                const url = HOST_URL_BY_MODE[m] || HOST_URL_BY_MODE.normal;
                 hostUrlEl.textContent = url;
                 hostUrlEl.setAttribute("href", url);
             }
@@ -510,7 +510,7 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
                     baseBtnEl.textContent = "Signing in...";
                 } else {
                     const m = activeMode();
-                    baseBtnEl.textContent = m === "jutge" ? "Sign in" : "Continue";
+                    baseBtnEl.textContent = m === "normal" ? "Sign in" : "Continue";
                 }
                 baseBtnEl.disabled =
                     isBasePending || hostAvailability === null || !isModeAvailable(activeMode());
@@ -591,10 +591,6 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
                         examKeyEl.appendChild(o);
                     });
                 }
-                const custom = document.createElement("vscode-option");
-                custom.value = CUSTOM_KEY_VALUE;
-                custom.textContent = CUSTOM_KEY_VALUE;
-                examKeyEl.appendChild(custom);
                 examKeyEl.value = "";
                 updateCustomKeyFieldVisibility();
             }
@@ -670,7 +666,7 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
 
             function applyHostAvailability(payload) {
                 const p = payload || {};
-                hostAvailability = p.hosts || { jutge: false, exam: false, contest: false };
+                hostAvailability = p.hosts || { normal: false, exam: false, contest: false };
                 updateTabsAvailability();
                 updateHostsStatus();
                 const preferredMode =
@@ -810,11 +806,11 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
         const availability = await HostAvailabilityService.detect({ force })
         this.hostAvailability_ = availability
 
-        let selectedMode = apiModeToMode(JutgeService.getApiMode())
-        if (!JutgeService.isSignedIn() && !JutgeService.isSignedInPreExam()) {
+        let selectedMode = JutgeService.getApiMode()
+        if (!JutgeService.isState("signed-in") && !JutgeService.isState("pre-exam")) {
             if (!availability[selectedMode]) {
                 selectedMode = SIGN_IN_MODES.find((mode) => availability[mode]) ?? selectedMode
-                setJutgeAPIMode(modeToApiMode(selectedMode))
+                JutgeService.setAPIMode(selectedMode)
             }
         }
 
@@ -826,17 +822,17 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
 
     private handleModeSelected_(payload: { mode?: string } | undefined): void {
         const mode = payload?.mode
-        if (mode !== "jutge" && mode !== "exam" && mode !== "contest") {
+        if (mode !== "normal" && mode !== "exam" && mode !== "contest") {
             return
         }
         if (this.hostAvailability_ && !this.hostAvailability_[mode]) {
             return
         }
-        setJutgeAPIMode(modeToApiMode(mode))
+        JutgeService.setAPIMode(mode)
     }
 
     private async pushInitialState_(): Promise<void> {
-        if (JutgeService.isSignedInPreExam()) {
+        if (JutgeService.isState("pre-exam")) {
             await this.pushPreExamState_()
             return
         }
@@ -850,7 +846,7 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
                 state: "not-signed-in",
                 email: email ?? "",
                 password: password ?? "",
-                mode: apiModeToMode(JutgeService.getApiMode()),
+                mode: JutgeService.getApiMode(),
             },
         })
     }
@@ -880,12 +876,12 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
     private async handleSignInBase_(
         payload: SignInBaseRequestPayload | undefined
     ): Promise<void> {
-        const mode = (payload?.mode as Mode | undefined) ?? "jutge"
+        const mode = (payload?.mode as ApiMode | undefined) ?? "jutge"
         const email = payload?.email || ""
         const password = payload?.password || ""
 
         if (mode === "exam" || mode === "contest") {
-            const result = await JutgeService.signInPreExam({
+            const result = await JutgeService.enterPreExam({
                 email,
                 password,
                 mode,
@@ -902,12 +898,12 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
         }
 
         // Normal Jutge sign-in.
-        const result = await JutgeService.signInJutge({ email, password })
+        const result = await JutgeService.signIn({ email, password })
         this.post_({
             type: "signInBaseResult",
             payload: {
                 ok: result.ok,
-                mode: "jutge",
+                mode: "normal",
                 error: result.ok ? undefined : result.error,
             },
         })
@@ -918,10 +914,10 @@ export class SignInWebviewViewProvider implements vscode.WebviewViewProvider {
     ): Promise<void> {
         const mode = JutgeService.getApiMode()
         const examMode: ExamMode = mode === "contest" ? "contest" : "exam"
-        const result = await JutgeService.enterExam({
+        const result = await JutgeService.signInExamOrContest({
             mode: examMode,
-            examKey: payload?.examKey || "",
-            examPassword: payload?.examPassword || "",
+            key: payload?.examKey || "",
+            password: payload?.examPassword || "",
         })
         this.post_({
             type: "enterExamResult",

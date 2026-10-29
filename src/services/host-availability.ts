@@ -1,13 +1,12 @@
 import { StaticLogger } from "@/loggers"
+import { ApiMode } from "./jutge"
 
-export type SignInMode = "jutge" | "exam" | "contest"
+export type HostAvailability = Record<ApiMode, boolean>
 
-export type HostAvailability = Record<SignInMode, boolean>
+export const SIGN_IN_MODES: ApiMode[] = ["normal", "exam", "contest"]
 
-export const SIGN_IN_MODES: SignInMode[] = ["jutge", "exam", "contest"]
-
-export const SIGN_IN_HOST_URL_BY_MODE: Record<SignInMode, string> = {
-    jutge: "https://jutge.org",
+export const SIGN_IN_HOST_URL_BY_MODE: Record<ApiMode, string> = {
+    normal: "https://jutge.org",
     exam: "https://exam.jutge.org",
     contest: "https://contest.jutge.org",
 }

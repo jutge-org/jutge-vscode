@@ -729,6 +729,7 @@ export class JutgeExamsWebviewViewProvider
     }
 
     public refresh = async (): Promise<void> => {
+        console.log("ExamsViewProvider.refresh")
         await this.loadAndPush_()
     }
 
@@ -750,7 +751,7 @@ export class JutgeExamsWebviewViewProvider
         if (!this.webviewView) {
             return
         }
-        if (!JutgeService.isSignedInExam()) {
+        if (!JutgeService.isSignedInExamOrContest()) {
             this.stopStartPoll_()
             this.currentRows = []
             this.currentExamMeta = null

@@ -185,7 +185,7 @@ export class ProblemViewPanel extends Logger {
     private async _loadProblem() {
         this.fileExists = await sourceFileExists(this.problem)
         const updateWebview = async () => {
-            const problemUrl = JutgeService.isExamMode()
+            const problemUrl = JutgeService.isMode()
                 ? `https://exam.jutge.org/problems/${this.problem.problem_id}`
                 : `https://jutge.org/problems/${this.problem.problem_id}`
 

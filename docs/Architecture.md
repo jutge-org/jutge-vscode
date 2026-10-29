@@ -27,7 +27,7 @@ Path alias **`@/`** → `src/` is configured in `esbuild.js` and TypeScript for 
 
 ## API modes and base URLs
 
-**`setJutgeApiURL`** in `extension.ts` selects the REST host from **`ApiMode`**: `normal` (`api.jutge.org`), `exam` (`exam.api.jutge.org`), `contest` (`contest.api.jutge.org`), each with optional **dev** variants when using the dev API toggle during development. **`JutgeService`** switches mode on sign-in (courses vs exam vs contest) and persists tokens / mode in `globalState` (and **SecretStorage** for sign-in credentials where applicable).
+**`setJutgeAPIMode`** in `extension.ts` selects the REST host from **`ApiMode`**: `normal` (`api.jutge.org`), `exam` (`exam.api.jutge.org`), `contest` (`contest.api.jutge.org`), each with optional **dev** variants when in development. **`JutgeService`** switches mode on sign-in (courses vs exam vs contest) and persists tokens / mode in `globalState` (and **SecretStorage** for sign-in credentials where applicable).
 
 ## Main building blocks
 
@@ -43,7 +43,7 @@ Path alias **`@/`** → `src/` is configured in `esbuild.js` and TypeScript for 
 
 - **`src/jutge_api_client.ts`**: generated **`JutgeApiClient`** and models for the Jutge REST API.
 - **`src/services/jutge.ts`**: **`JutgeService`** — façade for auth, **`ApiMode`**, profile, problems, lists, submissions, exam/contest flows, and stale-while-revalidate-style usage of the client.
-- **`jutgeClient`**: single exported **`JutgeApiClient`** instance; **`JUTGE_API_URL`** is set from **`setJutgeApiURL`**.
+- **`jutgeClient`**: single exported **`JutgeApiClient`** instance; **`JUTGE_API_URL`** is set from **`setJutgeAPIMode`**.
 
 ### 3. Sidebar — views and providers
 
@@ -57,7 +57,6 @@ Views are declared under the **`jutge`** container in `package.json`; visibility
 | Courses           | **`JutgeCourseTreeProvider`** (`course-view/`)                         | Courses → lists → problems; **`jutge-vscode.showProblem`** |
 | Profile           | **`ProfileTreeProvider`** (`profile-view/provider.ts`)                 | JSON-shaped user profile from API                          |
 | Exams             | **`JutgeExamsTreeProvider`** (`exam-view/`)                            | Exam problems when in exam mode                            |
-| Exam properties   | **`ExamPropertiesTreeProvider`** (`exam-properties-view/provider.ts`)  | Running exam metadata as tree                              |
 | Documents         | **`ExamDocumentsTreeProvider`** (`exam-documents-view/provider.ts`)    | PDFs via **`jutge-vscode.openExamDocument`**               |
 | Timer             | **`TimerWebviewViewProvider`** (`timer-view/provider.ts`)              | Webview view; countdown / exam time                        |
 | Ranking           | **`RankingTreeProvider`** (`ranking-view/provider.ts`)                 | Contest ranking; opens **`RankingPanel`**                  |
@@ -121,7 +120,6 @@ VS Code **when-clause** keys set via `vscode.commands.executeCommand('setContext
 | `JutgeExamsTreeProvider`               | `providers/exam-view/provider.ts`            | Exams tree                     |
 | `JutgeStatsTreeProvider`               | `providers/jutge-stats-view/provider.ts`     | Jutge stats                    |
 | `ProfileTreeProvider`                  | `providers/profile-view/provider.ts`         | Profile tree                   |
-| `ExamPropertiesTreeProvider`           | `providers/exam-properties-view/provider.ts` | Exam metadata                  |
 | `ExamDocumentsTreeProvider`            | `providers/exam-documents-view/provider.ts`  | Exam PDFs                      |
 | `RankingTreeProvider` / `RankingPanel` | `providers/ranking-view/provider.ts`         | Contest ranking                |
 | `DashboardPanel`                       | `providers/dashboard-view/provider.ts`       | Exam dashboard panel           |
@@ -185,7 +183,6 @@ flowchart TB
             EXAM["JutgeExamsTreeProvider"]
             HOME["JutgeStatsTreeProvider"]
             PROF["ProfileTreeProvider"]
-            EXPROP["ExamPropertiesTreeProvider"]
             EXDOC["ExamDocumentsTreeProvider"]
             RANKT["RankingTreeProvider"]
             DASH["DashboardPanel"]

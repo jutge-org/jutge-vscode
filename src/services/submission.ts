@@ -204,7 +204,7 @@ export class SubmissionService extends StaticLogger {
                     text += ": " + submission.veredict_info
                 }
         }
-        const host = JutgeService.isExamMode() ? "https://exam.jutge.org" : "https://jutge.org"
+        const host = JutgeService.isMode() ? "https://exam.jutge.org" : "https://jutge.org"
 
         const selection = await vscode.window.showInformationMessage(text, {
             title: "View in jutge.org",

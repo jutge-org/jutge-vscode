@@ -44,7 +44,7 @@ The path alias **`@/` → `src/`** is configured in both `esbuild.js` and `tscon
 
 ### API modes (normal / exam / contest)
 
-`setJutgeApiURL({ mode, useDevApi })` in `extension.ts` switches `jutgeClient.JUTGE_API_URL` between six hosts: `{normal, exam, contest}` × `{prod, dev}`. The single `jutgeClient` instance (in `src/services/jutge.ts`) is shared across the whole extension; its `meta.token` and base URL are mutated as the user signs in/out of different modes. **Exam mode** can only reach `exam.api.jutge.org` (the production host is firewalled), so any code path that needs to check a token must temporarily swap both URL and meta — see `JutgeService.isExamTokenValid` for the canonical pattern (save → swap → restore in `finally`).
+`JutgeService.setAPIMode(mode)` in `extension.ts` switches `jutgeClient.JUTGE_API_URL` between six hosts: `{normal, exam, contest}` × `{prod, dev}`. The single `jutgeClient` instance (in `src/services/jutge.ts`) is shared across the whole extension; its `meta.token` and base URL are mutated as the user signs in/out of different modes. **Exam mode** can only reach `exam.api.jutge.org` (the production host is firewalled), so any code path that needs to check a token must temporarily swap both URL and meta — see `JutgeService.isExamTokenValid` for the canonical pattern (save → swap → restore in `finally`).
 
 When-clause context keys gate the views in `package.json`:
 
