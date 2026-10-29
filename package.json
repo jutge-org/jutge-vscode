@@ -32,6 +32,7 @@
         "views": {
             "jutge": [
                 {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-sign-in",
                     "name": "Sign in",
                     "type": "webview",
@@ -40,20 +41,15 @@
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
                 },
                 {
-                    "id": "jutge-home",
+                    "icon": "resources/dummy.svg",
+                    "id": "jutge-stats",
                     "name": "Jutge Stats",
                     "visibility": "collapsed",
                     "contextualTitle": "Jutge.org",
                     "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
                 },
                 {
-                    "id": "jutge-api",
-                    "name": "Jutge API",
-                    "visibility": "collapsed",
-                    "contextualTitle": "Jutge.org",
-                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam"
-                },
-                {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-courses",
                     "name": "Courses",
                     "visibility": "visible",
@@ -61,6 +57,7 @@
                     "when": "jutge-vscode.isSignedIn.Courses"
                 },
                 {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-profile",
                     "name": "Profile",
                     "type": "webview",
@@ -69,6 +66,7 @@
                     "when": "jutge-vscode.isSignedIn.Courses"
                 },
                 {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-exams",
                     "name": "Exams",
                     "type": "webview",
@@ -77,6 +75,7 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-exam-documents",
                     "name": "Documents",
                     "visibility": "visible",
@@ -84,6 +83,7 @@
                     "when": "jutge-vscode.isSignedIn.Exam"
                 },
                 {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-ranking",
                     "name": "Ranking",
                     "visibility": "visible",
@@ -91,6 +91,7 @@
                     "when": "jutge-vscode.isContestMode"
                 },
                 {
+                    "icon": "resources/dummy.svg",
                     "id": "jutge-about",
                     "name": "About",
                     "visibility": "collapsed",
@@ -110,17 +111,12 @@
             "view/title": [
                 {
                     "command": "jutge-vscode.invalidateToken",
-                    "when": "(jutge-vscode.isSignedIn.Courses || jutge-vscode.isSignedIn.Exam) && (view == jutge-courses || view == jutge-exams) && jutge-vscode.isDevMode",
+                    "when": "jutge-vscode.isDevMode && (jutge-vscode.isSignedIn.Courses || jutge-vscode.isSignedIn.Exam) && (view == jutge-courses || view == jutge-exams)",
                     "group": "navigation"
                 },
                 {
                     "command": "jutge-vscode.refreshCoursesTree",
                     "when": "jutge-vscode.isSignedIn.Courses && view == jutge-courses",
-                    "group": "navigation"
-                },
-                {
-                    "command": "jutge-vscode.refreshProfileTree",
-                    "when": "jutge-vscode.isSignedIn.Courses && view == jutge-profile",
                     "group": "navigation"
                 },
                 {
@@ -131,6 +127,11 @@
                 {
                     "command": "jutge-vscode.refreshExamsTree",
                     "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exams",
+                    "group": "navigation"
+                },
+                {
+                    "command": "jutge-vscode.openDashboardPanel",
+                    "when": "jutge-vscode.isSignedIn.Exam && view == jutge-exam-properties",
                     "group": "navigation"
                 },
                 {
@@ -150,12 +151,7 @@
                 },
                 {
                     "command": "jutge-vscode.refreshHomeTree",
-                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam && view == jutge-home",
-                    "group": "navigation"
-                },
-                {
-                    "command": "jutge-vscode.refreshApiTree",
-                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam && view == jutge-api",
+                    "when": "!jutge-vscode.isSignedIn.Courses && !jutge-vscode.isSignedIn.Exam && view == jutge-stats",
                     "group": "navigation"
                 },
                 {
@@ -344,7 +340,7 @@
         "@types/vscode-webview": "^1.57.5",
         "@typescript-eslint/eslint-plugin": "^8.69.0",
         "@typescript-eslint/parser": "^8.69.0",
-        "@vscode/vsce": "^4.0.0",
+        "@vscode/vsce": "^4.1.0",
         "esbuild": "^0.28.2",
         "eslint": "^10.10.0",
         "husky": "^9.1.7",

@@ -185,7 +185,7 @@ export class ProblemViewPanel extends Logger {
     private async _loadProblem() {
         this.fileExists = await sourceFileExists(this.problem)
         const updateWebview = async () => {
-            const problemUrl = JutgeService.isMode()
+            const problemUrl = JutgeService.isMode("exam")
                 ? `https://exam.jutge.org/problems/${this.problem.problem_id}`
                 : `https://jutge.org/problems/${this.problem.problem_id}`
 
@@ -306,8 +306,8 @@ export class ProblemViewPanel extends Logger {
     private async _showDiff(data: { testcaseId: number; expected: string; received: string }) {
         const { testcaseId, expected, received } = data
         const diffTitle = `Testcase ${testcaseId}: Expected vs. Received Output`
-        const expectedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/expected.txt`)
-        const receivedUri = vscode.Uri.parse(`jutge-diff://${testcaseId}/received.txt`)
+        const expectedUri = new URL(`jutge-diff://${testcaseId}/expected.txt`)
+        const receivedUri = new URL(`jutge-diff://${testcaseId}/received.txt`)
         const contentProvider = new (class implements vscode.TextDocumentContentProvider {
             onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
             onDidChange = this.onDidChangeEmitter.event

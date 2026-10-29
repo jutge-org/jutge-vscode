@@ -45,7 +45,7 @@ export class JutgeCourseTreeProvider
         if (!JutgeService.isState("signed-in")) {
             return []
         } else if (!parent) {
-            return JutgeService.isMode("normal") ? [] : this.getEnrolledCourseList_()
+            return JutgeService.isMode("exam") ? [] : this.getEnrolledCourseList_()
         } else if (parent.type === "course") {
             return this.getListsFromCourseNm_(parent)
         } else if (parent.type === "list") {
@@ -96,6 +96,7 @@ export class JutgeCourseTreeProvider
     }
 
     public refresh_(element?: CourseTreeElement): void {
+        console.log("refresh_", element)
         this.emitter_.fire(element)
     }
 

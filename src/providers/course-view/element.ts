@@ -1,5 +1,3 @@
-import * as vscode from "vscode"
-import { CourseTreeItem } from "./item"
 import { IconStatus, status2IconStatus, SubmissionStatus } from "@/types"
 
 export type TreeItemCollapseState = "collapsed" | "expanded" | "none"

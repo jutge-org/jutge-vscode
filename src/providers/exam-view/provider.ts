@@ -665,9 +665,7 @@ export class JutgeExamsWebviewViewProvider
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
         this.webviewView = webviewView
-        webviewView.webview.options = {
-            enableScripts: true,
-        }
+        webviewView.webview.options = { enableScripts: true }
         webviewView.webview.html = getExamsHtml(this.iconMap)
 
         webviewView.onDidDispose(() => {
@@ -728,9 +726,12 @@ export class JutgeExamsWebviewViewProvider
         }, pollDelayMs())
     }
 
-    public refresh = async (): Promise<void> => {
-        console.log("ExamsViewProvider.refresh")
+    public async refresh_(): Promise<void> {
         await this.loadAndPush_()
+    }
+
+    get refresh() {
+        return this.refresh_.bind(this)
     }
 
     public refreshProblem({ problem_nm, status }: Veredict): void {

@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { HomepageStats } from "@/jutge_api_client"
 import { jutgeClient } from "@/services/jutge"
 
-export const jutgeStatsTreeViewType = "jutge-home"
+export const JUTGE_STATS_ID = "jutge-stats"
 
 const HOMEPAGE_TIMEOUT_MS = 12000
 

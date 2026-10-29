@@ -7,7 +7,7 @@ import { Problem, SubmissionStatus, VSCodeToWebviewCommand } from "@/types"
 import { waitMilliseconds } from "@/utils"
 import { readFile } from "fs/promises"
 import { basename } from "path"
-import { jutgeClient, JutgeService } from "./jutge"
+import { JutgeService } from "./jutge"
 import { proglangFromFilepath, proglangInfoGet } from "./runners/languages"
 
 export type Veredict = {
@@ -204,14 +204,21 @@ export class SubmissionService extends StaticLogger {
                     text += ": " + submission.veredict_info
                 }
         }
-        const host = JutgeService.isMode() ? "https://exam.jutge.org" : "https://jutge.org"
+        const host = JutgeService.isMode("exam")
+            ? "https://exam.jutge.org"
+            : "https://jutge.org"
 
         const selection = await vscode.window.showInformationMessage(text, {
             title: "View in jutge.org",
         })
         if (selection && selection.title === "View in jutge.org") {
             const path = `/${problem.problem_id}/submissions/${submission_id}`
-            vscode.env.openExternal(vscode.Uri.parse(`${host}/problems${path}`))
+            const uri: vscode.Uri = vscode.Uri.from({
+                scheme: "https",
+                authority: host,
+                path,
+            })
+            vscode.env.openExternal(uri)
         }
         // https://exam.jutge.org/problems/P68688_ca/submissions/E007
     }

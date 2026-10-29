@@ -13,11 +13,7 @@ import {
 } from "@/providers/ranking-view/provider"
 import { DashboardPanel } from "@/providers/dashboard-view/provider"
 import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
-import {
-    JutgeStatsTreeProvider,
-    jutgeStatsTreeViewType,
-} from "@/providers/jutge-stats-view/provider"
-import { JutgeApiTreeProvider, jutgeApiTreeViewType } from "@/providers/jutge-api-view/provider"
+import { JutgeStatsTreeProvider, JUTGE_STATS_ID } from "@/providers/jutge-stats-view/provider"
 import {
     ProfileWebviewViewProvider,
     profileWebviewViewType,
@@ -146,7 +142,6 @@ const showExtensionInfo = () => {
     console.info(`Node.js Version:   ${process.version}`)
     console.info(`Date:              ${new Date().toISOString()}`)
     console.info(`Development:       ${isDevelopmentMode()}`)
-    console.info(`JUTGE_API_URL:     ${jutgeClient.JUTGE_API_URL}`)
     console.info("===================================")
 }
 
@@ -178,20 +173,11 @@ const initCoursesTreeView = () => {
 
 const initHomeTreeView = () => {
     const jutgeStatsTreeProvider = new JutgeStatsTreeProvider()
-    jutgeStatsView = vscode.window.createTreeView(jutgeStatsTreeViewType, {
+    jutgeStatsView = vscode.window.createTreeView(JUTGE_STATS_ID, {
         showCollapseAll: false,
         treeDataProvider: jutgeStatsTreeProvider,
     })
     return { jutgeStatsTreeProvider, jutgeStatsView }
-}
-
-const initApiTreeView = () => {
-    const jutgeApiTreeProvider = new JutgeApiTreeProvider()
-    const jutgeApiView = vscode.window.createTreeView(jutgeApiTreeViewType, {
-        showCollapseAll: true,
-        treeDataProvider: jutgeApiTreeProvider,
-    })
-    return { jutgeApiTreeProvider, jutgeApiView }
 }
 
 const initAboutTreeView = () => {
@@ -232,14 +218,14 @@ const registerCommands = (commands: [string, (...args: any[]) => any][]) => {
 const commandShowProblem = async (problemNm: string | undefined, order: number) => {
     console.debug(`[commandShowProblem] Problem ${problemNm} (order = ${order})`)
 
-    if (!JutgeService.isSignedIn()) {
+    if (!JutgeService.isState("signed-in") && !JutgeService.isState("signed-in-exam")) {
         vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
         return
     }
 
     // If the command is called from the command palette, ask for the problem number.
     if (problemNm === undefined) {
-        if (JutgeService.isMode()) {
+        if (JutgeService.isMode("exam")) {
             vscode.window.showErrorMessage(
                 "In exam mode you can only see problems from the exam"
             )
@@ -337,8 +323,7 @@ const commandOpenExamDocument = async (
  */
 export async function activate(context: vscode.ExtensionContext) {
     setContext_(context)
-    await JutgeService.initialize(context)
-    ConfigService.initialize()
+    showExtensionInfo()
 
     // Initialize sign-in context keys to concrete values so VS Code can
     // evaluate the `when` clauses for the views from the very first frame
@@ -349,7 +334,8 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand("setContext", "jutge-vscode.isSignedIn.PreExam", false)
     vscode.commands.executeCommand("setContext", "jutge-vscode.isContestMode", false)
 
-    showExtensionInfo()
+    ConfigService.initialize()
+    await JutgeService.initialize(context)
 
     // Register webview view providers synchronously, before any await, so the
     // sign-in and timer views render immediately on the first activation.
@@ -381,15 +367,14 @@ export async function activate(context: vscode.ExtensionContext) {
         examsWebviewViewProvider.refreshProblem(veredict)
     })
 
-    const { courseTreeProvider } = initCoursesTreeView()
+    const { courseTreeProvider, coursesView } = initCoursesTreeView()
     const { examDocumentsTreeProvider, examDocumentsView } = initExamDocumentsTreeView()
     const { rankingTreeProvider, rankingView } = initRankingTreeView()
     const { jutgeStatsTreeProvider, jutgeStatsView } = initHomeTreeView()
-    const { jutgeApiTreeProvider, jutgeApiView } = initApiTreeView()
     const { aboutViewProvider } = initAboutTreeView()
 
+    context.subscriptions.push(coursesView)
     context.subscriptions.push(jutgeStatsView)
-    context.subscriptions.push(jutgeApiView)
     context.subscriptions.push(examDocumentsView)
     context.subscriptions.push(rankingView)
     context.subscriptions.push(rankingTreeProvider)
@@ -435,26 +420,22 @@ export async function activate(context: vscode.ExtensionContext) {
             "jutge-vscode.refreshHomeTree",
             jutgeStatsTreeProvider.refresh.bind(jutgeStatsTreeProvider),
         ],
-        [
-            "jutge-vscode.refreshApiTree",
-            jutgeApiTreeProvider.refresh.bind(jutgeApiTreeProvider),
-        ],
-
         ["jutge-vscode.showProblem", commandShowProblem],
         ["jutge-vscode.openExamDocument", commandOpenExamDocument],
 
         ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
     ])
 
-    console.info("[Extension] jutge-vscode is now active")
-
     await vscode.commands.executeCommand(
         "setContext",
         "jutge-vscode.isDevMode",
-        ["development"].includes(process.env.MODE || "production")
+        isDevelopmentMode()
     )
-
     if (isDevelopmentMode()) {
         await vscode.commands.executeCommand("workbench.view.extension.jutge")
     }
+
+    await JutgeService.resumeFromStorage()
+
+    console.info("[Extension] jutge-vscode is now active")
 }
