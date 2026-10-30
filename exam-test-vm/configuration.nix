@@ -7,19 +7,14 @@ let
   #   false -> the variable is not set at all
   jutgeForceDevMode = true;
 
-  # Base hosts (FQDNs, without the `dev.` prefix) the VM is allowed to
-  # reach (HTTP/HTTPS only, plus DNS/DHCP). Add as many entries as needed.
-  baseHosts = [
-    "exam.jutge.org"
-    "exam.api.jutge.org"
-  ];
-
-  # The `dev.` prefix is only applied when dev mode is on.
-  hostPrefix = lib.optionalString jutgeForceDevMode "dev.";
-
   # Hosts actually whitelisted in the egress firewall.
-  allowedHosts = map (host: "${hostPrefix}${host}") baseHosts;
-
+  allowedHosts = [
+    "exam.jutge.org"
+    (if jutgeForceDevMode then
+      "dev.exam.api.jutge.org"
+    else
+      "exam.api.jutge.org")
+  ];
   # Human-readable version, used in comments and service descriptions.
   allowedHostsList = lib.concatStringsSep ", " allowedHosts;
 
@@ -35,6 +30,25 @@ let
     )
     vscodeEnv
   );
+
+  # XFCE "Preferred Applications" helper for luakit. xfce4-settings ships
+  # helpers for firefox, surf, etc., but not for luakit.
+  xfceLuakitHelper = pkgs.writeTextFile {
+    name = "luakit.desktop";
+    destination = "/share/xfce4/helpers/luakit.desktop";
+    text = ''
+      [Desktop Entry]
+      Version=1.0
+      Type=X-XFCE-Helper
+      Name=Luakit
+      Icon=luakit
+      StartupNotify=true
+      X-XFCE-Binaries=luakit;
+      X-XFCE-Category=WebBrowser
+      X-XFCE-Commands=%B;
+      X-XFCE-CommandsWithParameter=%B "%s";
+    '';
+  };
 
   # 1. Package the local .vsix file into Nix
   myCustomExtension = pkgs.vscode-utils.buildVscodeExtension {
@@ -121,15 +135,32 @@ in
     # XFCE's tumbler, so it only adds a few MB (vs ~190 MB for epiphany, which
     # needs a second WebKitGTK 6.0, or ~640 MB for firefox).
     luakit
+    xfceLuakitHelper
   ];
 
   # Make it the default browser, so `xdg-open` works (the extension calls
   # `vscode.env.openExternal` for links).
+  #
+  # Two mechanisms are needed:
+  #  - mimeapps.list: used by GIO/`gio open` and by xdg-open outside XFCE.
+  #  - XFCE's helpers.rc: under XFCE, xdg-open delegates to exo-open, which
+  #    asks xfce4-mime-helper for the "WebBrowser" helper and ignores
+  #    mimeapps.list entirely. Without this, the default stays `firefox`
+  #    (not installed) and opening a browser fails.
   xdg.mime.defaultApplications = {
     "x-scheme-handler/http" = "luakit.desktop";
     "x-scheme-handler/https" = "luakit.desktop";
     "text/html" = "luakit.desktop";
   };
+
+  # Shadows xfce4-settings' default helpers.rc, so the other categories are
+  # repeated here with their stock values.
+  environment.etc."xdg/xfce4/helpers.rc".text = ''
+    WebBrowser=luakit
+    MailReader=thunderbird
+    TerminalEmulator=xfce4-terminal
+    FileManager=thunar
+  '';
 
   # ------------------------------------------------------------------
   # Egress firewall: only the hosts in `allowedHosts` (plus DNS/DHCP)
