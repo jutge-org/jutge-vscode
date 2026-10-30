@@ -143,21 +143,20 @@ export class ProblemHandler extends Logger {
         index: number,
         options: { saveFirst: boolean } = { saveFirst: true }
     ): Promise<boolean> {
+        if (options?.saveFirst) {
+            // Save the current file first
+            await vscode.commands.executeCommand("workbench.action.files.save")
+        }
+
+        const filePath = await this.__getEditorFilepath()
+        this.log.debug(`Running testcase on file ${filePath}`)
+
+        const testcase = await this.__getTestcase(index)
+        this.log.debug(`Running testcase ${index}`)
+
+        const { problem_nm } = this.problem_
+        this.__sendUpdate(problem_nm, index, TestcaseStatus.RUNNING)
         try {
-            if (options?.saveFirst) {
-                // Save the current file first
-                await vscode.commands.executeCommand("workbench.action.files.save")
-            }
-
-            const filePath = await this.__getEditorFilepath()
-            this.log.debug(`Running testcase on file ${filePath}`)
-
-            const testcase = await this.__getTestcase(index)
-            this.log.debug(`Running testcase ${index}`)
-
-            const { problem_nm } = this.problem_
-            this.__sendUpdate(problem_nm, index, TestcaseStatus.RUNNING)
-
             const { status, output } = await this.__runExpecting(testcase, filePath)
             this.__sendUpdate(problem_nm, index, status, output)
 
@@ -168,6 +167,7 @@ export class ProblemHandler extends Logger {
             if (e instanceof Error) {
                 vscode.window.showErrorMessage(e.message)
             }
+            this.__sendUpdate(problem_nm, index, TestcaseStatus.FAILED, "")
             return false
         }
     }
@@ -291,7 +291,6 @@ export class ProblemHandler extends Logger {
                     const checker = checkerInfoByName(this.problem_.handler?.checker)
                     const uniformed = output.replaceAll("\r\n", "\n")
                     const expected = testcase.expected.toString("utf-8")
-                    const passed = output !== null && output === expected
                     return {
                         status: checker.runner.run(uniformed, expected, this.problem_.handler),
                         output: uniformed,
