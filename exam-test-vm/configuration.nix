@@ -1,6 +1,41 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 let
+  # JUTGE_FORCE_DEVMODE switch for the jutge-vscode extension.
+  #   true  -> JUTGE_FORCE_DEVMODE=1 is exported to VS Code (and therefore to
+  #            the extension host, integrated terminals, tasks, ...)
+  #   false -> the variable is not set at all
+  jutgeForceDevMode = true;
+
+  # Base hosts (FQDNs, without the `dev.` prefix) the VM is allowed to
+  # reach (HTTP/HTTPS only, plus DNS/DHCP). Add as many entries as needed.
+  baseHosts = [
+    "exam.jutge.org"
+    "exam.api.jutge.org"
+  ];
+
+  # The `dev.` prefix is only applied when dev mode is on.
+  hostPrefix = lib.optionalString jutgeForceDevMode "dev.";
+
+  # Hosts actually whitelisted in the egress firewall.
+  allowedHosts = map (host: "${hostPrefix}${host}") baseHosts;
+
+  # Human-readable version, used in comments and service descriptions.
+  allowedHostsList = lib.concatStringsSep ", " allowedHosts;
+
+  # Environment variables exported to VS Code. Add more vars here if needed.
+  vscodeEnv = lib.optionalAttrs jutgeForceDevMode {
+    JUTGE_FORCE_DEVMODE = "1";
+  };
+
+  # `--set NAME VALUE` flags for makeWrapper, derived from `vscodeEnv`.
+  vscodeEnvArgs = lib.concatStrings (
+    lib.mapAttrsToList (
+      name: value: " --set ${lib.escapeShellArg name} ${lib.escapeShellArg (toString value)}"
+    )
+    vscodeEnv
+  );
+
   # 1. Package the local .vsix file into Nix
   myCustomExtension = pkgs.vscode-utils.buildVscodeExtension {
     pname = "jutge-vscode";
@@ -13,11 +48,29 @@ let
 
   # 2. Wrap VSCode with your extension pre-installed.
   #    ms-python.python comes first because jutge-vscode depends on it.
-  vscodeWithExtension = pkgs.vscode-with-extensions.override {
+  vscodeWithExtensions = pkgs.vscode-with-extensions.override {
     vscodeExtensions = [
       pkgs.vscode-extensions.ms-python.python
       myCustomExtension
     ];
+  };
+
+  # 3. Re-wrap the `code` executable so `vscodeEnv` is part of VS Code's own
+  #    environment. This is scoped to the editor (not the system environment)
+  #    and cannot be lost, no matter how VS Code is launched (desktop menu,
+  #    terminal, ...). When `vscodeEnv` is empty, this is a plain re-export of
+  #    the package above.
+  vscodeWithExtension = pkgs.symlinkJoin {
+    name = "vscode-with-jutge-extension";
+    paths = [ vscodeWithExtensions ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = lib.optionalString (vscodeEnv != { }) ''
+      for f in "$out"/bin/*; do
+        target="$(readlink -f "$f")"
+        rm "$f"
+        makeWrapper "$target" "$f" ${vscodeEnvArgs}
+      done
+    '';
   };
 in
 {
@@ -61,17 +114,34 @@ in
     git
     curl
     dig
+    # Toolchain used by the jutge-vscode extension
+    gcc # provides gcc, g++ and c++
+    python3
+    # Web browser. luakit reuses the WebKitGTK 4.1 engine already pulled in by
+    # XFCE's tumbler, so it only adds a few MB (vs ~190 MB for epiphany, which
+    # needs a second WebKitGTK 6.0, or ~640 MB for firefox).
+    luakit
   ];
 
+  # Make it the default browser, so `xdg-open` works (the extension calls
+  # `vscode.env.openExternal` for links).
+  xdg.mime.defaultApplications = {
+    "x-scheme-handler/http" = "luakit.desktop";
+    "x-scheme-handler/https" = "luakit.desktop";
+    "text/html" = "luakit.desktop";
+  };
+
   # ------------------------------------------------------------------
-  # Egress firewall: only exam.jutge.org (plus DNS/DHCP) is reachable.
+  # Egress firewall: only the hosts in `allowedHosts` (plus DNS/DHCP)
+  # are reachable.
   #
   # Two stages, because firewall.service runs *before* networking/DNS
   # are up at boot:
   #  1. extraCommands (early boot): install a fail-CLOSED policy that
   #     does not depend on DNS (allow loopback, DNS, DHCP; reject rest).
   #  2. exam-whitelist.service (after network is online): resolve
-  #     exam.jutge.org, retrying until it succeeds, and whitelist its IPs.
+  #     each host in `allowedHosts`, retrying until it succeeds, and
+  #     whitelist its IPs.
   # ------------------------------------------------------------------
   networking.firewall = {
     enable = true;
@@ -82,10 +152,10 @@ in
       iptables -F exam-egress
       iptables -A exam-egress -o lo -j ACCEPT
       iptables -A exam-egress -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-      iptables -A exam-egress -p udp --dport 53 -j ACCEPT # DNS (needed to resolve exam.jutge.org)
+      iptables -A exam-egress -p udp --dport 53 -j ACCEPT # DNS (needed to resolve ${allowedHostsList})
       iptables -A exam-egress -p tcp --dport 53 -j ACCEPT
       iptables -A exam-egress -p udp --dport 67:68 -j ACCEPT # DHCP renewals
-      # ACCEPT rules for exam.jutge.org are inserted above the REJECT
+      # ACCEPT rules for ${allowedHostsList} are inserted above the REJECT
       # by exam-whitelist.service once DNS works.
       iptables -A exam-egress -j REJECT --reject-with icmp-admin-prohibited
       iptables -C OUTPUT -j exam-egress 2>/dev/null || iptables -A OUTPUT -j exam-egress
@@ -108,9 +178,9 @@ in
     '';
   };
 
-  # Resolve exam.jutge.org once DNS works and whitelist its IPs.
+  # Resolve the allowed hosts once DNS works and whitelist their IPs.
   systemd.services.exam-whitelist = {
-    description = "Whitelist exam.jutge.org IPs in the egress firewall";
+    description = "Whitelist ${allowedHostsList} IPs in the egress firewall";
     wantedBy = [ "multi-user.target" ];
     after = [
       "firewall.service"
@@ -127,23 +197,32 @@ in
     script = ''
       set -u
 
-      ips=""
-      for i in $(seq 1 60); do
-        ips=$(getent ahostsv4 exam.jutge.org | awk '{ print $1 }' | sort -u)
-        [ -n "$ips" ] && break
-        sleep 2
+      resolved_any=0
+      for host in ${lib.escapeShellArgs allowedHosts}; do
+        ips=""
+        for i in $(seq 1 60); do
+          ips=$(getent ahostsv4 "$host" | awk '{ print $1 }' | sort -u)
+          [ -n "$ips" ] && break
+          sleep 2
+        done
+
+        if [ -z "$ips" ]; then
+          echo "WARNING: could not resolve $host; its traffic stays blocked" >&2
+          continue
+        fi
+
+        echo "Whitelisting $host: $ips"
+        for ip in $ips; do
+          iptables -C exam-egress -d "$ip" -p tcp -m multiport --dports 80,443 -j ACCEPT 2>/dev/null \
+            || iptables -I exam-egress -d "$ip" -p tcp -m multiport --dports 80,443 -j ACCEPT
+        done
+        resolved_any=1
       done
 
-      if [ -z "$ips" ]; then
-        echo "WARNING: could not resolve exam.jutge.org; everything stays blocked" >&2
+      if [ "$resolved_any" -eq 0 ]; then
+        echo "WARNING: could not resolve any of ${allowedHostsList}; everything stays blocked" >&2
         exit 1
       fi
-
-      echo "Whitelisting exam.jutge.org: $ips"
-      for ip in $ips; do
-        iptables -C exam-egress -d "$ip" -p tcp -m multiport --dports 80,443 -j ACCEPT 2>/dev/null \
-          || iptables -I exam-egress -d "$ip" -p tcp -m multiport --dports 80,443 -j ACCEPT
-      done
     '';
   };
 
