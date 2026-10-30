@@ -210,7 +210,7 @@ export class SubmissionService extends StaticLogger {
             title: "View in jutge.org",
         })
         if (selection && selection.title === "View in jutge.org") {
-            const path = `/${problem.problem_id}/submissions/${submission_id}`
+            const path = `/problems/${problem.problem_id}/submissions/${submission_id}`
             const uri: vscode.Uri = vscode.Uri.from({
                 scheme: "https",
                 authority: host,
@@ -218,7 +218,6 @@ export class SubmissionService extends StaticLogger {
             })
             vscode.env.openExternal(uri)
         }
-        // https://exam.jutge.org/problems/P68688_ca/submissions/E007
     }
 
     private static async _sendStatusUpdate(problemNm: string, status: SubmissionStatus) {
