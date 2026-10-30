@@ -1,9 +1,23 @@
 # Change Log
 
-All notable changes to the "jutge-vscode" extension will be documented in this file.
+All notable changes to the "jutge-vscode" extension will be
+documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.13] - 2026-10-30
+
+- Rewrote the logic in the sign-in form to account for different
+  environments (especially exams). Now the extension detects which
+  hosts allow login by itself.
+- Fixed bug when running tests locally that showed a test "Running..."
+  even if the child process had failed.
+- Fixed URLs for the "View in Jutge" button, which had an introduced
+  bug.
+- Refactored API mode changes internally.
+- Fixed a bug that showed `.out` files in the file chooser when
+  clicking "Open Existing File".
 
 ## [0.1.12] - 2026-10-28
 
@@ -11,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.11] - 2026-10-22
 
-- Fixed a bug in Python Turtle programs that produced an error upon execution of tests.
+- Fixed a bug in Python Turtle programs that produced an error upon
+  execution of tests.
 
 ## [0.1.10] - 2026-10-06
 
@@ -35,50 +50,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## New
 
-- The Python runner (which runs programs in the background) now uses `uv` to prepare a directory called `.jutge-org.python-runner` to deal with the `yogi` library independently of the rest of the system.
+- The Python runner (which runs programs in the background) now uses `uv`
+  to prepare a directory called `.jutge-org.python-runner` to deal with
+  the `yogi` library independently of the rest of the system.
 
 ## Fixed
 
-- The TreeView does not show Jutge.org quizzes, since the VSCode extension is not capable of running them yet.
+- The TreeView does not show Jutge.org quizzes, since the VSCode
+  extension is not capable of running them yet.
 
-- Now the "Open Existing File" button works correctly for multiple languages (worked only for C++ by mistake).
+- Now the "Open Existing File" button works correctly for multiple
+  languages (worked only for C++ by mistake).
 
-- Fixed a bug in which the order of a problem was not remembered in between sessions (when reloading VSCode).
+- Fixed a bug in which the order of a problem was not remembered in
+  between sessions (when reloading VSCode).
 
 ## [0.1.7] - 2026-09-06
 
 ## Added
 
-- In exam mode, problems show points and the "caption", which is extra text apart from the title (like "P1", "P2", "P3", for the exam problems). The exam itself shows if it has started or not.
-
+- In exam mode, problems show points and the "caption", which is extra
+  text apart from the title (like "P1", "P2", "P3", for the exam problems).
+  The exam itself shows if it has started or not.
 - Added support for `graphic` problems that use Turtle graphics in Python3.
 
 ## [0.1.5] - 2025-11-06
 
 ## Fixed
 
-- Fixed a bug in which the small command buttons at the top of the problem tree
-  were visible in other views as well as Jutge.org's own view 😅.
-
-- Tuned icon colors for the two commands "sign-out" and "refresh", both in dark and light mode.
-
-- If the token expires with the extension open, it will change immediately to the panel with the sign in buttons again.
+- Fixed a bug in which the small command buttons at the top of the
+  problem tree were visible in other views as well as Jutge.org's own
+  view 😅.
+- Tuned icon colors for the two commands "sign-out" and "refresh",
+  both in dark and light mode.
+- If the token expires with the extension open, it will change
+  immediately to the panel with the sign in buttons again.
 
 ## Added
 
-- Now if you try to create a file while there is not workspace open, the notification will prompt you to open a folder, instead of just giving an error message.
+- Now if you try to create a file while there is not workspace open,
+  the notification will prompt you to open a folder, instead of just
+  giving an error message.
 
 ## [0.1.4] - 2025-11-04
 
 ## Added
 
-- The "Oopen Existing File" button, to open a program file from the problem, is now always present, and its state (disabled or not), changes when a file is created or removed, just as custom testcases do. This works even when the VSCode is restarted.
+- The "Oopen Existing File" button, to open a program file from
+  the problem, is now always present, and its state (disabled or not),
+  changes when a file is created or removed, just as custom testcases
+  do. This works even when the VSCode is restarted.
 
-- When creating a code file, now the file has a number prefix which corresponds to the order of that problem in its list (i.e. `01_`, `02_`, etc.). This behaviour will in the future be configurable, since it is clear that some people might like it and other might not. However, when doing work on course lists, this ordering helps see which problems have code files, especially if there are more than 10.
+- When creating a code file, now the file has a number prefix which
+  corresponds to the order of that problem in its list (i.e. `01_`,
+  `02_`, etc.). This behaviour will in the future be configurable,
+  since it is clear that some people might like it and other might not.
+  However, when doing work on course lists, this ordering helps see
+  which problems have code files, especially if there are more than 10.
 
 ## Fixed
 
-- Removed a potential bug where the htmlStatement of the problem appeared in source code form at the top of the problem, since some data was embedded in the head of the HTML page which represents the webview, and the JSON probably contained HTML that made the parser go crazy. Even if I only saw this bug two or three times, I think I've removed its source.
+- Removed a potential bug where the htmlStatement of the problem
+  appeared in source code form at the top of the problem, since
+  some data was embedded in the head of the HTML page which represents
+  the webview, and the JSON probably contained HTML that made the
+  parser go crazy. Even if I only saw this bug two or three times,
+  I think I've removed its source.
 
 ## [0.1.3] - 2025-11-04
 
@@ -88,9 +125,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- Credentials and email are now stored in a global storage space in VSCode so that when changing the workspace, sign-in state is not lost. This also works in exam mode.
-
-- Fixed a bug that set the wrong compiler when sending problems with a compiler specified in the problem itself.
+- Credentials and email are now stored in a global storage space in
+  VSCode so that when changing the workspace, sign-in state is not lost.
+  This also works in exam mode.
+- Fixed a bug that set the wrong compiler when sending problems with
+  a compiler specified in the problem itself.
 
 ## [0.1.2] - 2025-10-21
 
@@ -99,9 +138,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The courses now show the title instead of the course ID. By @jma25l.
 - A bug in Windows showed `\r\n` as two characters. By @jma25l.
 - Fixes related to Windows-specific things (paths, etc). By @jma25l.
-- Changed the storage system for internal metadata to avoid errors on KDE in Linux systems.
-- Fixed bug where the exam token was not checked against the exam URL version of the API.
-- In exam mode, changed the URL of the problem to point to the URL in the exam, not the URL in the normal Jutge.org.
+- Changed the storage system for internal metadata to avoid errors on
+  KDE in Linux systems.
+- Fixed bug where the exam token was not checked against the exam URL
+  version of the API.
+- In exam mode, changed the URL of the problem to point to the URL in
+  the exam, not the URL in the normal Jutge.org.
 
 ## [0.1.1] - 2025-10-20
 
@@ -111,29 +153,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- The "Copy" button which copied a textcase input to the clipboard was not working due to a change in the HTML. Now works again.
-
+- The "Copy" button which copied a textcase input to the clipboard
+  was not working due to a change in the HTML. Now works again.
 - Some problems reported "Language not found" that now will work fine.
-
-- When trying to create a custom testcase in a problem without testcases, the extension failed without a message. Now it works.
-
-- Fixed sanitization of the title of the problem before creating the source file. Now a problem with title "àèìòùáéíóúñç" will generate a filename with "aeiouaeiounc" and not an empty one.
+- When trying to create a custom testcase in a problem without
+  testcases, the extension failed without a message. Now it works.
+- Fixed sanitization of the title of the problem before creating
+  the source file. Now a problem with title "àèìòùáéíóúñç" will
+  generate a filename with "aeiouaeiounc" and not an empty one.
 
 ## [0.0.26] - 2025-10-14
 
 ### Added
 
-- Support for "graphics" problems, in which the output of a program is a PNG image instead of text. Testcases show the expected image and the output is shown to the side. (Diffing between expected and result images is not yet implemented.)
+- Support for "graphics" problems, in which the output of a program
+  is a PNG image instead of text. Testcases show the expected image
+  and the output is shown to the side. (Diffing between expected
+  and result images is not yet implemented.)
 
 ### Fixed
 
-- If you search for a problem that does not exist, you receive an error message instead of a blank document.
-
-- The "compare" button was lost due to bad CSS positioning. Now it appears again where it was, with its functionality intact.
-
-- The "Submit to Jutge" button was disabled after each submission due to a status update missing. It is fixed now, so sending repeatedly to Jutge is possible. Sorry about that!
-
-- Exam mode: fixed submitting problems and improved many error messages, showing the root cause to the user directly.
+- If you search for a problem that does not exist, you receive an error
+  message instead of a blank document.
+- The "compare" button was lost due to bad CSS positioning. Now it
+  appears again where it was, with its functionality intact.
+- The "Submit to Jutge" button was disabled after each submission due to
+  a status update missing. It is fixed now, so sending repeatedly to Jutge
+  is possible. Sorry about that!
+- Exam mode: fixed submitting problems and improved many error messages,
+  showing the root cause to the user directly.
 
 ## [0.0.25] - 2025-10-07
 
@@ -141,7 +189,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refresh and logout buttons appear only when it is appropriate.
 - In exam mode, you cannot show any problem from the Command Palette.
-- In exam mode, if you close VSCode and open it again, you go back to the same exam.
+- In exam mode, if you close VSCode and open it again, you go back to
+  the same exam.
 
 ## [0.0.24] - 2025-09-30
 
@@ -154,13 +203,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Reverted VSCode version to 1.87 so that the extension can be installed in older VSCode installations.
+- Reverted VSCode version to 1.87 so that the extension can be installed
+  in older VSCode installations.
 
 ## [0.0.22] - 2025-09-23
 
 ### Fixed
 
-- Bug about getting the filesize that made the extension less stable when submitting (also fixed at the API end).
+- Bug about getting the filesize that made the extension less stable
+  when submitting (also fixed at the API end).
 
 ## [0.0.21] - 2025-09-23
 
@@ -170,13 +221,15 @@ No changes.
 
 ### Fixed
 
-- Updated the API client. The API has had some instability problems as well, they seem resolved now.
+- Updated the API client. The API has had some instability problems as
+  well, they seem resolved now.
 
 ## [0.0.19] - 2025-07-22
 
 ### Added
 
-- Made the code editors not "previews" so that they are kept open when opening more editors (and not substituted).
+- Made the code editors not "previews" so that they are kept open when
+  opening more editors (and not substituted).
 
 ### Fixed
 
@@ -186,33 +239,39 @@ No changes.
 
 ### Fixed
 
-- The source code generated with the "+ New File" button didn't use the template present at Jutge.org. Now it does again.
-
-- Additionally, we try to make sure the source code window is at the left and the statement of the problem is to the right. (Still to be improved.)
+- The source code generated with the "+ New File" button didn't use the
+  template present at Jutge.org. Now it does again.
+- Additionally, we try to make sure the source code window is at the left
+  and the statement of the problem is to the right. (Still to be improved.)
 
 ## [0.0.17] - 2025-07-19
 
 ### Added
 
-- Button to edit a custom testcase. It will open the file containing the testcase.
+- Button to edit a custom testcase. It will open the file containing the
+  testcase.
 - Button to expand or collapse all testcases of a certain type.
 
 ### Fixed
 
 - Input/output layout for regular and custom testcases.
-- The verdict notification appeared on top of the "waiting" notification when sending a problem.
+- The verdict notification appeared on top of the "waiting" notification
+  when sending a problem.
 
 ## [0.0.16] - 2025-07-18
 
 ### Added
 
-- Custom testcases. These are stored as files and are also updated whenever files change, are created or deleted. (Some subtle bugs remain, but the feature is quite usable.)
+- Custom testcases. These are stored as files and are also updated whenever
+  files change, are created or deleted. (Some subtle bugs remain, but the
+  feature is quite usable.)
 
 ### Fixed
 
 - Improved the traffic lights icons further.
 - Upon pressing "+ New File", the language of the file was not asked.
-- The mouse cursor in the problem statement was not changing to reveal interactive elements (buttons, etc.)
+- The mouse cursor in the problem statement was not changing to reveal
+  interactive elements (buttons, etc.)
 
 ## [0.0.15] - 2025-07-17
 
@@ -220,13 +279,22 @@ No changes.
 
 - Icon for "presentation error" (yellow).
 
-- Messages shown for rejected problems include more cases found in Jutge.org, such as "PE" and "IC", which were shown confusingly as a question mark without any text.
+- Messages shown for rejected problems include more cases found in Jutge.org,
+  such as "PE" and "IC", which were shown confusingly as a question mark
+  without any text.
 
-- Button "Open Existing File" in the problem page (beside the "+ New File" button) whenever a file with the default filename is present in the workspace directory. This makes it much easier to find the file implementing a particular problem, whenever you work on problems and just accept the filenames produced by the extension.
+- Button "Open Existing File" in the problem page (beside the "+ New File"
+  button) whenever a file with the default filename is present in the
+  workspace directory. This makes it much easier to find the file
+  implementing a particular problem, whenever you work on problems and
+  just accept the filenames produced by the extension.
 
 ### Fixed
 
-- Update mechanism for the problem icon (the traffic lights icon), which triggers when the veredict is given as a notification. Before 0.0.15, it didn't update properly (and internally it used a convoluted mechanism, now it is much simpler).
+- Update mechanism for the problem icon (the traffic lights icon), which
+  triggers when the veredict is given as a notification. Before 0.0.15,
+  it didn't update properly (and internally it used a convoluted mechanism,
+  now it is much simpler).
 
 ## [0.0.14] - 2025-07-17
 
