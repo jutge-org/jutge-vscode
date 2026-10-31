@@ -736,11 +736,19 @@ export class JutgeService extends StaticLogger {
                     problem_nms.join(",")
                 )
 
+                // IMPORTANT: In exams, the problems need to be in the _same_ order
+                // in which the original array `problem_nms` was, so we should sort
+                // the result to match that order!
+
                 const result: j.AbstractProblem[] = []
-                for (const [problem_nm, abstractProblem] of Object.entries(abstractProblems)) {
-                    if (problem_nm !== null) {
-                        result.push(abstractProblem)
+                for (const problem_nm of problem_nms) {
+                    const abstractProblem = abstractProblems[problem_nm]
+                    if (!abstractProblem) {
+                        this.log.error(
+                            `INTERNAL ERROR: Problem ${problem_nm} not found in results!`
+                        )
                     }
+                    result.push(abstractProblem)
                 }
                 return result
             }
