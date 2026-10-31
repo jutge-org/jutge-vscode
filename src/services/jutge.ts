@@ -74,6 +74,12 @@ type EnterExamParams = {
 
 type SignInResult = { ok: true } | { ok: false; error: string }
 
+type SignOutQuestions = {
+    placeHolder: string
+    no: string
+    yes: string
+}
+
 const KEY_SIGN_IN_EMAIL = "jutge-vscode.signIn.email"
 const KEY_SIGN_IN_PASSWORD = "jutge-vscode.signIn.password"
 
@@ -543,28 +549,24 @@ export class JutgeService extends StaticLogger {
         await this.setSignedOut()
     }
 
-    public static async confirmSignOut() {
-        let dialogText = {
-            placeHolder: `Please confirm that you want to sign out`,
-            no: `No, keep signed in.`,
-            yes: `Yes, sign out.`,
-        }
-        if (this.isMode("exam") || this.isMode("contest")) {
-            dialogText = {
-                placeHolder: `Please confirm that you want to finish the exam`,
-                no: `No, keep doing the exam.`,
-                yes: `Yes, finish the exam.`,
-            }
-        }
-        const confirmation = await vscode.window.showQuickPick(
-            [dialogText.no, dialogText.yes],
-            {
-                title: "Confirmation",
-                placeHolder: dialogText.placeHolder,
-            }
-        )
-        return confirmation === dialogText.yes
+    public static async confirmSignOut({ placeHolder, yes, no }: SignOutQuestions) {
+        const confirmation = await vscode.window.showQuickPick([no, yes], {
+            title: "Confirmation",
+            placeHolder: placeHolder,
+        })
+        return confirmation === yes
     }
+
+    // let dialogText =
+    //     if (this.isMode("exam")) {
+    //         dialogText = {
+    //             placeHolder: `Please confirm that you want to finish the exam`,
+    //             no: `No, keep doing the exam.`,
+    //             yes: `Yes, finish the exam.`,
+    //         }
+    //     } else if (this.isMode("contest")) {
+    //         dialogText =
+    //     }
 
     public static async signOut(options?: {
         askConfirmation: boolean
@@ -572,7 +574,14 @@ export class JutgeService extends StaticLogger {
     }): Promise<void> {
         try {
             const askConfirmation = options?.askConfirmation ?? false
-            if (askConfirmation && !(await this.confirmSignOut())) {
+            if (
+                askConfirmation &&
+                !(await this.confirmSignOut({
+                    placeHolder: `Please confirm that you want to sign out`,
+                    yes: `Yes, sign out.`,
+                    no: `No, keep signed in.`,
+                }))
+            ) {
                 return
             }
             await this.saveState()
@@ -588,25 +597,61 @@ export class JutgeService extends StaticLogger {
         }
     }
 
+    private static async finishExam() {
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                // title: `Finishing exam`,
+                cancellable: false,
+            },
+            async (progress) => {
+                progress.report({ message: "finishing exam" })
+                await jutgeClient.student.exam.finishExam()
+
+                progress.report({ message: "signing out" })
+                await this.setSignedOut()
+            }
+        )
+        vscode.window.showInformationMessage(
+            `Jutge.org: You have successfully finished the exam`
+        )
+    }
+
     public static async signOutExam(options?: {
         askConfirmation: boolean
         message: string
     }): Promise<void> {
         try {
+            // Save the state anyway
+            await this.saveState()
+
+            // Ask for confirmation to end the exam
             const askConfirmation = options?.askConfirmation ?? true
-            if (askConfirmation && !(await this.confirmSignOut())) {
+            if (
+                askConfirmation &&
+                !(await this.confirmSignOut({
+                    placeHolder: `Please confirm that you want to finish the exam`,
+                    yes: `Yes, finish the exam.`,
+                    no: `No, keep doing the exam.`,
+                }))
+            ) {
                 return
             }
-            await this.saveState()
-            await this.setSignedOut()
 
-            vscode.commands.executeCommand("jutge-vscode.refreshExamsTree")
-            const message = options?.message || "You have signed out"
-            vscode.window.showInformationMessage(`Jutge.org: ${message}`)
+            // Finish the exam
+            this.finishExam()
+            //
         } catch (e) {
             console.error(e)
         }
     }
+
+    // Text for signOutContest??
+    // {
+    //     placeHolder: `Please confirm that you want to exit the contest`,
+    //     no: `No, keep participating.`,
+    //     yes: `Yes, finish the exam.`,
+    // }
 
     // ---
 
