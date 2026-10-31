@@ -136,6 +136,9 @@ in
     # needs a second WebKitGTK 6.0, or ~640 MB for firefox).
     luakit
     xfceLuakitHelper
+    # Minimal PDF viewer. `pkgs.zathura` is the wrapper that bundles the
+    # mupdf backend (plus djvu/ps/cb), so PDF support works out of the box.
+    zathura
   ];
 
   # Make it the default browser, so `xdg-open` works (the extension calls
@@ -151,6 +154,10 @@ in
     "x-scheme-handler/http" = "luakit.desktop";
     "x-scheme-handler/https" = "luakit.desktop";
     "text/html" = "luakit.desktop";
+    # PDFs opened from Thunar (double click) use GIO's default handler, which
+    # reads this mimeapps.list. Unlike the browser case, no XFCE helper is
+    # needed: xfce4-mime-helper only knows WebBrowser/MailReader.
+    "application/pdf" = "org.pwmt.zathura-pdf-mupdf.desktop";
   };
 
   # Shadows xfce4-settings' default helpers.rc, so the other categories are
