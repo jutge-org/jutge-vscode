@@ -380,3 +380,21 @@ export async function downloadFile(url: string, targetPath: string): Promise<voi
 export async function appendToFile(filepath: string, code: string) {
     return fs.appendFileSync(filepath, code)
 }
+
+const lower = "abcdefghijklmnopqrstuvwxyz"
+const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const digit = "0123456789"
+const alpha = lower + upper + digit
+
+export function randomChar() {
+    const irnd = Math.floor(Math.random() * alpha.length)
+    return alpha[irnd]
+}
+
+export function randomDirName(len: number): string {
+    let result = ""
+    for (let i = 0; i < len; i++) {
+        result += randomChar()
+    }
+    return result
+}

@@ -1,27 +1,28 @@
-import * as os from "os"
-import * as vscode from "vscode"
+import os from "os"
+import vscode from "vscode"
 
 import { AboutTreeProvider, aboutTreeViewType } from "@/providers/about-view/provider"
+import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
+import { DashboardPanel } from "@/providers/dashboard-view/provider"
 import {
     ExamDocumentsTreeProvider,
     examDocumentsTreeViewType,
 } from "@/providers/exam-documents-view/provider"
+import { JUTGE_STATS_ID, JutgeStatsTreeProvider } from "@/providers/jutge-stats-view/provider"
+import {
+    ProfileWebviewViewProvider,
+    profileWebviewViewType,
+} from "@/providers/profile-view/provider"
 import {
     RankingPanel,
     RankingTreeProvider,
     rankingTreeViewType,
 } from "@/providers/ranking-view/provider"
-import { DashboardPanel } from "@/providers/dashboard-view/provider"
-import { JutgeCourseTreeProvider } from "@/providers/course-view/provider"
-import { JutgeStatsTreeProvider, JUTGE_STATS_ID } from "@/providers/jutge-stats-view/provider"
-import {
-    ProfileWebviewViewProvider,
-    profileWebviewViewType,
-} from "@/providers/profile-view/provider"
 import { ConfigService } from "@/services/config"
+import { CourseTreeElement } from "./providers/course-view/element"
 import {
-    JutgeExamsWebviewViewProvider,
     examsWebviewViewType,
+    JutgeExamsWebviewViewProvider,
 } from "./providers/exam-view/provider"
 import { ProblemViewPanel } from "./providers/problem-view/panel"
 import { WebviewPanelRegistry } from "./providers/problem-view/panel-registry"
@@ -30,11 +31,10 @@ import {
     SignInWebviewViewProvider,
     signInWebviewViewType,
 } from "./providers/sign-in-view/provider"
-import { CourseTreeElement } from "./providers/course-view/element"
-import { ApiMode, jutgeClient, JutgeService, stringToApiMode } from "./services/jutge"
+import { DocumentService } from "./services/documents"
+import { JutgeService } from "./services/jutge"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
-import * as path from "path"
 
 /**
  * Get the webview options for the webview panel.
@@ -270,51 +270,6 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
     await WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
 }
 
-const commandOpenExamDocument = async (
-    documentNm: string | undefined,
-    displayTitle?: string
-) => {
-    if (!JutgeService.isSignedInExamOrContest()) {
-        vscode.window.showErrorMessage("You need to be signed in to an exam or contest.")
-        return
-    }
-
-    if (!documentNm) {
-        vscode.window.showErrorMessage("Missing document name.")
-        return
-    }
-
-    try {
-        const download = await jutgeClient.student.exam.getDocumentPdf(documentNm)
-        const baseName = download.name?.trim() || `${documentNm}.pdf`
-        const fileName =
-            path.extname(baseName).toLowerCase() === ".pdf" ? baseName : `${baseName}.pdf`
-        const sanitizedDocumentNm = documentNm.replace(/[^a-zA-Z0-9._-]/g, "_")
-        const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_")
-        const docsDirUri = vscode.Uri.file(path.join(os.tmpdir(), "jutge-vscode-documents"))
-        await vscode.workspace.fs.createDirectory(docsDirUri)
-        const uri = vscode.Uri.joinPath(
-            docsDirUri,
-            `${sanitizedDocumentNm}-${sanitizedFileName}`
-        )
-
-        await vscode.workspace.fs.writeFile(uri, download.data)
-        try {
-            await vscode.commands.executeCommand("vscode.openWith", uri, "pdf.preview")
-        } catch {
-            const opened = await vscode.env.openExternal(uri)
-            if (!opened) {
-                await vscode.commands.executeCommand("vscode.open", uri)
-            }
-        }
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        vscode.window.showErrorMessage(
-            `Could not open document "${displayTitle || documentNm}": ${message}`
-        )
-    }
-}
-
 /**
  * Works as entrypoint when the extension is activated.
  * It is responsible for registering commands and other extension components.
@@ -421,7 +376,7 @@ export async function activate(context: vscode.ExtensionContext) {
             jutgeStatsTreeProvider.refresh.bind(jutgeStatsTreeProvider),
         ],
         ["jutge-vscode.showProblem", commandShowProblem],
-        ["jutge-vscode.openExamDocument", commandOpenExamDocument],
+        ["jutge-vscode.openExamDocument", DocumentService.commandOpenExamDocument],
 
         ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
     ])

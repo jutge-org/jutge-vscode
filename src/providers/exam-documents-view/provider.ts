@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 
 import { RunningExamDocument } from "@/jutge_api_client"
 import { jutgeClient } from "@/services/jutge"
+import { DocumentService } from "@/services/documents"
 
 export const examDocumentsTreeViewType = "jutge-exam-documents"
 
@@ -64,6 +65,9 @@ export class ExamDocumentsTreeProvider implements vscode.TreeDataProvider<ExamDo
     }
 
     async refresh(): Promise<void> {
+        // Every time we do a refresh, change the temporary directory of the DocumentService
+        DocumentService.newTemporaryDir()
+
         this.items = [new ExamDocumentTreeItem("Loading documents...")]
         this._onDidChangeTreeData.fire(undefined)
 
