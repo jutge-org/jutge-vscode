@@ -86,7 +86,8 @@ Unchanged in spirit from earlier versions:
 
 ### 7. Files, config, runners
 
-- **`FileService`** (`services/file.ts`)
+- **`FileService`** (`services/file.ts`): creates source files; the header it writes contains a `jutge://problems/<problem_id>` link
+- **`ProblemLinkProvider`** (`services/links.ts`): `DocumentLinkProvider` that turns those links into clicks running **`jutge-vscode.openProblemForLink`** (opens the problem panel, not the website)
 - **`ConfigService`** (`services/config.ts`): **`jutge-vscode.*`** settings and Python extension API
 - **`services/runners/languages.ts`**: registry (**`CppRunner`**, **`PythonRunner`**, **`GHCRunner`**) in `runners/languages/*.ts`; **`errors.ts`** for runner errors
 - **`services/terminal.ts`**: terminal helpers used from the runner stack

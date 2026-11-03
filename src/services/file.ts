@@ -53,7 +53,7 @@ export class FileService extends StaticLogger {
         const comment = langInfo.commentPrefix
         return [
             `${comment} ${problem.title}\n`,
-            `${comment} https://jutge.org/problems/${problem.problem_id}\n`,
+            `${comment} jutge://problems/${problem.problem_id}\n`,
             `${comment} ${problem.problem_id}:${handler}:${source_modifier}:${compiler_id}\n`,
             `${comment} Created on ${new Date().toLocaleString()} ${profile ? `by ${profile.name}` : ``}\n`,
             `\n`,

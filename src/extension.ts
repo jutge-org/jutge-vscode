@@ -33,8 +33,9 @@ import {
 } from "./providers/sign-in-view/provider"
 import { DocumentService } from "./services/documents"
 import { JutgeService } from "./services/jutge"
+import { ProblemLinkProvider } from "./services/links"
 import { SubmissionService } from "./services/submission"
-import { findCodeFilenameForProblem, showCodeDocument } from "./utils"
+import { findCodeFilenameForProblem, showCodeDocument, splitProblemNm } from "./utils"
 
 /**
  * Get the webview options for the webview panel.
@@ -244,12 +245,9 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
     }
 
     // Handle non-abstract problem_nms
-    let language = ""
-    if (problemNm.includes("_")) {
-        let split = problemNm.replaceAll(" ", "").split("_")
-        problemNm = split[0]
-        language = split[1]
-    }
+    const split = splitProblemNm(problemNm)
+    problemNm = split.problemNm
+    const language = split.language
 
     // Check that the problem really exists
     if (!(await JutgeService.problemExists(problemNm))) {
@@ -268,6 +266,28 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
     await WebviewPanelRegistry.createOrReveal(problemNm, order, language)
     // Force update on "Open Existing File" button + custom testcases
     await WebviewPanelRegistry.notifyProblemFilesChanges(problemNm)
+}
+
+/**
+ * Opens the problem panel for a `jutge://problems/<problem_id>` link (see
+ * `ProblemLinkProvider`). Unlike `commandShowProblem`, it does not open or
+ * focus the code file, so clicking a link in a file header does not move the
+ * user away from the editor they are working in.
+ */
+const commandOpenProblemForLink = async (problemNm: string | undefined) => {
+    console.debug(`[commandOpenProblemForLink] Problem ${problemNm}`)
+
+    if (!problemNm) {
+        return
+    }
+
+    if (!JutgeService.isState("signed-in") && !JutgeService.isState("signed-in-exam")) {
+        vscode.window.showErrorMessage("You need to sign in to Jutge.org to use this feature.")
+        return
+    }
+
+    const { problemNm: problemId, language } = splitProblemNm(problemNm)
+    await WebviewPanelRegistry.createOrReveal(problemId, -1, language)
 }
 
 /**
@@ -376,10 +396,20 @@ export async function activate(context: vscode.ExtensionContext) {
             jutgeStatsTreeProvider.refresh.bind(jutgeStatsTreeProvider),
         ],
         ["jutge-vscode.showProblem", commandShowProblem],
+        ["jutge-vscode.openProblemForLink", commandOpenProblemForLink],
         ["jutge-vscode.openExamDocument", DocumentService.commandOpenExamDocument],
 
         ["jutge-vscode.invalidateToken", JutgeService.invalidateToken.bind(JutgeService)],
     ])
+
+    // Make `jutge://problems/<problem_id>` links in generated file headers open
+    // the problem panel (see `ProblemLinkProvider`).
+    context.subscriptions.push(
+        vscode.languages.registerDocumentLinkProvider(
+            [{ scheme: "file" }, { scheme: "untitled" }],
+            new ProblemLinkProvider()
+        )
+    )
 
     await vscode.commands.executeCommand(
         "setContext",

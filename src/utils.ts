@@ -167,6 +167,19 @@ export function fileExistsOrThrow(filePath: string) {
 
 const jutgeFileRegex = /([P-Z]\d{5}).*/
 
+/**
+ * Splits a problem name of the form `P12345_ca` into its abstract problem id
+ * (`P12345`) and its language id (`ca`). Problem names without a language
+ * suffix are returned unchanged, with an empty language.
+ */
+export function splitProblemNm(problemNm: string): { problemNm: string; language: string } {
+    if (!problemNm.includes("_")) {
+        return { problemNm, language: "" }
+    }
+    const [id, language] = problemNm.replaceAll(" ", "").split("_")
+    return { problemNm: id, language }
+}
+
 export function getProblemIdFromFilename(filePath: string) {
     const m = filePath.match(jutgeFileRegex)
     return m === null ? null : m[1]
