@@ -100,9 +100,14 @@ export class PythonRunner extends Logger implements LanguageRunner {
             // UNZIP and move uv.exe uvw.exe and uvx.exe to .bin
             await decompress(path, runningDir)
 
+            const binDir = join(this.runningDir, "bin")
+            if (!existsSync(binDir)) {
+                mkdirSync(binDir)
+            }
+
             for (const binary of ["uv.exe", "uvw.exe", "uvx.exe"]) {
                 const from = join(runningDir, binary)
-                const to = join(runningDir, ".bin", binary)
+                const to = join(runningDir, "bin", binary)
                 await rename(from, to)
             }
         }

@@ -370,6 +370,9 @@
         "*": "prettier --write --ignore-unknown"
     },
     "homepage": "https://marketplace.visualstudio.com/manage/publishers/jutge-org",
+    "extensionDependencies": [
+        "ms-python.python"
+    ],
     "prettier": {
         "printWidth": 96,
         "tabWidth": 4,

@@ -23,7 +23,6 @@ import {
     defaultFilenameForProblem,
     findPossibleFiles,
     getProglangFromProblem,
-    getWorkingDirectory,
     showCodeDocument,
 } from "@/utils"
 import { readFile, writeFile } from "fs/promises"
@@ -31,8 +30,8 @@ import { basename, join } from "path"
 import * as vscode from "vscode"
 import { FileService } from "./file"
 import { JutgeService } from "./jutge"
-import { SubmissionService } from "./submission"
 import { checkerInfoByName } from "./runners/checkers"
+import { SubmissionService } from "./submission"
 
 export class ProblemHandler extends Logger {
     panel_: ProblemViewPanel
