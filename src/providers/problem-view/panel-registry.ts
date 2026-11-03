@@ -23,13 +23,16 @@ export class WebviewPanelRegistry extends StaticLogger {
     static async createOrReveal(
         problemNm: string,
         order: number = -1,
-        langId?: string
+        langId?: string,
+        { silent = false }: { silent?: boolean } = {}
     ): Promise<ProblemViewPanel | null> {
         this.log.debug(`Attempting to show panel for problem ${problemNm}`)
 
         const context = getContext()
         if (!(await isProblemValidAndAccessible(problemNm))) {
-            vscode.window.showErrorMessage("Problem not valid or accessible.")
+            if (!silent) {
+                vscode.window.showErrorMessage("Problem not valid or accessible.")
+            }
             return null
         }
         const viewColumn = vscode.ViewColumn.Beside

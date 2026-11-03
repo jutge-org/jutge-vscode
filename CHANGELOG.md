@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Source files created by the extension now have a `jutge://problems/<id>`
   link in their header. Ctrl+Clicking it opens the problem panel directly,
   instead of the Jutge.org website.
+- The problem statement is now opened automatically the first time a source
+  file created by the extension is opened (can be disabled with the
+  `jutge-vscode.problem.autoOpenStatement` setting).
 
 ## [0.1.14] - 2026-10-31
 

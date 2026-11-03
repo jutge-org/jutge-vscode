@@ -4,7 +4,31 @@ import * as vscode from "vscode"
  * Matches the problem links written by `FileService.makeHeader` into the header
  * of every generated source file, e.g. `jutge://problems/P12345_ca`.
  */
-const PROBLEM_LINK_REGEX = /jutge:\/\/problems\/([A-Za-z0-9_]+)/g
+const PROBLEM_LINK_PATTERN = /jutge:\/\/problems\/([A-Za-z0-9_]+)/
+const PROBLEM_LINK_REGEX = new RegExp(PROBLEM_LINK_PATTERN.source, "g")
+
+/**
+ * Number of lines at the top of a document that are considered its header
+ * (see `FileService.makeHeader`, which writes 5 of them).
+ */
+const HEADER_LINES = 10
+
+/**
+ * Returns the problem name of the `jutge://problems/<problem_id>` link in the
+ * header of `document`, or `null` if there is none. Only the first
+ * `HEADER_LINES` lines are inspected, so that a mention of a problem link
+ * somewhere else in the file does not count as a header.
+ */
+export function problemNmFromHeader(document: vscode.TextDocument): string | null {
+    const lastLine = Math.min(document.lineCount, HEADER_LINES)
+    for (let line = 0; line < lastLine; line++) {
+        const match = document.lineAt(line).text.match(PROBLEM_LINK_PATTERN)
+        if (match) {
+            return match[1]
+        }
+    }
+    return null
+}
 
 /**
  * Makes `jutge://problems/<problem_id>` clickable in text editors. The links

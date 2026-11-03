@@ -31,6 +31,7 @@ import {
     SignInWebviewViewProvider,
     signInWebviewViewType,
 } from "./providers/sign-in-view/provider"
+import { ProblemAutoOpener } from "./services/auto-open"
 import { DocumentService } from "./services/documents"
 import { JutgeService } from "./services/jutge"
 import { ProblemLinkProvider } from "./services/links"
@@ -258,6 +259,9 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
     await whenWorkspaceFolder(async (workspace) => {
         const fileUri = await findCodeFilenameForProblem(workspace, problemNm)
         if (fileUri) {
+            // This command opens the panel itself, so don't let the auto-opener
+            // do it again (with a default `order`) when the file becomes active.
+            ProblemAutoOpener.markSeen(fileUri)
             const document = await vscode.workspace.openTextDocument(fileUri)
             await showCodeDocument(document)
         }
@@ -421,6 +425,10 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     await JutgeService.resumeFromStorage()
+
+    // Registered last, so that the sign-in state is already restored when the
+    // first editor event arrives.
+    ProblemAutoOpener.register(context)
 
     console.info("[Extension] jutge-vscode is now active")
 }

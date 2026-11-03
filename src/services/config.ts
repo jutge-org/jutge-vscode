@@ -69,6 +69,10 @@ export class ConfigService extends StaticLogger {
         return ConfigService.getString("problem.preferredLang")
     }
 
+    public static getAutoOpenStatement(): boolean {
+        return ConfigService.config.get<boolean>("problem.autoOpenStatement") ?? true
+    }
+
     private static codes: Record<string, LanguageCode> = {
         Català: LanguageCode.ca,
         Castellano: LanguageCode.es,

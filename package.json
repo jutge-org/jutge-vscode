@@ -316,6 +316,11 @@
                     ],
                     "description": "The preferred language for problem descriptions.",
                     "TODO": "These should be obtained from the Jutge.org API, not hardcoded."
+                },
+                "jutge-vscode.problem.autoOpenStatement": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically open the problem statement when a source file created by the extension is opened."
                 }
             }
         }
