@@ -5,7 +5,7 @@ let
   #   true  -> JUTGE_FORCE_DEVMODE=1 is exported to VS Code (and therefore to
   #            the extension host, integrated terminals, tasks, ...)
   #   false -> the variable is not set at all
-  jutgeForceDevMode = true;
+  jutgeForceDevMode = false;
 
   # Hosts actually whitelisted in the egress firewall.
   allowedHosts = [

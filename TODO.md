@@ -1,46 +1,51 @@
-## README
-
-- Review all the details and get rid of `Makefile`, it is not necessary at all.
-
 ## Testcases
 
-- When doing "Custom testcases" in graphics problems, the output
-  should be the image generated, but it assumes text.
+- [ ] When doing "Custom testcases" in graphics problems, the output
+      should be the image generated, but it assumes text.
 
-- Replicate the fact that Jutge.org does a first "mypy" compilation and errors in mypy have the result of WA (with no output).
+- [ ] Replicate the fact that Jutge.org does a first "mypy" compilation and
+      errors in mypy have the result of WA (with no output).
 
-- When doing problems which ask just a function (`no_main`), we should be mixing the code written by the student + the main.py given in the problem! ([P36936_ca](https://jutge.org/problems/P36936_ca))
+- [ ] When doing problems which ask just a function (`no_main`), we should be
+      mixing the code written by the student + the main.py given in the problem! ([P36936_ca](https://jutge.org/problems/P36936_ca))
 
 ## Problems
 
-- Button to download previous submissions to a problem and save them in the directory you are working on.
+- [ ] Button to download previous submissions to a problem and save them in the
+      directory you are working on.
 
 ## Exams
 
 When doing an exam:
 
-- You can't get or submit any problems other than the exam's own problems.
+- [ ] You can't get or submit any problems other than the exam's own problems.
 
-- You can't see the problems (nor get them through the API) until the exam has started.
+- [ ] You can't see the problems (nor get them through the API) until the exam
+      has started.
 
-- Even if the extension shows a list of open exams, you can't log in by writing the exam ID manually.
+- [ ] Even if the extension shows a list of open exams, you can't log in by
+      writing the exam ID manually.
 
-- You can't log in unless you type the exam password correctly.
+- [ ] You can't log in unless you type the exam password correctly.
 
-- The veredicts are only for the exam, i.e. you could have a green or red veredict for the problems in the exam in the problem lists of your course, but in the exam the veredict is independent. You could even have multiple exams with the same problems and each exam is a separated sequence of submissions and veredicts. The veredicts should not mix, and cache separately.
+- [ ] The veredicts are only for the exam, i.e. you could have a green or red
+      veredict for the problems in the exam in the problem lists of your course, but in the exam the veredict is independent. You could even have multiple exams with the same problems and each exam is a separated sequence of submissions and veredicts. The veredicts should not mix, and cache separately.
 
-- You cannot enter an exam from an outside IP (not in the range assigned to the classroom). The exam password is there to avoid this, but it could potentially be leaked. The extension should not let you sign-in. And it should log this, and report it.
+- [ ] You cannot enter an exam from an outside IP (not in the range assigned
+      to the classroom). The exam password is there to avoid this, but it could potentially be leaked. The extension should not let you sign-in. And it should log this, and report it.
 
-- When finishing an exam, the extension has to be really clear that the student won't be able to sign-in again.
+- [ ] When finishing an exam, the extension has to be really clear that the
+      student won't be able to sign-in again.
 
-- You should not sign-in more than once into an exam from the extension (asking for a token twice). Unless there has been a bad problem (reboot, etc.). We should log this and prevent it in some way (ask "You are logging back into the exam, this will be reported, are you sure you want to continue?").
+- [ ] You should not sign-in more than once into an exam from the extension
+      (asking for a token twice). Unless there has been a bad problem (reboot, etc.). We should log this and prevent it in some way (ask "You are logging back into the exam, this will be reported, are you sure you want to continue?").
 
 ### Exam niceties
 
-- Showing the time available (as a progress bar?).
-- Showing a list of documentation items during the exam.
+- [ ] Showing the time available (as a progress bar?).
+- [ ] Showing a list of documentation items during the exam.
 
 ## Good error messages
 
-- For any language supported for local execution, give clear messages when the compiler
-  is not found, and, if possible, install things internally also notifying the user.
+- [ ] For any language supported for local execution, give clear messages when
+      the compiler is not found, and, if possible, install things internally also notifying the user.
