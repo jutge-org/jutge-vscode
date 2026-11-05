@@ -2,7 +2,7 @@ import * as fs from "fs"
 import * as path from "path"
 import * as vscode from "vscode"
 
-import { AbstractProblem, BriefProblem, Submission } from "@/jutge_api_client"
+import { AbstractProblem, BriefProblem, RunningExam, Submission } from "@/jutge_api_client"
 import { Logger } from "@/loggers"
 import { ConfigService } from "@/services/config"
 import { JutgeService } from "@/services/jutge"
@@ -33,6 +33,7 @@ type ExamMeta = {
     startMs: number | null
     expectedStartMs: number | null
     totalMs: number
+    extraMs: number
 }
 
 function parseTime(value: string | number | null | undefined): number | null {
@@ -43,17 +44,15 @@ function parseTime(value: string | number | null | undefined): number | null {
     return Number.isNaN(ms) ? null : ms
 }
 
-function toExamMeta(exam: {
-    title: string
-    time_start: string | number | null
-    exp_time_start: string | number
-    running_time: number
-}): ExamMeta {
+function toExamMeta(exam: RunningExam): ExamMeta {
+    const extraMs = exam.extra_minutes * 60_000
     return {
         title: exam.title ?? "",
         startMs: parseTime(exam.time_start),
         expectedStartMs: parseTime(exam.exp_time_start),
-        totalMs: Math.max(0, Number(exam.running_time || 0)) * 60_000,
+        // NOTE(pauek): We put the extraMs inside the totalMs already
+        totalMs: Math.max(0, Number(exam.running_time || 0)) * 60_000 + extraMs,
+        extraMs,
     }
 }
 
@@ -586,7 +585,9 @@ function getExamsHtml(iconMap: IconMap): string {
 
             window.addEventListener("message", function(event) {
                 const message = event.data;
-                if (!message || typeof message !== "object") return;
+                if (!message || typeof message !== "object") {
+                    return;
+                }
                 if (message.type === "examLoading") {
                     setStatus("Loading exam problems...", false);
                     setHeaderPlaceholder();
@@ -594,40 +595,39 @@ function getExamsHtml(iconMap: IconMap): string {
                     hideEmptyState();
                     return;
                 }
-                if (message.type === "examResult") {
-                    const payload = message.payload || {};
-                    if (!payload.ok) {
-                        setStatus(payload.error || "Could not load exam problems.", true);
-                        setHeaderPlaceholder();
-                        tableEl.hidden = true;
-                        hideEmptyState();
-                        return;
-                    }
-                    const meta = payload.exam || null;
-                    renderHeader(meta);
-                    const rows = Array.isArray(payload.rows) ? payload.rows : [];
-                    const started = meta && typeof meta.startMs === "number";
-                    if (meta && !started) {
-                        setStatus("", false);
-                        tableEl.hidden = true;
-                        showEmptyState(
-                            "Exam not started yet",
-                            typeof meta.expectedStartMs === "number"
-                                ? "expected " + formatClock(meta.expectedStartMs)
-                                : ""
-                        );
-                        return;
-                    }
-                    if (rows.length === 0) {
-                        hideEmptyState();
-                        setStatus("", false);
-                        tableEl.hidden = true;
-                        return;
-                    }
+                if (message.type === "examErrorLoading") {
+                    const { payload: { error } } = message
+                    setStatus(error || "Could not load exam problems.", true);
+                    setHeaderPlaceholder();
+                    tableEl.hidden = true;
                     hideEmptyState();
-                    setStatus("", false);
-                    renderRows(rows);
+                    return;
                 }
+                if (message.type === "examNotStarted") {
+                    const { payload: { examMeta } } = message
+                    renderHeader(examMeta);
+                    setStatus("", false);
+                    tableEl.hidden = true;
+
+                    const { expectedStartMs } = examMeta
+                    showEmptyState(
+                        "Exam not started yet",
+                        typeof expectedStartMs === "number"
+                            ? "expected " + formatClock(expectedStartMs)
+                            : ""
+                    );
+                    return;
+                }
+
+                const { payload: { examMeta, rows } } = message
+                renderHeader(examMeta);
+                hideEmptyState();
+                setStatus("", false);
+                if (rows.length === 0) {
+                    tableEl.hidden = true;
+                    return;
+                }
+                renderRows(rows);
             });
 
             vscode.postMessage({ type: "examViewReady" });
@@ -653,14 +653,31 @@ export class JutgeExamsWebviewViewProvider
     implements vscode.WebviewViewProvider, vscode.Disposable
 {
     private webviewView: vscode.WebviewView | undefined
+
+    private exam: RunningExam | undefined = undefined
+    private currentExamMeta: ExamMeta | undefined = undefined
+    private abstractProblems: AbstractProblem[] | null = null
+    private submissions: Submission[] | null = null
+
     private currentRows: ProblemRow[] = []
-    private currentExamMeta: ExamMeta | null = null
     private iconMap: IconMap
     private startPollHandle: ReturnType<typeof setTimeout> | null = null
 
     constructor(private readonly extensionUri: vscode.Uri) {
         super()
         this.iconMap = loadIconMap(extensionUri)
+    }
+
+    hasExamEnded(): boolean {
+        if (this.exam === undefined) {
+            return false
+        }
+        const { startMs, totalMs } = toExamMeta(this.exam)
+        if (startMs === null) {
+            return false
+        }
+        const nowMs = Date.now()
+        return nowMs > startMs + totalMs
     }
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -680,16 +697,27 @@ export class JutgeExamsWebviewViewProvider
                 type?: string
                 payload?: { problem_nm?: string; order?: number }
             }
-            if (msg.type === "examViewReady") {
-                await this.loadAndPush_()
-                return
-            }
-            if (msg.type === "openProblem" && msg.payload?.problem_nm) {
-                await vscode.commands.executeCommand(
-                    "jutge-vscode.showProblem",
-                    msg.payload.problem_nm,
-                    msg.payload.order ?? -1
-                )
+
+            switch (msg.type) {
+                case "examViewReady": {
+                    await this.loadAndPush_()
+                    break
+                }
+                case "openProblem": {
+                    // Check first if the exam has ended
+                    if (this.hasExamEnded()) {
+                        vscode.window.showErrorMessage("Exam has ended")
+                        break
+                    }
+                    if (msg.payload?.problem_nm) {
+                        await vscode.commands.executeCommand(
+                            "jutge-vscode.showProblem",
+                            msg.payload.problem_nm,
+                            msg.payload.order ?? -1
+                        )
+                        break
+                    }
+                }
             }
         })
     }
@@ -717,7 +745,7 @@ export class JutgeExamsWebviewViewProvider
         if (!this.webviewView) {
             return
         }
-        if (!this.currentExamMeta || this.currentExamMeta.startMs !== null) {
+        if (this.currentExamMeta === undefined || this.currentExamMeta.startMs !== null) {
             return
         }
         this.startPollHandle = setTimeout(() => {
@@ -745,17 +773,70 @@ export class JutgeExamsWebviewViewProvider
             return
         }
         row.iconStatus = newIcon
-        void this.pushRows_()
+        void this.pushToWebView_()
     }
 
     private async loadAndPush_(): Promise<void> {
+        // Auxiliary functions
+        const getSubmissions = () => {
+            const swrSubmissions = JutgeService.getAllSubmissionsSWR()
+            swrSubmissions.onUpdate = (submissions) => {
+                this.submissions = submissions
+                void this.pushToWebView_()
+            }
+            this.submissions = swrSubmissions.data ?? null
+            this.pushToWebView_()
+        }
+
+        const getProblems = (exam: RunningExam | undefined) => {
+            if (exam === undefined) {
+                return
+            }
+            const swrProblems = JutgeService.getAbstractProblemsSWR(
+                exam.problems.map((p) => p.problem_nm)
+            )
+            swrProblems.onUpdate = (problems) => {
+                this.abstractProblems = problems
+                this.pushToWebView_()
+            }
+            this.abstractProblems = swrProblems.data ?? null
+            this.pushToWebView_()
+        }
+
+        const pushExam = (exam: RunningExam) => {
+            this.exam = exam
+
+            // Only get the problems and submissions once the exam has started
+            if (exam.time_start !== null) {
+                getProblems(exam)
+                getSubmissions()
+            }
+
+            this.pushToWebView_()
+        }
+
+        const getExam = () => {
+            const swrExam = JutgeService.getExamSWR()
+            swrExam.onUpdate = (exam) => {
+                if (exam) {
+                    pushExam(exam)
+                }
+            }
+            if (swrExam.data) {
+                pushExam(swrExam.data)
+            }
+        }
+
+        // No webview, bail out
         if (!this.webviewView) {
             return
         }
+
+        // If we are not signed in, then reset everything.
         if (!JutgeService.isSignedInExamOrContest()) {
             this.stopStartPoll_()
             this.currentRows = []
-            this.currentExamMeta = null
+            this.currentExamMeta = undefined
             await this.webviewView.webview.postMessage({
                 type: "examResult",
                 payload: { ok: true, rows: [], exam: null },
@@ -763,49 +844,11 @@ export class JutgeExamsWebviewViewProvider
             return
         }
 
+        // Getting the exam is a prerequisite of getting the problems,
+        // but getting the submissions is not, so we start both the exam
+        // and the submissions
         try {
-            const swrExam = JutgeService.getExamSWR()
-            swrExam.onUpdate = () => void this.loadAndPush_()
-
-            const exam = swrExam.data
-            if (!exam) {
-                await this.webviewView.webview.postMessage({ type: "examLoading" })
-                return
-            }
-            this.currentExamMeta = toExamMeta(exam)
-
-            const problem_nms = exam.problems.map((p) => p.problem_nm)
-            const swrProblems = JutgeService.getAbstractProblemsSWR(problem_nms)
-            swrProblems.onUpdate = () => void this.loadAndPush_()
-
-            // Status is derived from this session's submissions instead of
-            // `student.statuses.getAll()`, which returns the student's lifetime
-            // verdicts and would color exam problems based on prior solves.
-            const swrSubmissions = JutgeService.getAllSubmissionsSWR()
-            swrSubmissions.onUpdate = () => void this.loadAndPush_()
-
-            if (swrProblems.data === undefined || swrSubmissions.data === undefined) {
-                await this.webviewView.webview.postMessage({ type: "examLoading" })
-                return
-            }
-
-            const abstractProblems = swrProblems.data
-            const iconByProblemNm = iconStatusBySubmissions(swrSubmissions.data)
-
-            const rows: ProblemRow[] = []
-            let order = 1
-            for (const abstractProblem of abstractProblems) {
-                const examProblem = exam.problems[order - 1]
-                const caption = examProblem?.caption || ""
-                const weight = examProblem?.weight ?? 1.0
-                const { title, problem_nm } = abstractProblemSummary(abstractProblem)
-                const iconStatus = iconByProblemNm.get(problem_nm) ?? IconStatus.NONE
-                rows.push({ problem_nm, order, caption, title, weight, iconStatus })
-                order++
-            }
-
-            this.currentRows = rows
-            await this.pushRows_()
+            getExam()
         } catch (error) {
             this.log.error(error)
             const message = error instanceof Error ? error.message : String(error)
@@ -818,13 +861,61 @@ export class JutgeExamsWebviewViewProvider
         }
     }
 
-    private async pushRows_(): Promise<void> {
+    private async pushToWebView_(): Promise<void> {
+        // If there is not webview, nothing to do
         if (!this.webviewView) {
             return
         }
+
+        // We still don't have the exam
+        if (this.exam === undefined) {
+            await this.webviewView.webview.postMessage({ type: "examLoading" })
+            return
+        }
+
+        // Now we know we have the exam, compute metadata
+        this.currentExamMeta = toExamMeta(this.exam)
+
+        // Exam ended?
+        if (this.hasExamEnded()) {
+            await this.webviewView.webview.postMessage({
+                type: "examResult",
+                payload: { examMeta: this.currentExamMeta },
+            })
+            return
+        }
+
+        // Are we loading? If there are no problems, or no submissions, we are.
+        if (this.abstractProblems === null || this.submissions === null) {
+            await this.webviewView.webview.postMessage({
+                type: "examLoading",
+                payload: { examMeta: this.currentExamMeta },
+            })
+            return
+        }
+
+        // Ok, we have the necessary data: pre-process and send to webview
+        const ok = true
+        const rows: ProblemRow[] = []
+        const iconByProblemNm = iconStatusBySubmissions(this.submissions)
+
+        let order = 1
+        for (const abstractProblem of this.abstractProblems) {
+            const examProblem = this.exam.problems[order - 1]
+            const caption = examProblem?.caption || ""
+            const weight = examProblem?.weight ?? 1.0
+            const { title, problem_nm } = abstractProblemSummary(abstractProblem)
+            const iconStatus = iconByProblemNm.get(problem_nm) ?? IconStatus.NONE
+            rows.push({ problem_nm, order, caption, title, weight, iconStatus })
+            order++
+        }
+
+        // Keeping the rows is important for later, when the verdict comes
+        this.currentRows = rows
+
         await this.webviewView.webview.postMessage({
             type: "examResult",
-            payload: { ok: true, rows: this.currentRows, exam: this.currentExamMeta },
+            payload: { ok, rows, examMeta: this.currentExamMeta },
         })
     }
 }
