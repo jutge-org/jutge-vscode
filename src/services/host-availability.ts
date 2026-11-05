@@ -1,15 +1,10 @@
 import { StaticLogger } from "@/loggers"
-import { ApiMode } from "./jutge"
+import { ApiMode, JutgeService } from "./jutge"
+import { isDevelopmentMode } from "@/extension"
 
 export type HostAvailability = Record<ApiMode, boolean>
 
 export const SIGN_IN_MODES: ApiMode[] = ["normal", "exam", "contest"]
-
-export const SIGN_IN_HOST_URL_BY_MODE: Record<ApiMode, string> = {
-    normal: "https://jutge.org",
-    exam: "https://exam.jutge.org",
-    contest: "https://contest.jutge.org",
-}
 
 const PROBE_TIMEOUT_MS = 4000
 const CACHE_TTL_MS = 15_000
@@ -36,7 +31,8 @@ export class HostAvailabilityService extends StaticLogger {
 
         const entries = await Promise.all(
             SIGN_IN_MODES.map(async (mode) => {
-                const available = await this.probeHost_(SIGN_IN_HOST_URL_BY_MODE[mode])
+                const devMode = isDevelopmentMode() ? "development" : "production"
+                const available = await this.probeHost_(JutgeService.URLTable[devMode][mode])
                 return [mode, available] as const
             })
         )
