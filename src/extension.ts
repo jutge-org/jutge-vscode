@@ -37,6 +37,7 @@ import { JutgeService } from "./services/jutge"
 import { ProblemLinkProvider } from "./services/links"
 import { SubmissionService } from "./services/submission"
 import { findCodeFilenameForProblem, showCodeDocument, splitProblemNm } from "./utils"
+import { InfoError } from "./jutge_api_client"
 
 /**
  * Get the webview options for the webview panel.
@@ -250,10 +251,16 @@ const commandShowProblem = async (problemNm: string | undefined, order: number) 
     problemNm = split.problemNm
     const language = split.language
 
-    // Check that the problem really exists
-    if (!(await JutgeService.problemExists(problemNm))) {
-        vscode.window.showErrorMessage(`Problem ${problemNm} does not exist`)
-        return
+    try {
+        // Check that the problem really exists
+        if (!(await JutgeService.problemExists(problemNm))) {
+            vscode.window.showErrorMessage(`Problem ${problemNm} does not exist`)
+            return
+        }
+    } catch (e: unknown) {
+        if (e instanceof InfoError) {
+            vscode.window.showErrorMessage(`Could not get problem: ${e.message}`)
+        }
     }
 
     await whenWorkspaceFolder(async (workspace) => {
@@ -342,8 +349,8 @@ export async function activate(context: vscode.ExtensionContext) {
             examsWebviewViewProvider
         )
     )
-    SubmissionService.onDidReceiveVeredict((veredict) => {
-        examsWebviewViewProvider.refreshProblem(veredict)
+    SubmissionService.onDidReceiveVeredict((verdict) => {
+        examsWebviewViewProvider.refreshProblem(verdict)
     })
 
     const { courseTreeProvider, coursesView } = initCoursesTreeView()
