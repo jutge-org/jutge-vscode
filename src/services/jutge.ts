@@ -29,7 +29,7 @@ jutgeClient.userAgent = "jutge-vscode"
 type SwrResult<T> = {
     data: T | undefined
     onUpdate: (data: T | null) => void
-    // TODO: Put an onError and handle it!
+    onError?: (msg: string) => void
 }
 
 export type ApiMode = "normal" | "exam" | "contest"
@@ -686,17 +686,16 @@ export class JutgeService extends StaticLogger {
                 } else {
                     this.log.info(`Revalidated '${funcCallId}': no changes.`)
                 }
-            } catch (e) {
-                if (e instanceof j.UnauthorizedError) {
-                    this.log.info(`Token might have expired (UnauthorizedError). Signing out.`)
-                    this.signOut({
-                        askConfirmation: false,
-                        message: "Token has expired",
-                    })
-                } else {
-                    this.log.info(`Error getting data: ${e}`)
-                }
+            } catch (e: unknown) {
+                this.log.info(`SWR: Error getting data: ${e}`)
+                // Update with empty data
                 result.onUpdate(null)
+
+                // Also report error if 'onError' is present
+                if (result.onError) {
+                    const err = e instanceof Error ? e.message : (e as any).toString()
+                    result.onError(err)
+                }
             }
         }
 
