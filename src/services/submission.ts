@@ -155,7 +155,7 @@ export class SubmissionService extends StaticLogger {
         let verdict: SubmissionStatus = SubmissionStatus.PENDING
         let response: j.Submission | undefined = undefined
         try {
-            while (verdict === SubmissionStatus.PENDING) {
+            while (verdict === SubmissionStatus.PENDING && times < 20) {
                 // NOTE(pauek): Wait first so that the last progress report
                 // (which was the "submission successful") is visible for a while...
                 await waitMilliseconds(this.MONITOR_INTERVAL_MS)
