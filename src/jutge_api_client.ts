@@ -1,5 +1,5 @@
 /**
- * This file has been automatically generated at 2026-10-06T14:02:43.682Z
+ * This file has been automatically generated at 2026-11-05T15:32:41.152Z
  *
  * Name:    Jutge API
  * Version: 2.0.0
@@ -635,6 +635,7 @@ export type RunningExam = {
     instructions: string
     time_start: Iso8601Date | null
     exp_time_start: Iso8601Date
+    extra_minutes: number
     running_time: number
     contest: number
     problems: RunningExamProblem[]
@@ -735,6 +736,7 @@ export type Setting = {
 
 export type TradingCard = {
     card_id: string
+    title: string
     created_at: Iso8601Date
     updated_at: Iso8601Date
 }
@@ -931,7 +933,7 @@ export type InstructorExamStudent = {
     reason_inc: string | null
     taken_exam: number // Whether the student has logged in to the exam
     emergency_password: string | null
-    invited: number // Whether the student is invited (excluded from the ranking)
+    invited: number // Whether the student is invited (excluded from the ranking) (only used in contests)
 }
 
 export type InstructorExamCreation = {
@@ -1158,6 +1160,13 @@ export type CreateImageInput = {
     prompt: string // The prompt to generate the image from.
     size: string // Size (e.g. 1024x1024) or aspect ratio (e.g. 16:9).
 }
+
+export type ModelTokenPrices = {
+    input: number // USD per 1M input tokens.
+    output: number // USD per 1M output tokens.
+}
+
+export type ModelPrices = Record<string, ModelTokenPrices>
 
 export type SubmitMatchUserPlayer = {
     name: string
@@ -1699,9 +1708,8 @@ class Module_clients {
     /**
      * Get Python client.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async python(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("clients.python", null)
@@ -1711,9 +1719,8 @@ class Module_clients {
     /**
      * Get TypeScript client.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async typescript(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("clients.typescript", null)
@@ -1723,9 +1730,8 @@ class Module_clients {
     /**
      * Get JavaScript client.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async javascript(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("clients.javascript", null)
@@ -1735,9 +1741,8 @@ class Module_clients {
     /**
      * Get Java client.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async java(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("clients.java", null)
@@ -1747,9 +1752,8 @@ class Module_clients {
     /**
      * Get Cpp client.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async cpp(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("clients.cpp", null)
@@ -1759,9 +1763,8 @@ class Module_clients {
     /**
      * Get PHP client.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async php(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("clients.php", null)
@@ -1784,9 +1787,10 @@ class Module_auth {
     /**
      * Login: Get an access token.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns a token on success. Throws UnauthorizedError on failure.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async login(data: CredentialsIn): Promise<CredentialsOut> {
         const [output, ofiles] = await this.root.execute("auth.login", data)
@@ -1796,9 +1800,10 @@ class Module_auth {
     /**
      * Logout: Discard the access token.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Discards the access token so that the user cannot use it anymore. Requires authentication.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: user
      */
     async logout(): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.logout", null)
@@ -1808,9 +1813,10 @@ class Module_auth {
     /**
      * Login to an exam: Get an access token for an exam.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns a token on success. Throws UnauthorizedError on failure.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: any
      */
     async loginExam(data: ExamCredentialsIn): Promise<CredentialsOut> {
         const [output, ofiles] = await this.root.execute("auth.loginExam", data)
@@ -1820,9 +1826,10 @@ class Module_auth {
     /**
      * Get list of ready exams for a user, given their credentials.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Validates user credentials and returns the list of ready exams. Does not create a session or return a token.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: any
      */
     async getReadyExams(data: CredentialsIn): Promise<ReadyExam[]> {
         const [output, ofiles] = await this.root.execute("auth.getReadyExams", data)
@@ -1832,9 +1839,10 @@ class Module_auth {
     /**
      * Login: Get an access token.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns a token on success. Throws UnauthorizedError on failure. Created for backward compatibility, do not use anymore.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async loginWithUsername(data: CredentialsWithUsernameIn): Promise<CredentialsOut> {
         const [output, ofiles] = await this.root.execute("auth.loginWithUsername", data)
@@ -1844,9 +1852,10 @@ class Module_auth {
     /**
      * Register a new user account.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Creates a new user with the provided profile data. Requires a valid reCAPTCHA v3 token.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async register(data: RegisterIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.register", data)
@@ -1856,9 +1865,10 @@ class Module_auth {
     /**
      * Request a password reset.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Emails a reset code if the address is registered. Always succeeds silently for unknown emails. Requires a valid reCAPTCHA v3 token.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async requestPasswordReset(data: RequestPasswordResetIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.requestPasswordReset", data)
@@ -1868,9 +1878,10 @@ class Module_auth {
     /**
      * Confirm a password reset and set a new password.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Validates the reset code and sets a new password. Requires a valid reCAPTCHA v3 token.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async confirmPasswordRequest(data: ConfirmPasswordRequestIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.confirmPasswordRequest", data)
@@ -1880,9 +1891,10 @@ class Module_auth {
     /**
      * Request account unregistration confirmation.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Verifies the current password and emails an unregistration confirmation code. Requires authentication and a valid reCAPTCHA v3 token.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async requestUnregistration(data: RequestUnregistrationIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.requestUnregistration", data)
@@ -1892,9 +1904,10 @@ class Module_auth {
     /**
      * Confirm account unregistration.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Validates the current password and the unregistration code, removes the account, unlinks course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token. Warning: This action is irreversible!!!
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async confirmUnregistration(data: ConfirmPasswordRequestIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.confirmUnregistration", data)
@@ -1904,9 +1917,10 @@ class Module_auth {
     /**
      * Request an email address change.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Verifies the current password and emails a confirmation code to the current address and another to the new address. Requires authentication and a valid reCAPTCHA v3 token.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async requestChangeEmail(data: RequestChangeEmailIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.requestChangeEmail", data)
@@ -1916,9 +1930,10 @@ class Module_auth {
     /**
      * Confirm an email address change.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Validates the current password and both email confirmation codes, updates the account email, migrates course enrollments, and invalidates all sessions. Requires authentication and a valid reCAPTCHA v3 token.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async confirmChangeEmail(data: ConfirmChangeEmailIn): Promise<void> {
         const [output, ofiles] = await this.root.execute("auth.confirmChangeEmail", data)
@@ -1941,9 +1956,8 @@ class Module_misc {
     /**
      * Get version information of the API.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getApiVersion(): Promise<ApiVersion> {
         const [output, ofiles] = await this.root.execute("misc.getApiVersion", null)
@@ -1953,9 +1967,8 @@ class Module_misc {
     /**
      * Get requestion information.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getRequestInformation(): Promise<RequestInformation> {
         const [output, ofiles] = await this.root.execute("misc.getRequestInformation", null)
@@ -1965,9 +1978,8 @@ class Module_misc {
     /**
      * Get a fortune message.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getFortune(): Promise<string> {
         const [output, ofiles] = await this.root.execute("misc.getFortune", null)
@@ -1977,9 +1989,8 @@ class Module_misc {
     /**
      * Get server time.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getTime(): Promise<Time> {
         const [output, ofiles] = await this.root.execute("misc.getTime", null)
@@ -1989,9 +2000,8 @@ class Module_misc {
     /**
      * Get homepage stats.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getHomepageStats(): Promise<HomepageStats> {
         const [output, ofiles] = await this.root.execute("misc.getHomepageStats", null)
@@ -2001,9 +2011,8 @@ class Module_misc {
     /**
      * Get Jutge.org logo as a PNG file.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getLogo(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("misc.getLogo", null)
@@ -2013,9 +2022,10 @@ class Module_misc {
     /**
      * Returns all packs of avatars.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Avatars are used in exams and contests to identify students or participants.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getAvatarPacks(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("misc.getAvatarPacks", null)
@@ -2025,9 +2035,10 @@ class Module_misc {
     /**
      * Returns all exam icons.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Exam icon are used in exams and contests to identify problems.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getExamIcons(): Promise<TagsDict> {
         const [output, ofiles] = await this.root.execute("misc.getExamIcons", null)
@@ -2037,9 +2048,10 @@ class Module_misc {
     /**
      * Returns color mappings using colornames notation.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Color mappings may be used to colorize keys in the frontends. Color names are as defined in https://github.com/timoxley/colornames
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getColors(): Promise<ColorMapping> {
         const [output, ofiles] = await this.root.execute("misc.getColors", null)
@@ -2049,9 +2061,10 @@ class Module_misc {
     /**
      * Returns color mappings using hexadecimal color notation.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Color mappings may be used to colorize keys in the frontends.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getHexColors(): Promise<ColorMapping> {
         const [output, ofiles] = await this.root.execute("misc.getHexColors", null)
@@ -2061,9 +2074,8 @@ class Module_misc {
     /**
      * Returns code demos for a given compiler as a dictionary of base64 codes indexed by problem_nm.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getDemosForCompiler(compiler_id: string): Promise<Record<string, string>> {
         const [output, ofiles] = await this.root.execute(
@@ -2076,9 +2088,10 @@ class Module_misc {
     /**
      * Translate text from one language to another.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Source and target languages are ISO 639-1 codes. Use "auto" as the source language to detect it.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async translate(data: TranslationIn): Promise<TranslationOut> {
         const [output, ofiles] = await this.root.execute("misc.translate", data)
@@ -2101,9 +2114,10 @@ class Module_tables {
     /**
      * Returns all tables.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all compilers, countries, drivers, languages, proglangs, and verdicts in a single request. This data does not change often, so you should only request it once per session.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async get(): Promise<AllTables> {
         const [output, ofiles] = await this.root.execute("tables.get", null)
@@ -2113,9 +2127,10 @@ class Module_tables {
     /**
      * Returns all languages.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all languages as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getLanguages(): Promise<Record<string, Language>> {
         const [output, ofiles] = await this.root.execute("tables.getLanguages", null)
@@ -2125,9 +2140,10 @@ class Module_tables {
     /**
      * Returns all countries.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all countries as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getCountries(): Promise<Record<string, Country>> {
         const [output, ofiles] = await this.root.execute("tables.getCountries", null)
@@ -2137,9 +2153,10 @@ class Module_tables {
     /**
      * Returns all compilers.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all compilers as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getCompilers(): Promise<Record<string, Compiler>> {
         const [output, ofiles] = await this.root.execute("tables.getCompilers", null)
@@ -2149,9 +2166,10 @@ class Module_tables {
     /**
      * Returns all drivers.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all drivers as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getDrivers(): Promise<Record<string, Driver>> {
         const [output, ofiles] = await this.root.execute("tables.getDrivers", null)
@@ -2161,9 +2179,10 @@ class Module_tables {
     /**
      * Returns all verdicts.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all verdicts as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getVerdicts(): Promise<Record<string, Verdict>> {
         const [output, ofiles] = await this.root.execute("tables.getVerdicts", null)
@@ -2173,9 +2192,10 @@ class Module_tables {
     /**
      * Returns all proglangs.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all proglangs (porgramming languages) as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getProglangs(): Promise<Record<string, Proglang>> {
         const [output, ofiles] = await this.root.execute("tables.getProglangs", null)
@@ -2185,9 +2205,10 @@ class Module_tables {
     /**
      * Returns all timezones.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all timezones as a dictionary of objects, indexed by id.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async getTimezones(): Promise<Record<string, Timezone>> {
         const [output, ofiles] = await this.root.execute("tables.getTimezones", null)
@@ -2210,9 +2231,10 @@ class Module_courses {
     /**
      * Get all public courses.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Returns all courses marked as public, indexed by course key (`username:course_nm`).
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: any
      */
     async indexPublic(): Promise<PublicCourses> {
         const [output, ofiles] = await this.root.execute("courses.indexPublic", null)
@@ -2248,9 +2270,10 @@ class Module_problems {
     /**
      * Get all available abstract problems.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes problems.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getAllAbstractProblems(): Promise<Record<string, AbstractProblem>> {
         const [output, ofiles] = await this.root.execute(
@@ -2263,9 +2286,10 @@ class Module_problems {
     /**
      * Test of getting abstract problems
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Bla bla
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getAllAbstractProblemsRaw(): Promise<Record<string, AbstractProblem>> {
         const [output, ofiles] = await this.root.execute(
@@ -2278,9 +2302,10 @@ class Module_problems {
     /**
      * Get available abstract problems whose keys are in `problem_nms`.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes problems.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getAbstractProblems(problem_nms: string): Promise<Record<string, AbstractProblem>> {
         const [output, ofiles] = await this.root.execute(
@@ -2293,9 +2318,10 @@ class Module_problems {
     /**
      * Get some available abstract problems with a given regexp and a limit.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes problems.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getSomeAbstractProblems(
         data: GetSomeAbstractProblemsIn
@@ -2310,9 +2336,10 @@ class Module_problems {
     /**
      * Get available abstract problems that belong to a list.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes problems.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getAbstractProblemsInList(
         list_key: string
@@ -2327,9 +2354,10 @@ class Module_problems {
     /**
      * Get an abstract problem.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes problems
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getAbstractProblem(problem_nm: string): Promise<AbstractProblem> {
         const [output, ofiles] = await this.root.execute(
@@ -2342,9 +2370,10 @@ class Module_problems {
     /**
      * Get supplementary information of an abstract problem.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes accepted compilers and accepted proglangs
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getAbstractProblemSuppl(problem_nm: string): Promise<AbstractProblemSuppl> {
         const [output, ofiles] = await this.root.execute(
@@ -2357,9 +2386,10 @@ class Module_problems {
     /**
      * Get supplementary information of many abstract problems.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes accepted compilers and accepted proglangs. Keys are `problem_nm`s.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getManyAbstractProblemSuppl(problem_nms: string): Promise<AbstractProblemSuppls> {
         const [output, ofiles] = await this.root.execute(
@@ -2372,9 +2402,10 @@ class Module_problems {
     /**
      * Get a problem.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes abstract problem.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getProblem(problem_id: string): Promise<Problem> {
         const [output, ofiles] = await this.root.execute("problems.getProblem", problem_id)
@@ -2384,9 +2415,10 @@ class Module_problems {
     /**
      * Get supplementary information of a problem.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Includes accepted compilers, accepted proglangs, official solutions checks and handler specifications
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getProblemSuppl(problem_id: string): Promise<ProblemSuppl> {
         const [output, ofiles] = await this.root.execute("problems.getProblemSuppl", problem_id)
@@ -2396,9 +2428,8 @@ class Module_problems {
     /**
      * Get sample testcases of a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getSampleTestcases(problem_id: string): Promise<Testcase[]> {
         const [output, ofiles] = await this.root.execute(
@@ -2409,11 +2440,28 @@ class Module_problems {
     }
 
     /**
+     * Get sample session of a problem.
+     *
+     * The sample session is the sample.dt file that contains the sample input and output for a Python problem.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
+     */
+    async getSampleSession(problem_id: string): Promise<string> {
+        const [output, ofiles] = await this.root.execute(
+            "problems.getSampleSession",
+            problem_id
+        )
+        return output
+    }
+
+    /**
      * Get public testcases of a problem.
      *
-     * 🔐 Authentication: any
-     * No warnings
      * Public testcases are like sample testcases, but are not meant to be shown in the problem statatement, because of their long length.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: any
      */
     async getPublicTestcases(problem_id: string): Promise<Testcase[]> {
         const [output, ofiles] = await this.root.execute(
@@ -2426,9 +2474,8 @@ class Module_problems {
     /**
      * Get ZIP archive of a problem. This includes its statements, templates and public testcases.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getZipStatement(problem_id: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute("problems.getZipStatement", problem_id)
@@ -2438,9 +2485,8 @@ class Module_problems {
     /**
      * Get PDF statement of a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getPdfStatement(problem_id: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute("problems.getPdfStatement", problem_id)
@@ -2450,9 +2496,8 @@ class Module_problems {
     /**
      * Get Html statement of a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getHtmlStatement(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -2465,9 +2510,8 @@ class Module_problems {
     /**
      * Get Text statement of a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getTextStatement(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -2480,9 +2524,8 @@ class Module_problems {
     /**
      * Get Markdown statement of a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getMarkdownStatement(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -2495,9 +2538,8 @@ class Module_problems {
     /**
      * Get short Html statement of a problem (does not include title or author).
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getShortHtmlStatement(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -2510,9 +2552,8 @@ class Module_problems {
     /**
      * Get short Text statement of a problem (does not include title or author).
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getShortTextStatement(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -2525,9 +2566,8 @@ class Module_problems {
     /**
      * Get short Markdown statement of a problem (does not include title or author).
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getShortMarkdownStatement(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -2540,9 +2580,8 @@ class Module_problems {
     /**
      * Get list of template files of a problem (`main.*`, `code.*`, `public.tar`, etc.).
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getTemplates(problem_id: string): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("problems.getTemplates", problem_id)
@@ -2552,9 +2591,8 @@ class Module_problems {
     /**
      * Get a template file of a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async getTemplate(data: {
         problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
@@ -2567,9 +2605,10 @@ class Module_problems {
     /**
      * Get list of proglangs for which the problem has an official solution.
      *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
      * Permission is granted to admins, the problem owner, or any instructor if solutions are shared.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructorOrAdmin
      */
     async getSolutions(problem_id: string): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("problems.getSolutions", problem_id)
@@ -2579,9 +2618,10 @@ class Module_problems {
     /**
      * Get official solution for a problem in proglang as a string in base64.
      *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
      * Permission is granted to admins, the problem owner, or any instructor if solutions are shared.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructorOrAdmin
      */
     async getSolutionAsB64(data: {
         problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
@@ -2594,9 +2634,10 @@ class Module_problems {
     /**
      * Get official solution for a problem in proglang as a file.
      *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
      * Permission is granted to admins, the problem owner, or any instructor if solutions are shared.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructorOrAdmin
      */
     async getSolutionAsFile(data: {
         problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
@@ -2609,9 +2650,10 @@ class Module_problems {
     /**
      * Get names of all testcases of a problem.
      *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
      * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructorOrAdmin
      */
     async getTestcases(problem_id: string): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("problems.getTestcases", problem_id)
@@ -2621,9 +2663,10 @@ class Module_problems {
     /**
      * Get one testcase of a problem (input and correct output as base64).
      *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
      * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructorOrAdmin
      */
     async getTestcase(data: {
         problem_id: string /* The problem ID (`problem_nm` + "_" + `lang_id`). */
@@ -2636,9 +2679,10 @@ class Module_problems {
     /**
      * Get all testcases of a problem.
      *
-     * 🔐 Authentication: instructorOrAdmin
-     * No warnings
      * Permission is granted to admins, the problem owner, or any instructor if testcases are shared.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructorOrAdmin
      */
     async getAllTestcases(problem_id: string): Promise<Testcase[]> {
         const [output, ofiles] = await this.root.execute("problems.getAllTestcases", problem_id)
@@ -2648,9 +2692,8 @@ class Module_problems {
     /**
      * Get results for a semantic search for statement problems. The array is sorted by score (better at the top).
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async semanticSearch(data: {
         query: string /* The query string to search for. */
@@ -2663,9 +2706,8 @@ class Module_problems {
     /**
      * Get results for a full text search for statement problems. The array is sorted by score (better at the top). Queries are matched against titles and statements and can use boolean operators.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: any
-     * No warnings
-     *
      */
     async fullTextSearch(data: {
         query: string /* The query string to search for. */
@@ -2731,9 +2773,8 @@ class Module_student_keys {
     /**
      * Get problem, courses (as enrolled and available) and list keys.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async get(): Promise<AllKeys> {
         const [output, ofiles] = await this.root.execute("student.keys.get", null)
@@ -2743,9 +2784,8 @@ class Module_student_keys {
     /**
      * Get problem keys.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getProblems(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("student.keys.getProblems", null)
@@ -2755,9 +2795,8 @@ class Module_student_keys {
     /**
      * Get enrolled course keys.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getEnrolledCourses(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -2770,9 +2809,8 @@ class Module_student_keys {
     /**
      * Get available course keys.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAvailableCourses(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -2785,9 +2823,8 @@ class Module_student_keys {
     /**
      * Get list keys.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getLists(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("student.keys.getLists", null)
@@ -2810,9 +2847,8 @@ class Module_student_profile {
     /**
      * Get the profile.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     * In case of exams, some fields are not nullified to avoid cheating.
      */
     async get(): Promise<Profile> {
         const [output, ofiles] = await this.root.execute("student.profile.get", null)
@@ -2822,9 +2858,8 @@ class Module_student_profile {
     /**
      * Returns the avatar as a PNG file.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAvatar(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("student.profile.getAvatar", null)
@@ -2834,9 +2869,10 @@ class Module_student_profile {
     /**
      * Download a zip archive with all submissions.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Entries sit under a folder named with the user email. Each problem directory contains a YAML summary and, when the source is stored, the program.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async downloadSubmissions(): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
@@ -2849,9 +2885,10 @@ class Module_student_profile {
     /**
      * Download a zip archive with all trading cards.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Entries sit under a folder named with the user email. Images of owned cards are placed in a cards folder.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async downloadCards(): Promise<Download> {
         const [output, ofiles] = await this.root.execute("student.profile.downloadCards", null)
@@ -2861,9 +2898,8 @@ class Module_student_profile {
     /**
      * Update the profile
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async update(data: NewProfile): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.profile.update", data)
@@ -2873,9 +2909,8 @@ class Module_student_profile {
     /**
      * Update the avatar with new PNG.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async updateAvatar(ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.profile.updateAvatar", null, [
@@ -2887,9 +2922,10 @@ class Module_student_profile {
     /**
      * Update password.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Receives the old password and the new one, and changes the password if the old one is correct and the new one strong enough.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async updatePassword(data: NewPassword): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.profile.updatePassword", data)
@@ -2912,9 +2948,8 @@ class Module_student_dashboard {
     /**
      * Get the ranking of the user over all users in the system.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAbsoluteRanking(): Promise<number> {
         const [output, ofiles] = await this.root.execute(
@@ -2927,9 +2962,8 @@ class Module_student_dashboard {
     /**
      * Get all distributions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAllDistributions(): Promise<AllDistributions> {
         const [output, ofiles] = await this.root.execute(
@@ -2942,9 +2976,8 @@ class Module_student_dashboard {
     /**
      * Get compilers distribution.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCompilersDistribution(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute(
@@ -2957,9 +2990,8 @@ class Module_student_dashboard {
     /**
      * Get dashboard.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getDashboard(): Promise<Dashboard> {
         const [output, ofiles] = await this.root.execute("student.dashboard.getDashboard", null)
@@ -2969,9 +3001,8 @@ class Module_student_dashboard {
     /**
      * Get heatmap calendar of submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getHeatmapCalendar(): Promise<HeatmapCalendar> {
         const [output, ofiles] = await this.root.execute(
@@ -2984,9 +3015,8 @@ class Module_student_dashboard {
     /**
      * Get programming languages distribution.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getProglangsDistribution(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute(
@@ -2999,9 +3029,8 @@ class Module_student_dashboard {
     /**
      * Get dashboard stats.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getStats(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute("student.dashboard.getStats", null)
@@ -3011,9 +3040,8 @@ class Module_student_dashboard {
     /**
      * Get fancy Jutge level.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getLevel(): Promise<string> {
         const [output, ofiles] = await this.root.execute("student.dashboard.getLevel", null)
@@ -3023,9 +3051,8 @@ class Module_student_dashboard {
     /**
      * Get submissions by hour distribution.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getSubmissionsByHour(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute(
@@ -3038,9 +3065,8 @@ class Module_student_dashboard {
     /**
      * Get submissions by weekday distribution.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getSubmissionsByWeekDay(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute(
@@ -3053,9 +3079,8 @@ class Module_student_dashboard {
     /**
      * Get verdicts distribution.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getVerdictsDistribution(): Promise<Distribution> {
         const [output, ofiles] = await this.root.execute(
@@ -3081,9 +3106,10 @@ class Module_student_submissions {
     /**
      * Get index of all submissions for an abstract problem.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Grouped by problem.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: user
      */
     async indexForAbstractProblem(
         problem_nm: string
@@ -3098,9 +3124,8 @@ class Module_student_submissions {
     /**
      * Get index of all submissions for a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async indexForProblem(problem_id: string): Promise<Record<string, Submission>> {
         const [output, ofiles] = await this.root.execute(
@@ -3113,9 +3138,10 @@ class Module_student_submissions {
     /**
      * Get all submissions for a list of abstract problems.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Flat array of submissions from newer to older.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: user
      */
     async getForAbstractProblems(problem_nms: string): Promise<Submission[]> {
         const [output, ofiles] = await this.root.execute(
@@ -3128,9 +3154,10 @@ class Module_student_submissions {
     /**
      * Get all submissions.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Flat array of submissions from newer to older.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: user
      */
     async getAll(): Promise<Submission[]> {
         const [output, ofiles] = await this.root.execute("student.submissions.getAll", null)
@@ -3140,9 +3167,10 @@ class Module_student_submissions {
     /**
      * Get list of submissions in a range of dates.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Flat array of submissions from newer to older for a given range of dates.
+     *
+     * 🗂️ Domains: jutge, exam, contest
+     * 🔐 Authentication: user
      */
     async getRange(data: DateRange2): Promise<Submission[]> {
         const [output, ofiles] = await this.root.execute("student.submissions.getRange", data)
@@ -3152,9 +3180,8 @@ class Module_student_submissions {
     /**
      * Submit a solution to the Judge, easy interface.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async submit(data: {
         problem_id: string
@@ -3169,9 +3196,8 @@ class Module_student_submissions {
     /**
      * Submit a solution to the Judge, full interface.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async submitFull(data: NewSubmissionIn, ifiles: File[]): Promise<NewSubmissionOut> {
         const [output, ofiles] = await this.root.execute(
@@ -3185,9 +3211,8 @@ class Module_student_submissions {
     /**
      * Get a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async get(data: GetGameResultIn): Promise<Submission> {
         const [output, ofiles] = await this.root.execute("student.submissions.get", data)
@@ -3197,9 +3222,8 @@ class Module_student_submissions {
     /**
      * Get code for a submission as a string in base64.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCodeAsB64(data: GetGameResultIn): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -3212,9 +3236,8 @@ class Module_student_submissions {
     /**
      * Get compilation errors for a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCompilationErrors(data: GetGameResultIn): Promise<CompilationErrors> {
         const [output, ofiles] = await this.root.execute(
@@ -3227,9 +3250,8 @@ class Module_student_submissions {
     /**
      * Get code metrics for a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCodeMetrics(data: GetGameResultIn): Promise<CodeMetricsResult> {
         const [output, ofiles] = await this.root.execute(
@@ -3242,9 +3264,8 @@ class Module_student_submissions {
     /**
      * Get partial scoring for a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getScoring(data: GetGameResultIn): Promise<Scoring> {
         const [output, ofiles] = await this.root.execute("student.submissions.getScoring", data)
@@ -3254,9 +3275,8 @@ class Module_student_submissions {
     /**
      * Get list of awards ids for a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAwards(data: GetGameResultIn): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("student.submissions.getAwards", data)
@@ -3266,9 +3286,8 @@ class Module_student_submissions {
     /**
      * Get analysis of a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAnalysis(data: GetGameResultIn): Promise<SubmissionAnalysis[]> {
         const [output, ofiles] = await this.root.execute(
@@ -3279,11 +3298,10 @@ class Module_student_submissions {
     }
 
     /**
-     * Get a (public) testcase analysis of a submission.
+     * Get a testcase analysis of a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getTestcaseAnalysis(data: {
         problem_id: string
@@ -3300,9 +3318,8 @@ class Module_student_submissions {
     /**
      * Get the modules of a circuit submission. Only for circuits. Each element is an SVG string.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCircuitModules(data: GetGameResultIn): Promise<Record<string, string>> {
         const [output, ofiles] = await this.root.execute(
@@ -3315,9 +3332,8 @@ class Module_student_submissions {
     /**
      * Get the error report traces of a circuit submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCircuitTracesJson(data: GetGameResultIn): Promise<Settings> {
         const [output, ofiles] = await this.root.execute(
@@ -3330,9 +3346,8 @@ class Module_student_submissions {
     /**
      * Get the error report traces of a circuit submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getCircuitTracesSvg(data: GetGameResultIn): Promise<Record<string, string>> {
         const [output, ofiles] = await this.root.execute(
@@ -3345,9 +3360,8 @@ class Module_student_submissions {
     /**
      * Get the result of a game submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getGameResult(data: GetGameResultIn): Promise<GetGameResultOut> {
         const [output, ofiles] = await this.root.execute(
@@ -3360,9 +3374,8 @@ class Module_student_submissions {
     /**
      * Get the output of a game in a game submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getGameOutput(data: GetGameOutputIn): Promise<string> {
         const [output, ofiles] = await this.root.execute(
@@ -3375,9 +3388,8 @@ class Module_student_submissions {
     /**
      * Get debug information for a submission.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getDebugInformation(data: GetGameResultIn): Promise<DebugInformation | null> {
         const [output, ofiles] = await this.root.execute(
@@ -3403,9 +3415,8 @@ class Module_student_courses {
     /**
      * Get index of all available courses.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async indexAvailable(): Promise<Record<string, BriefCourse>> {
         const [output, ofiles] = await this.root.execute("student.courses.indexAvailable", null)
@@ -3415,9 +3426,8 @@ class Module_student_courses {
     /**
      * Get index of all enrolled courses.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async indexEnrolled(): Promise<Record<string, BriefCourse>> {
         const [output, ofiles] = await this.root.execute("student.courses.indexEnrolled", null)
@@ -3427,9 +3437,10 @@ class Module_student_courses {
     /**
      * Get an available course.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Includes owner and lists.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async getAvailable(course_key: string): Promise<Course> {
         const [output, ofiles] = await this.root.execute(
@@ -3442,9 +3453,10 @@ class Module_student_courses {
     /**
      * Get an enrolled course.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Includes owner and lists.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async getEnrolled(course_key: string): Promise<Course> {
         const [output, ofiles] = await this.root.execute(
@@ -3457,9 +3469,8 @@ class Module_student_courses {
     /**
      * Enroll in an available course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async enroll(course_key: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.courses.enroll", course_key)
@@ -3469,9 +3480,8 @@ class Module_student_courses {
     /**
      * Unenroll from an enrolled course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async unenroll(course_key: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.courses.unenroll", course_key)
@@ -3481,9 +3491,8 @@ class Module_student_courses {
     /**
      * Get the keys of all archived courses.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getArchivedKeys(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -3496,9 +3505,8 @@ class Module_student_courses {
     /**
      * Archive an enrolled course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async archive(course_key: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.courses.archive", course_key)
@@ -3508,9 +3516,8 @@ class Module_student_courses {
     /**
      * Unarchive an archived course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async unArchive(course_key: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -3536,9 +3543,8 @@ class Module_student_lists {
     /**
      * Get all lists.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<Record<string, BriefList>> {
         const [output, ofiles] = await this.root.execute("student.lists.getAll", null)
@@ -3548,9 +3554,10 @@ class Module_student_lists {
     /**
      * Get a list.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Includes items, owner.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async get(list_key: string): Promise<List> {
         const [output, ofiles] = await this.root.execute("student.lists.get", list_key)
@@ -3560,9 +3567,10 @@ class Module_student_lists {
     /**
      * Get many lists.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Includes items, owner. Keys are `list_key`s.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async getMany(list_keys: string): Promise<Record<string, List>> {
         const [output, ofiles] = await this.root.execute("student.lists.getMany", list_keys)
@@ -3585,9 +3593,10 @@ class Module_student_passcodes {
     /**
      * Store the passcode of a problem.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * Fails if the problem does not exist, has no passcode, or the given passcode does not match.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async add(data: Passcode): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.passcodes.add", data)
@@ -3597,9 +3606,8 @@ class Module_student_passcodes {
     /**
      * Remove the stored problem passcode of a problem.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async remove(problem_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.passcodes.remove", problem_nm)
@@ -3609,9 +3617,8 @@ class Module_student_passcodes {
     /**
      * Get all problem passcodes stored, sorted by problem name.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<Passcode[]> {
         const [output, ofiles] = await this.root.execute("student.passcodes.getAll", null)
@@ -3634,9 +3641,10 @@ class Module_student_exam {
     /**
      * Get list of ready exams.
      *
-     * 🔐 Authentication: user
-     * No warnings
      * An exam is ready if the current time is between its expected start time minus two days and its expected end time plus two days. Exams are sorted by their distance to the current time and by title order in case of ties.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: user
      */
     async getReadyExams(): Promise<ReadyExam[]> {
         const [output, ofiles] = await this.root.execute("student.exam.getReadyExams", null)
@@ -3646,9 +3654,8 @@ class Module_student_exam {
     /**
      * Get current exam.
      *
+     * 🗂️ Domains: exam, contest
      * 🔐 Authentication: exam
-     * No warnings
-     *
      */
     async get(): Promise<RunningExam> {
         const [output, ofiles] = await this.root.execute("student.exam.get", null)
@@ -3658,9 +3665,8 @@ class Module_student_exam {
     /**
      * Get a document in an exam.
      *
+     * 🗂️ Domains: exam, contest
      * 🔐 Authentication: exam
-     * No warnings
-     *
      */
     async getDocument(document_nm: string): Promise<RunningExamDocument> {
         const [output, ofiles] = await this.root.execute(
@@ -3673,9 +3679,8 @@ class Module_student_exam {
     /**
      * Get PDF of a document in an exam.
      *
+     * 🗂️ Domains: exam, contest
      * 🔐 Authentication: exam
-     * No warnings
-     *
      */
     async getDocumentPdf(document_nm: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
@@ -3688,9 +3693,8 @@ class Module_student_exam {
     /**
      * Get ranking of the current contest.
      *
+     * 🗂️ Domains: exam, contest
      * 🔐 Authentication: exam
-     * No warnings
-     *
      */
     async getRanking(): Promise<Ranking> {
         const [output, ofiles] = await this.root.execute("student.exam.getRanking", null)
@@ -3700,9 +3704,8 @@ class Module_student_exam {
     /**
      * Mark the current exam as finished.
      *
+     * 🗂️ Domains: exam, contest
      * 🔐 Authentication: exam
-     * No warnings
-     *
      */
     async finishExam(): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.exam.finishExam", null)
@@ -3725,9 +3728,8 @@ class Module_student_exams {
     /**
      * Get all exams linked to the user.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<BriefExams> {
         const [output, ofiles] = await this.root.execute("student.exams.getAll", null)
@@ -3737,9 +3739,8 @@ class Module_student_exams {
     /**
      * Get an exam linked to the user.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async get(exam_key: string): Promise<Exam> {
         const [output, ofiles] = await this.root.execute("student.exams.get", exam_key)
@@ -3762,9 +3763,8 @@ class Module_student_statuses {
     /**
      * Get statuses for all abstract problems.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<Record<string, AbstractStatus>> {
         const [output, ofiles] = await this.root.execute("student.statuses.getAll", null)
@@ -3774,9 +3774,8 @@ class Module_student_statuses {
     /**
      * Get status for an abstract problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getForAbstractProblem(problem_nm: string): Promise<AbstractStatus> {
         const [output, ofiles] = await this.root.execute(
@@ -3789,9 +3788,8 @@ class Module_student_statuses {
     /**
      * Get status for a problem.
      *
+     * 🗂️ Domains: jutge, exam, contest
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getForProblem(problem_id: string): Promise<Status> {
         const [output, ofiles] = await this.root.execute(
@@ -3817,9 +3815,8 @@ class Module_student_awards {
     /**
      * Get all awards.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<Record<string, BriefAward>> {
         const [output, ofiles] = await this.root.execute("student.awards.getAll", null)
@@ -3829,9 +3826,8 @@ class Module_student_awards {
     /**
      * Get an award.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async get(award_id: string): Promise<Award> {
         const [output, ofiles] = await this.root.execute("student.awards.get", award_id)
@@ -3854,9 +3850,8 @@ class Module_student_settings {
     /**
      * Get all user settings.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<Settings> {
         const [output, ofiles] = await this.root.execute("student.settings.getAll", null)
@@ -3866,9 +3861,8 @@ class Module_student_settings {
     /**
      * Get a user setting by key.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async get(key: string): Promise<any> {
         const [output, ofiles] = await this.root.execute("student.settings.get", key)
@@ -3878,9 +3872,8 @@ class Module_student_settings {
     /**
      * Set a user setting.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async set(data: Setting): Promise<void> {
         const [output, ofiles] = await this.root.execute("student.settings.set", data)
@@ -3903,9 +3896,8 @@ class Module_student_tradingCards {
     /**
      * Get all trading cards.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: user
-     * No warnings
-     *
      */
     async getAll(): Promise<TradingCards> {
         const [output, ofiles] = await this.root.execute("student.tradingCards.getAll", null)
@@ -3921,6 +3913,7 @@ class Module_student_tradingCards {
 class Module_tutor {
     private readonly root: JutgeApiClient
 
+    readonly examctl: Module_tutor_examctl
     readonly courses: Module_tutor_courses
     readonly profile: Module_tutor_profile
     readonly statuses: Module_tutor_statuses
@@ -3928,10 +3921,279 @@ class Module_tutor {
 
     constructor(root: JutgeApiClient) {
         this.root = root
+        this.examctl = new Module_tutor_examctl(root)
         this.courses = new Module_tutor_courses(root)
         this.profile = new Module_tutor_profile(root)
         this.statuses = new Module_tutor_statuses(root)
         this.submissions = new Module_tutor_submissions(root)
+    }
+}
+
+/**
+ *
+ *
+This module is used to control live exams (and constests, because contests are just exams with a public ranking).
+
+This module is available for instructors of the exam and for tutors enrolled in the exam's course.
+
+Current interface is still experimental and may change in the future.
+
+ *
+ */
+class Module_tutor_examctl {
+    private readonly root: JutgeApiClient
+
+    constructor(root: JutgeApiClient) {
+        this.root = root
+    }
+
+    /**
+     * Get the status of the exam.
+     *
+     * Returns waiting, started, or finished, plus the start time and the latest end time among students who have not finished.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async getStatus(): Promise<{
+        status: string /* waiting, started, or finished */
+        time_start: Iso8601Date | null
+        time_end: Iso8601Date | null
+    }> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.getStatus", null)
+        return output
+    }
+
+    /**
+     * List every student in the live exam.
+     *
+     * Returns each student with first login, computed end time, entry, finish, ban, and invite flags, and distinct submission and login IPs.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async liveRoster(): Promise<
+        {
+            email: string /* Email of the student */
+            name: string /* Name of the student */
+            start_time: Iso8601Date | null
+            end_time: Iso8601Date | null
+            entered: number /* Whether the student has entered the exam */
+            finished: number /* Whether the student has finished */
+            banned: number /* Whether the student is banned */
+            invited: number /* Whether the student is invited */
+            submission_ips: string[] /* Distinct submission IP addresses */
+            login_ips: string[] /* Distinct login IP addresses */
+        }[]
+    > {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.liveRoster", null)
+        return output
+    }
+
+    /**
+     * Get the latest submissions of the exam.
+     *
+     * Returns the most recent submissions, up to the given limit, with email, problem, verdict, and compiler.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async latestSubmissions(data: {
+        limit: number /* Maximum number of submissions to return */
+    }): Promise<
+        {
+            email: string /* Email of the student */
+            problem: string /* Problem name */
+            verdict: string | null
+            verdict_info: string | null
+            time_in: Iso8601Date /* Submission time */
+            problem_id: string /* Problem id */
+            compiler_id: string /* Compiler id */
+        }[]
+    > {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.examctl.latestSubmissions",
+            data
+        )
+        return output
+    }
+
+    /**
+     * List students who logged in from more than one IP.
+     *
+     * Returns each student with more than one distinct login IP, and the time of each login.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async multipleIPs(): Promise<
+        {
+            email: string /* Email of the student */
+            name: string /* Name of the student */
+            ips: {
+                ip: string /* Login IP address */
+                at: Iso8601Date /* Login time */
+            }[] /* Login IP addresses and times */
+        }[]
+    > {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.multipleIPs", null)
+        return output
+    }
+
+    /**
+     * Get statistics of the exam.
+     *
+     * Returns verdict, status, compiler, and language counts by problem, plus submission counts bucketed over time.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async getStatistics(): Promise<ExamStatistics> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.getStatistics", null)
+        return output
+    }
+
+    /**
+     * Get the ranking.
+     *
+     * Under development.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async getRanking(): Promise<Ranking> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.getRanking", null)
+        return output
+    }
+
+    /**
+     * Start an exam.
+     *
+     * Starts an exam, saving who has started it and its start time.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async start(): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.start", null)
+        return output
+    }
+
+    /**
+     * Finish one student.
+     *
+     * Sets the student as finished, ending access to the exam.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async finish(data: { email: string /* Email of the student */ }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.finish", data)
+        return output
+    }
+
+    /**
+     * Unfinish one student.
+     *
+     * Clears the finished flag and reopens access to the exam.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async unfinish(data: { email: string /* Email of the student */ }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.unfinish", data)
+        return output
+    }
+
+    /**
+     * Ban one student.
+     *
+     * Sets the student as banned and stores the reason, ending their access to the exam.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async ban(data: {
+        email: string /* Email of the student */
+        reason_ban: string /* Reason the student is banned */
+    }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.ban", data)
+        return output
+    }
+
+    /**
+     * Unban one student.
+     *
+     * Clears the banned flag and the ban reason, restoring access to the exam.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async unban(data: { email: string /* Email of the student */ }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.unban", data)
+        return output
+    }
+
+    /**
+     * Invite one student.
+     *
+     * Marks the student as invited, leaving the student out of the ranking. Only available when the exam is a contest.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async invite(data: { email: string /* Email of the student */ }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.invite", data)
+        return output
+    }
+
+    /**
+     * Uninvite one student.
+     *
+     * Clears the invited flag so the student is included in the ranking. Only available when the exam is a contest.
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async uninvite(data: { email: string /* Email of the student */ }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.uninvite", data)
+        return output
+    }
+
+    /**
+     * Add or remove minutes for every student.
+     *
+     * Adds minutes for every student. Negative values remove time. The reason is appended, separated by "; ".
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async addMinutes(data: {
+        minutes: number /* Minutes to add. A negative value removes time. */
+        reason_inc: string /* Reason for the time change, appended to the existing reason */
+    }): Promise<void> {
+        const [output, ofiles] = await this.root.execute("tutor.examctl.addMinutes", data)
+        return output
+    }
+
+    /**
+     * Add or remove minutes for one student.
+     *
+     * Adds minutes for one student. Negative values remove time. The reason is appended, separated by "; ".
+     *
+     * 🗂️ Domains: exam, contest
+     * 🔐 Authentication: examctl
+     */
+    async addStudentMinutes(data: {
+        email: string /* Email of the student */
+        minutes: number /* Minutes to add. A negative value removes time. */
+        reason_inc: string /* Reason for the time change, appended to the existing reason */
+    }): Promise<void> {
+        const [output, ofiles] = await this.root.execute(
+            "tutor.examctl.addStudentMinutes",
+            data
+        )
+        return output
     }
 }
 
@@ -3950,9 +4212,10 @@ class Module_tutor_courses {
     /**
      * Get course keys the user can tutorize.
      *
-     * 🔐 Authentication: tutor
-     * No warnings
      * Returns courses where the user is enrolled as a tutor.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: tutor
      */
     async getCoursesKeys(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("tutor.courses.getCoursesKeys", null)
@@ -3962,9 +4225,10 @@ class Module_tutor_courses {
     /**
      * Get students enrolled in a course.
      *
-     * 🔐 Authentication: tutor
-     * No warnings
      * Returns name and email for each student enrolled in the given course. Gated to courses the user can tutorize.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: tutor
      */
     async getEnrolledStudents(course_key: string): Promise<EnrolledStudent[]> {
         const [output, ofiles] = await this.root.execute(
@@ -3977,9 +4241,10 @@ class Module_tutor_courses {
     /**
      * Get tutors enrolled in a course.
      *
-     * 🔐 Authentication: tutor
-     * No warnings
      * Returns name and email for each tutor enrolled in the given course. Gated to courses the user can tutorize.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: tutor
      */
     async getEnrolledTutors(course_key: string): Promise<EnrolledStudent[]> {
         const [output, ofiles] = await this.root.execute(
@@ -3992,9 +4257,10 @@ class Module_tutor_courses {
     /**
      * Get all submissions for a course.
      *
-     * 🔐 Authentication: tutor
-     * No warnings
      * Returns all submissions for all problems in all lists of the course, from all enrolled students. Each submission includes the student user uid, email, time, problem id, verdict, compiler id, and programming language. Gated to courses the user can tutorize.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: tutor
      */
     async getCourseSubmissions(course_key: string): Promise<CourseSubmission[]> {
         const [output, ofiles] = await this.root.execute(
@@ -4020,9 +4286,10 @@ class Module_tutor_profile {
     /**
      * Get the public profile of a student.
      *
-     * 🔐 Authentication: tutor
-     * No warnings
      * Returns the public profile for the given email. Gated to students enrolled in courses the user can tutorize.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: tutor
      */
     async get(email: string): Promise<PublicProfile> {
         const [output, ofiles] = await this.root.execute("tutor.profile.get", email)
@@ -4032,9 +4299,10 @@ class Module_tutor_profile {
     /**
      * Returns the avatar of a student as a PNG file.
      *
-     * 🔐 Authentication: tutor
-     * No warnings
      * Returns the avatar for the given email. Gated to students enrolled in courses the user can tutorize.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: tutor
      */
     async getAvatar(email: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute("tutor.profile.getAvatar", email)
@@ -4057,9 +4325,8 @@ class Module_tutor_statuses {
     /**
      * Get statuses for all abstract problems in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getAll(data: {
         course_key: string
@@ -4072,9 +4339,8 @@ class Module_tutor_statuses {
     /**
      * Get status for an abstract problem in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getForAbstractProblem(data: {
         course_key: string
@@ -4091,9 +4357,8 @@ class Module_tutor_statuses {
     /**
      * Get status for a problem in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getForProblem(data: {
         course_key: string
@@ -4120,9 +4385,8 @@ class Module_tutor_submissions {
     /**
      * Get index of all submissions for an abstract problem in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async indexForAbstractProblem(data: {
         course_key: string
@@ -4139,9 +4403,8 @@ class Module_tutor_submissions {
     /**
      * Get index of all submissions for a problem in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async indexForProblem(data: {
         course_key: string
@@ -4158,9 +4421,8 @@ class Module_tutor_submissions {
     /**
      * Get all submissions for a list of abstract problems in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getForAbstractProblems(data: {
         course_key: string
@@ -4177,9 +4439,8 @@ class Module_tutor_submissions {
     /**
      * Get all submissions for a supervised student in a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getAll(data: { course_key: string; email: string }): Promise<TutorSubmission[]> {
         const [output, ofiles] = await this.root.execute("tutor.submissions.getAll", data)
@@ -4189,9 +4450,8 @@ class Module_tutor_submissions {
     /**
      * Get a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async get(data: {
         course_key: string
@@ -4206,9 +4466,8 @@ class Module_tutor_submissions {
     /**
      * Get code for a submission as a string in base64.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getCodeAsB64(data: {
         course_key: string
@@ -4223,9 +4482,8 @@ class Module_tutor_submissions {
     /**
      * Get compilation errors for a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getCompilationErrors(data: {
         course_key: string
@@ -4243,9 +4501,8 @@ class Module_tutor_submissions {
     /**
      * Get code metrics for a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getCodeMetrics(data: {
         course_key: string
@@ -4263,9 +4520,8 @@ class Module_tutor_submissions {
     /**
      * Get partial scoring for a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getScoring(data: {
         course_key: string
@@ -4280,9 +4536,8 @@ class Module_tutor_submissions {
     /**
      * Get list of awards ids for a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getAwards(data: {
         course_key: string
@@ -4297,9 +4552,8 @@ class Module_tutor_submissions {
     /**
      * Get analysis of a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getAnalysis(data: {
         course_key: string
@@ -4314,9 +4568,8 @@ class Module_tutor_submissions {
     /**
      * Get a (public) testcase analysis of a submission.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: tutor
-     * No warnings
-     *
      */
     async getTestcaseAnalysis(data: {
         course_key: string
@@ -4378,9 +4631,8 @@ class Module_instructor_documents {
     /**
      * Get index of all documents.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async index(): Promise<Record<string, Document>> {
         const [output, ofiles] = await this.root.execute("instructor.documents.index", null)
@@ -4390,9 +4642,10 @@ class Module_instructor_documents {
     /**
      * Get a document.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * The file content is not included in the response.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async get(document_nm: string): Promise<Document> {
         const [output, ofiles] = await this.root.execute(
@@ -4405,9 +4658,8 @@ class Module_instructor_documents {
     /**
      * Get PDF of a document.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getPdf(document_nm: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
@@ -4420,9 +4672,8 @@ class Module_instructor_documents {
     /**
      * Get ZIP of a document.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getZip(document_nm: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
@@ -4435,9 +4686,8 @@ class Module_instructor_documents {
     /**
      * Create a new document.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async create(data: DocumentCreation, ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.documents.create", data, [
@@ -4449,9 +4699,8 @@ class Module_instructor_documents {
     /**
      * Update a document.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async update(data: DocumentCreation, ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.documents.update", data, [
@@ -4463,9 +4712,8 @@ class Module_instructor_documents {
     /**
      * Remove a document.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async remove(document_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -4491,9 +4739,8 @@ class Module_instructor_lists {
     /**
      * Get index of all lists.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async index(): Promise<Record<string, InstructorBriefList>> {
         const [output, ofiles] = await this.root.execute("instructor.lists.index", null)
@@ -4503,9 +4750,8 @@ class Module_instructor_lists {
     /**
      * Get a list.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async get(list_nm: string): Promise<InstructorList> {
         const [output, ofiles] = await this.root.execute("instructor.lists.get", list_nm)
@@ -4515,9 +4761,8 @@ class Module_instructor_lists {
     /**
      * Create a new list.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async create(data: InstructorListCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.create", data)
@@ -4527,9 +4772,8 @@ class Module_instructor_lists {
     /**
      * Update an existing list.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async update(data: InstructorListCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.update", data)
@@ -4539,9 +4783,8 @@ class Module_instructor_lists {
     /**
      * Delete an existing list.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async remove(list_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.remove", list_nm)
@@ -4551,9 +4794,10 @@ class Module_instructor_lists {
     /**
      * Get the list of lists that are archived.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * At some point, endpoints related to archiving lists should change as the archive bit will be an attribute of each list.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getArchived(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("instructor.lists.getArchived", null)
@@ -4563,9 +4807,8 @@ class Module_instructor_lists {
     /**
      * Archive a list.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async archive(list_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.archive", list_nm)
@@ -4575,9 +4818,8 @@ class Module_instructor_lists {
     /**
      * Unarchive a list.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async unarchive(list_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.lists.unarchive", list_nm)
@@ -4610,9 +4852,8 @@ class Module_instructor_courses {
     /**
      * Get index of all courses.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async index(): Promise<Record<string, InstructorBriefCourse>> {
         const [output, ofiles] = await this.root.execute("instructor.courses.index", null)
@@ -4622,9 +4863,8 @@ class Module_instructor_courses {
     /**
      * Get a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async get(course_nm: string): Promise<InstructorCourse> {
         const [output, ofiles] = await this.root.execute("instructor.courses.get", course_nm)
@@ -4634,9 +4874,10 @@ class Module_instructor_courses {
     /**
      * Create a new course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Only invited students and tutors are taken into account. Enrolled and pending students and tutors are ignored, as these are managed by the system.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async create(data: InstructorCourseCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.create", data)
@@ -4646,9 +4887,10 @@ class Module_instructor_courses {
     /**
      * Update an existing course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Only invited students and tutors are taken into account. Enrolled and pending students and tutors are ignored, as these are managed by the system.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async update(data: InstructorCourseUpdate): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.update", data)
@@ -4658,9 +4900,10 @@ class Module_instructor_courses {
     /**
      * Delete an existing course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * A course should not be deleted. Ask a system administrator to remove it if you really need it.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async remove(course_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.courses.remove", course_nm)
@@ -4670,9 +4913,10 @@ class Module_instructor_courses {
     /**
      * Send invite email to pending students in the course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Please do not abuse.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async sendInviteToStudents(course_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -4685,9 +4929,10 @@ class Module_instructor_courses {
     /**
      * Send invite email to pending tutors in the course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Please do not abuse.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async sendInviteToTutors(course_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -4700,9 +4945,8 @@ class Module_instructor_courses {
     /**
      * Get the profiles of the students enrolled in the course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getStudentProfiles(course_nm: string): Promise<Record<string, StudentProfile>> {
         const [output, ofiles] = await this.root.execute(
@@ -4715,9 +4959,8 @@ class Module_instructor_courses {
     /**
      * Get the profiles of the tutors enrolled in the course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getTutorProfiles(course_nm: string): Promise<Record<string, StudentProfile>> {
         const [output, ofiles] = await this.root.execute(
@@ -4730,9 +4973,10 @@ class Module_instructor_courses {
     /**
      * Get the list of courses that are archived.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * At some point, endpoints related to archiving courses should change as the archive bit will be an attribute of each course.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getArchived(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("instructor.courses.getArchived", null)
@@ -4742,9 +4986,8 @@ class Module_instructor_courses {
     /**
      * Archive a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async archive(course_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -4757,9 +5000,8 @@ class Module_instructor_courses {
     /**
      * Unarchive a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async unarchive(course_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -4790,9 +5032,8 @@ class Module_instructor_exams {
     /**
      * Get index of all exams.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async index(): Promise<Record<string, InstructorBriefExam>> {
         const [output, ofiles] = await this.root.execute("instructor.exams.index", null)
@@ -4802,9 +5043,8 @@ class Module_instructor_exams {
     /**
      * Get an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async get(exam_nm: string): Promise<InstructorExam> {
         const [output, ofiles] = await this.root.execute("instructor.exams.get", exam_nm)
@@ -4814,9 +5054,8 @@ class Module_instructor_exams {
     /**
      * Get documents of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getDocuments(exam_nm: string): Promise<InstructorExamDocument[]> {
         const [output, ofiles] = await this.root.execute(
@@ -4829,9 +5068,8 @@ class Module_instructor_exams {
     /**
      * Get problems of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getProblems(exam_nm: string): Promise<InstructorExamProblem[]> {
         const [output, ofiles] = await this.root.execute(
@@ -4844,9 +5082,8 @@ class Module_instructor_exams {
     /**
      * Get students of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getStudents(exam_nm: string): Promise<InstructorExamStudent[]> {
         const [output, ofiles] = await this.root.execute(
@@ -4859,9 +5096,8 @@ class Module_instructor_exams {
     /**
      * Get an student of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getStudent(data: {
         exam_nm: string /* Exam name */
@@ -4874,9 +5110,10 @@ class Module_instructor_exams {
     /**
      * Get submissions of an exam as a webstream.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Meant for real-time streaming of submissions, most instructors will possibly prefer getSubmissionsPack.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getSubmissions(data: {
         exam_nm: string /* Exam name */
@@ -4892,9 +5129,10 @@ class Module_instructor_exams {
     /**
      * Get submissions of an exam as a pack.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * This endpoint will prepare the pack in the background and return a link to download it later. Packs take some time to be prepared, and are deleted after 24 hours. This is the preferred endpoint for most instructors, as it is simpler to use than getSubmissions.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getSubmissionsPack(data: {
         exam_nm: string /* Exam name */
@@ -4910,9 +5148,8 @@ class Module_instructor_exams {
     /**
      * Get statistics of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getStatistics(exam_nm: string): Promise<ExamStatistics> {
         const [output, ofiles] = await this.root.execute(
@@ -4925,9 +5162,8 @@ class Module_instructor_exams {
     /**
      * Create a new exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async create(data: InstructorExamCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.create", data)
@@ -4937,9 +5173,8 @@ class Module_instructor_exams {
     /**
      * Update an existing exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async update(data: InstructorExamUpdate): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.update", data)
@@ -4949,9 +5184,8 @@ class Module_instructor_exams {
     /**
      * Update documents of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async updateDocuments(data: {
         exam_nm: string /* Exam name */
@@ -4967,9 +5201,8 @@ class Module_instructor_exams {
     /**
      * Update compilers of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async updateCompilers(data: {
         exam_nm: string /* Exam name */
@@ -4985,9 +5218,8 @@ class Module_instructor_exams {
     /**
      * Update problems of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async updateProblems(data: {
         exam_nm: string /* Exam name */
@@ -5003,9 +5235,8 @@ class Module_instructor_exams {
     /**
      * Update students of an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async updateStudents(data: {
         exam_nm: string /* Exam name */
@@ -5021,9 +5252,8 @@ class Module_instructor_exams {
     /**
      * Add students to an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async addStudents(data: {
         exam_nm: string /* Exam name */
@@ -5036,9 +5266,8 @@ class Module_instructor_exams {
     /**
      * Remove students from an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async removeStudents(data: {
         exam_nm: string /* Exam name */
@@ -5054,9 +5283,10 @@ class Module_instructor_exams {
     /**
      * Delete an existing exam.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Note: An exam can only be deleted if it has not started.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async remove(exam_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.remove", exam_nm)
@@ -5066,9 +5296,10 @@ class Module_instructor_exams {
     /**
      * Get the list of exams that are archived.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * At some point, endpoints related to archiving exams should change as the archive bit will be an attribute of each exam.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getArchived(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("instructor.exams.getArchived", null)
@@ -5078,9 +5309,8 @@ class Module_instructor_exams {
     /**
      * Archive an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async archive(exam_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.archive", exam_nm)
@@ -5090,9 +5320,8 @@ class Module_instructor_exams {
     /**
      * Unarchive an exam.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async unarchive(exam_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.exams.unarchive", exam_nm)
@@ -5102,9 +5331,10 @@ class Module_instructor_exams {
     /**
      * Get the ranking.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Under development.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getRanking(exam_nm: string): Promise<Ranking> {
         const [output, ofiles] = await this.root.execute("instructor.exams.getRanking", exam_nm)
@@ -5127,9 +5357,8 @@ class Module_instructor_problems {
     /**
      * Get the list of own problems.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getOwnProblems(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5142,14 +5371,14 @@ class Module_instructor_problems {
     /**
      * Set the sharing settings of a problem.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
+     * *        Without a passcode, the problem is visible to all users.
+     *        With a passcode, the problem is only visible to users with the correct passcode.
+     *        With shared testcases, the testcases are shared with instructors.
+     *        With shared solutions, the solutions are shared with instructors.
      *
-            Without a passcode, the problem is visible to all users.
-            With a passcode, the problem is only visible to users with the correct passcode.
-            With shared testcases, the testcases are shared with instructors.
-            With shared solutions, the solutions are shared with instructors.
-
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async setSharingSettings(data: SharingSettings): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -5162,9 +5391,8 @@ class Module_instructor_problems {
     /**
      * Get the sharing settings of a problem.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getSharingSettings(problem_nm: string): Promise<SharingSettings> {
         const [output, ofiles] = await this.root.execute(
@@ -5177,9 +5405,8 @@ class Module_instructor_problems {
     /**
      * Get the sharing settings of all problems.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getAllSharingSettings(): Promise<SharingSettings[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5192,9 +5419,8 @@ class Module_instructor_problems {
     /**
      * Get alerts for one problem.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getAlerts(problem_nm: string): Promise<ProblemAlerts> {
         const [output, ofiles] = await this.root.execute(
@@ -5207,9 +5433,8 @@ class Module_instructor_problems {
     /**
      * Get alerts for all problems.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getAllAlerts(): Promise<ProblemAlerts[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5222,9 +5447,8 @@ class Module_instructor_problems {
     /**
      * Share a problem with users.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async shareWith(data: ShareWithInp): Promise<void> {
         const [output, ofiles] = await this.root.execute("instructor.problems.shareWith", data)
@@ -5234,9 +5458,10 @@ class Module_instructor_problems {
     /**
      * Set the deprecation of a problem.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * If the reason is null or empty, the problem is undeprecated.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async setDeprecation(data: Deprecation): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -5249,9 +5474,10 @@ class Module_instructor_problems {
     /**
      * Get the popularity buckets for all problems.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * The buckets are sorted by the number of problems in each bucket by total number of submissions. The data is refreshed every hour.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getProblemPopularityBuckets(): Promise<ProblemPopularityBucketEntry[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5264,9 +5490,10 @@ class Module_instructor_problems {
     /**
      * Get anonymous submissions for an abstract problem.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * This function is useful to produce statistics about the submissions for an abstract problem. The user ids are anonymized using a nonce.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getAnonymousSubmissions(problem_nm: string): Promise<ProblemAnonymousSubmission[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5279,9 +5506,8 @@ class Module_instructor_problems {
     /**
      * Download a problem as a ZIP file.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async download(problem_nm: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
@@ -5294,9 +5520,10 @@ class Module_instructor_problems {
     /**
      * Create a problem from a ZIP archive.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * This endpoint uses terminal web streaming: It returns an id from which the problem feedback is streamed over <URL>/api/webstreams/<id>.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async create(passcode: string, ifile: File): Promise<WebStream> {
         const [output, ofiles] = await this.root.execute(
@@ -5310,9 +5537,10 @@ class Module_instructor_problems {
     /**
      * Update a problem from a ZIP archive.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * This endpoint uses terminal web streaming: It returns an id from which the problem feedback is streamed over <URL>/api/webstreams/<id>.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async update(problem_nm: string, ifile: File): Promise<WebStream> {
         const [output, ofiles] = await this.root.execute(
@@ -5326,9 +5554,10 @@ class Module_instructor_problems {
     /**
      * Remove a problem.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * A problem can only be removed if it has few submissions.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async remove(problem_nm: string): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -5354,9 +5583,10 @@ class Module_instructor_queries {
     /**
      * Get submissions for a problem in a course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Returns a list of submissions for a given problem for all students of a given course. Each submission includes the email, time, problem name, problem id, verdict, and IP address. The list is ordered by email and time. Known as ricard01 in the past.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getCourseProblemSubmissions(data: {
         course_nm: string
@@ -5372,9 +5602,10 @@ class Module_instructor_queries {
     /**
      * Get submissions for all problems in a list in a course.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Returns a list of submissions for all problems in a given list for all students of a given course. Each submission includes the email, time, problem name, problem id, verdict, and IP address. The list is ordered by email, problem id and time. Known as ricard02 in the past.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async getCourseListSubmissions(data: {
         course_nm: string
@@ -5403,9 +5634,8 @@ class Module_instructor_tags {
     /**
      * Get list of all tags.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async index(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("instructor.tags.index", null)
@@ -5415,9 +5645,8 @@ class Module_instructor_tags {
     /**
      * Get all tags with their problems.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getDict(): Promise<TagsDict> {
         const [output, ofiles] = await this.root.execute("instructor.tags.getDict", null)
@@ -5427,9 +5656,8 @@ class Module_instructor_tags {
     /**
      * Get all problems with a given tag.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async get(tag: string): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("instructor.tags.get", tag)
@@ -5452,9 +5680,8 @@ class Module_instructor_jutgeai {
     /**
      * Get the list of supported models.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async supportedModels(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5467,9 +5694,8 @@ class Module_instructor_jutgeai {
     /**
      * Get the list of supported image models.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async supportedImageModels(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -5480,11 +5706,25 @@ class Module_instructor_jutgeai {
     }
 
     /**
+     * Get USD prices per 1M tokens for supported text models.
+     *
+     * Prices are fetched live from OpenRouter for models in `supportedModels` and historical `formerModels` (for usage accounting).
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
+     */
+    async getPrices(): Promise<ModelPrices> {
+        const [output, ofiles] = await this.root.execute("instructor.jutgeai.getPrices", null)
+        return output
+    }
+
+    /**
      * Chat with an AI model using a list of messages.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Send a conversation (list of system|user|assistant messages) and get the next assistant reply. Models are listed in the `supportedModels` endpoint. This endpoint uses terminal web streaming: It returns an id from which the chat is streamed over <URL>/api/webstreams/<id>. If `addUsage` is true, the usage of the model will be added at the end of the response as a JSON object between `---USAGE_JSON_START---` and `---USAGE_JSON_END---`.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async chat(data: ChatPrompt): Promise<WebStream> {
         const [output, ofiles] = await this.root.execute("instructor.jutgeai.chat", data)
@@ -5494,9 +5734,10 @@ class Module_instructor_jutgeai {
     /**
      * Create an image using an AI image model.
      *
-     * 🔐 Authentication: instructor
-     * No warnings
      * Some models only accept certain sizes and aspect ratios.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: instructor
      */
     async createImage(data: CreateImageInput): Promise<Download> {
         const [output, ofiles] = await this.root.execute("instructor.jutgeai.createImage", data)
@@ -5506,9 +5747,8 @@ class Module_instructor_jutgeai {
     /**
      * Get audit usage of LLM models.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: instructor
-     * No warnings
-     *
      */
     async getLlmUsage(): Promise<LlmUsageEntry[]> {
         const [output, ofiles] = await this.root.execute("instructor.jutgeai.getLlmUsage", null)
@@ -5531,9 +5771,8 @@ class Module_games {
     /**
      * Get list of problems that are games.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: competitions
-     * No warnings
-     *
      */
     async getGames(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("games.getGames", null)
@@ -5543,9 +5782,8 @@ class Module_games {
     /**
      * Get dummy player for a game.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: competitions
-     * No warnings
-     *
      */
     async getDummy(problem_id: string): Promise<string> {
         const [output, ofiles] = await this.root.execute("games.getDummy", problem_id)
@@ -5555,9 +5793,8 @@ class Module_games {
     /**
      * Get a ZIP file with the viewer for a game.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: competitions
-     * No warnings
-     *
      */
     async getViewer(problem_id: string): Promise<Download> {
         const [output, ofiles] = await this.root.execute("games.getViewer", problem_id)
@@ -5567,9 +5804,8 @@ class Module_games {
     /**
      * Submit a match for a game (combat or competition match).
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: competitions
-     * No warnings
-     *
      */
     async submitMatch(data: SubmitMatchIn): Promise<NewSubmissionOut> {
         const [output, ofiles] = await this.root.execute("games.submitMatch", data)
@@ -5622,9 +5858,8 @@ class Module_admin_instructors {
     /**
      * Get instructors.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async get(): Promise<InstructorEntries> {
         const [output, ofiles] = await this.root.execute("admin.instructors.get", null)
@@ -5634,9 +5869,8 @@ class Module_admin_instructors {
     /**
      * Add an instructor.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async add(data: { email: string; username: string }): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.instructors.add", data)
@@ -5646,9 +5880,8 @@ class Module_admin_instructors {
     /**
      * Remove an instructor.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async remove(email: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.instructors.remove", email)
@@ -5671,9 +5904,8 @@ class Module_admin_courses {
     /**
      * Get all courses from all instructors.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getAll(): Promise<AdminCourses> {
         const [output, ofiles] = await this.root.execute("admin.courses.getAll", null)
@@ -5683,9 +5915,8 @@ class Module_admin_courses {
     /**
      * Set the public and official fields of a course.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async setPublicAndOfficial(data: AdminCourseSetPublicAndOfficial): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -5711,9 +5942,8 @@ class Module_admin_users {
     /**
      * Count users
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async count(): Promise<number> {
         const [output, ofiles] = await this.root.execute("admin.users.count", null)
@@ -5723,9 +5953,8 @@ class Module_admin_users {
     /**
      * Create a user
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async create(data: UserCreation): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.users.create", data)
@@ -5735,9 +5964,8 @@ class Module_admin_users {
     /**
      * Remove a user
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async remove(email: string): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.users.remove", email)
@@ -5747,9 +5975,8 @@ class Module_admin_users {
     /**
      * Set a password for a user
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async setPassword(data: {
         email: string
@@ -5763,9 +5990,8 @@ class Module_admin_users {
     /**
      * Get all profiles of users whose email or name contains a specific string
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getProfiles(data: string): Promise<ProfileForAdmin[]> {
         const [output, ofiles] = await this.root.execute("admin.users.getProfiles", data)
@@ -5775,9 +6001,8 @@ class Module_admin_users {
     /**
      * Get all users (well, just email and name) whose email contains a specific string
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getAllWithEmail(data: string): Promise<UsersEmailsAndNames> {
         const [output, ofiles] = await this.root.execute("admin.users.getAllWithEmail", data)
@@ -5787,9 +6012,8 @@ class Module_admin_users {
     /**
      * Get a list of emails of spam users
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getSpamUsers(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute("admin.users.getSpamUsers", null)
@@ -5799,9 +6023,8 @@ class Module_admin_users {
     /**
      * Remove spam users
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async removeSpamUsers(data: string[]): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.users.removeSpamUsers", data)
@@ -5824,9 +6047,8 @@ class Module_admin_dashboard {
     /**
      * Get all admin dashboard items.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getAll(): Promise<AdminDashboard> {
         const [output, ofiles] = await this.root.execute("admin.dashboard.getAll", null)
@@ -5836,9 +6058,8 @@ class Module_admin_dashboard {
     /**
      * Get database info.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDatabasesInfo(): Promise<DatabasesInfo> {
         const [output, ofiles] = await this.root.execute(
@@ -5851,9 +6072,8 @@ class Module_admin_dashboard {
     /**
      * Get free disk space.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getFreeDiskSpace(): Promise<FreeDiskSpace> {
         const [output, ofiles] = await this.root.execute(
@@ -5866,9 +6086,8 @@ class Module_admin_dashboard {
     /**
      * Get recent connected users.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getRecentConnectedUsers(): Promise<RecentConnectedUsers> {
         const [output, ofiles] = await this.root.execute(
@@ -5881,9 +6100,8 @@ class Module_admin_dashboard {
     /**
      * Get recent load averages.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getRecentLoadAverages(): Promise<RecentLoadAverages> {
         const [output, ofiles] = await this.root.execute(
@@ -5896,9 +6114,8 @@ class Module_admin_dashboard {
     /**
      * Get recent submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getRecentSubmissions(): Promise<RecentSubmissions> {
         const [output, ofiles] = await this.root.execute(
@@ -5911,9 +6128,8 @@ class Module_admin_dashboard {
     /**
      * Get submissions histograms.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getSubmissionsHistograms(): Promise<SubmissionsHistograms> {
         const [output, ofiles] = await this.root.execute(
@@ -5926,9 +6142,8 @@ class Module_admin_dashboard {
     /**
      * Get zombies.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getZombies(): Promise<Zombies> {
         const [output, ofiles] = await this.root.execute("admin.dashboard.getZombies", null)
@@ -5938,9 +6153,8 @@ class Module_admin_dashboard {
     /**
      * Get upcoming exams
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getUpcomingExams(data: {
         daysBefore: number
@@ -5956,9 +6170,10 @@ class Module_admin_dashboard {
     /**
      * Get pm2 status
      *
-     * 🔐 Authentication: admin
-     * No warnings
      * This endpoint retrieves the status of PM2 processes as reported by `pm2 jlist`.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: admin
      */
     async getPM2Status(): Promise<any> {
         const [output, ofiles] = await this.root.execute("admin.dashboard.getPM2Status", null)
@@ -5968,9 +6183,10 @@ class Module_admin_dashboard {
     /**
      * Get docker status
      *
-     * 🔐 Authentication: admin
-     * No warnings
      * This endpoint retrieves the status of docker processes as reported by `docker ps --all`.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: admin
      */
     async getDockerStatus(): Promise<any> {
         const [output, ofiles] = await this.root.execute(
@@ -5996,9 +6212,10 @@ class Module_admin_queue {
     /**
      * Get the lattest submissions from the queue in descending chronological order for a certain verdict.
      *
-     * 🔐 Authentication: admin
-     * No warnings
      * The `limit` parameter tells the number of submissions to retrieve. The `verdicts` parameter is an array of verdicts to filter the submissions. If no verdicts are provided, all submissions will be retrieved.
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: admin
      */
     async getQueue(data: QueueQuery): Promise<SubmissionQueueItems> {
         const [output, ofiles] = await this.root.execute("admin.queue.getQueue", data)
@@ -6021,9 +6238,10 @@ class Module_admin_tasks {
     /**
      * Purge expired access tokens.
      *
-     * 🔐 Authentication: admin
-     * No warnings
      * Purge expired access tokens (call it from time to time, it does not hurt)
+     *
+     * 🗂️ Domains: jutge
+     * 🔐 Authentication: admin
      */
     async purgeAuthTokens(): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.tasks.purgeAuthTokens", null)
@@ -6033,9 +6251,8 @@ class Module_admin_tasks {
     /**
      * Clear all memoization caches.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async clearCaches(): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.tasks.clearCaches", null)
@@ -6045,9 +6262,8 @@ class Module_admin_tasks {
     /**
      * Fatalize IE submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async fatalizeIEs(): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.tasks.fatalizeIEs", null)
@@ -6057,9 +6273,8 @@ class Module_admin_tasks {
     /**
      * Fatalize pending submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async fatalizePendings(): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.tasks.fatalizePendings", null)
@@ -6069,9 +6284,8 @@ class Module_admin_tasks {
     /**
      * Resubmit IE submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async resubmitIEs(): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.tasks.resubmitIEs", null)
@@ -6081,9 +6295,8 @@ class Module_admin_tasks {
     /**
      * Resubmit pending submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async resubmitPendings(): Promise<void> {
         const [output, ofiles] = await this.root.execute("admin.tasks.resubmitPendings", null)
@@ -6093,9 +6306,8 @@ class Module_admin_tasks {
     /**
      * Get full text search database status.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getFullTextSearchDatabase(): Promise<Download> {
         const [output, ofiles] = await this.root.execute(
@@ -6108,9 +6320,8 @@ class Module_admin_tasks {
     /**
      * Update semantic search database.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async updateSemanticSearchDatabase(data: string, ifile: File): Promise<void> {
         const [output, ofiles] = await this.root.execute(
@@ -6137,9 +6348,8 @@ class Module_admin_stats {
     /**
      * Get counters.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getCounters(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute("admin.stats.getCounters", null)
@@ -6149,9 +6359,8 @@ class Module_admin_stats {
     /**
      * Get distribution of verdicts.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfVerdicts(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6164,9 +6373,8 @@ class Module_admin_stats {
     /**
      * Get distribution of verdicts by year.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfVerdictsByYear(): Promise<Record<string, number>[]> {
         const [output, ofiles] = await this.root.execute(
@@ -6179,9 +6387,8 @@ class Module_admin_stats {
     /**
      * Get distribution of compilers.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfCompilers(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6194,9 +6401,8 @@ class Module_admin_stats {
     /**
      * Get distribution of proglangs.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfProglangs(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6209,9 +6415,8 @@ class Module_admin_stats {
     /**
      * Get distribution of registered users by year.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfUsersByYear(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6224,9 +6429,8 @@ class Module_admin_stats {
     /**
      * Get distribution of registered users by country.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfUsersByCountry(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6239,9 +6443,8 @@ class Module_admin_stats {
     /**
      * Get distribution of registered users by submissions using a custom bucket size.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfUsersBySubmissions(data: number): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6254,9 +6457,9 @@ class Module_admin_stats {
     /**
      * Get ranking of users.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * ❌ Warning: Input type is not correct
-     *
+     * ‼️ Warning: Input type is not correct
      */
     async getRankingOfUsers(limit: number): Promise<UserRanking> {
         const [output, ofiles] = await this.root.execute("admin.stats.getRankingOfUsers", limit)
@@ -6266,9 +6469,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by hour.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByHour(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6281,9 +6483,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by proglang.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByProglang(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6296,9 +6497,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by compiler.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByCompiler(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6311,9 +6511,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by weekday.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByWeekday(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6326,9 +6525,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by year.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByYear(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6341,9 +6539,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by year for a proglang.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByYearForProglang(
         proglang: string
@@ -6358,9 +6555,8 @@ class Module_admin_stats {
     /**
      * Get distribution of submissions by day.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfSubmissionsByDay(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6373,9 +6569,8 @@ class Module_admin_stats {
     /**
      * Get heatmap calendar of submissions.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getHeatmapCalendarOfSubmissions(data: DateRange): Promise<any> {
         const [output, ofiles] = await this.root.execute(
@@ -6388,9 +6583,8 @@ class Module_admin_stats {
     /**
      * Get distribution of domains of users' emails.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getDistributionOfDomains(): Promise<Record<string, number>> {
         const [output, ofiles] = await this.root.execute(
@@ -6416,9 +6610,8 @@ class Module_admin_problems {
     /**
      * Get summary for a problem.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getProblemSummary(problem_id: string): Promise<ProblemSummary | null> {
         const [output, ofiles] = await this.root.execute(
@@ -6431,9 +6624,8 @@ class Module_admin_problems {
     /**
      * Get list of problems with summary.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getProblemsWithSummary(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -6446,9 +6638,8 @@ class Module_admin_problems {
     /**
      * Get list of problems without summary.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getProblemsWithoutSummary(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -6461,9 +6652,8 @@ class Module_admin_problems {
     /**
      * Get solution tags for an abstract problem.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getAbstractProblemSolutionTags(data: {
         problem_nm: string
@@ -6478,9 +6668,8 @@ class Module_admin_problems {
     /**
      * Get list of abstract problems with solution tags.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getAbstractProblemsWithSolutionTags(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
@@ -6493,9 +6682,8 @@ class Module_admin_problems {
     /**
      * Get list of abstract problems without solution tags.
      *
+     * 🗂️ Domains: jutge
      * 🔐 Authentication: admin
-     * No warnings
-     *
      */
     async getAbstractProblemsWithoutSolutionTags(): Promise<string[]> {
         const [output, ofiles] = await this.root.execute(
