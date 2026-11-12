@@ -492,7 +492,7 @@ export class JutgeService extends StaticLogger {
             }
             this.setAPIMode(mode)
             const exams = await jutgeClient.auth.getReadyExams({ email, password })
-            return exams.map((e) => e.exam_key)
+            return exams.map((e) => e.title)
         } catch (error) {
             this.log.error(`Could not get exams: ${error}`)
             return
