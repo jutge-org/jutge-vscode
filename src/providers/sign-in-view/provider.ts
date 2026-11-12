@@ -586,8 +586,8 @@ function getSignInHtml({ scriptUri, cspSource }: SignInHtmlOptions): string {
                 if (Array.isArray(items)) {
                     items.forEach(function (item) {
                         const o = document.createElement("vscode-option");
-                        o.value = item;
-                        o.textContent = item;
+                        o.value = item.key;
+                        o.textContent = item.title;
                         examKeyEl.appendChild(o);
                     });
                 }

@@ -482,7 +482,9 @@ export class JutgeService extends StaticLogger {
      * the exam/contest hosts, which means this call stays inside the exam
      * network and never needs `api.jutge.org`.
      */
-    static async getReadyExamsForMode(mode: ExamMode): Promise<string[] | undefined> {
+    static async getReadyExamsForMode(
+        mode: ExamMode
+    ): Promise<{ key: string; title: string }[] | undefined> {
         const originalMode = this.state_.apiMode
         try {
             const email = await this.getStoredSignInEmail()
@@ -492,7 +494,7 @@ export class JutgeService extends StaticLogger {
             }
             this.setAPIMode(mode)
             const exams = await jutgeClient.auth.getReadyExams({ email, password })
-            return exams.map((e) => e.title)
+            return exams.map((e) => ({ title: e.title, key: e.exam_key }))
         } catch (error) {
             this.log.error(`Could not get exams: ${error}`)
             return
