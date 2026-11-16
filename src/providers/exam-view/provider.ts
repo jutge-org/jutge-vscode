@@ -768,7 +768,7 @@ export class JutgeExamsWebviewViewProvider
             this.log.info(`Verdict for unknown problem '${problem_nm}'`)
             return
         }
-        const newIcon = mergeIconStatus(row.iconStatus, status)
+        const newIcon = mergeIconStatus_Latest(row.iconStatus, status)
         if (newIcon === row.iconStatus) {
             return
         }
@@ -955,7 +955,7 @@ function submissionStatusFromVeredict(veredict: string | null): SubmissionStatus
 
 /**
  * Collapses a flat list of submissions into the best icon status per problem,
- * applying the same precedence as {@link mergeIconStatus}: accepted ≻ presentation
+ * applying the same precedence as {@link mergeIconStatus_BestOfAll}: accepted ≻ presentation
  * error ≻ rejected/failed ≻ none. Problems with no submissions are absent from
  * the result and fall back to `none`.
  */
@@ -968,12 +968,29 @@ function iconStatusBySubmissions(submissions: Submission[]): Map<string, IconSta
         }
         const problem_nm = problemNmFromProblemId(submission.problem_id)
         const current = result.get(problem_nm) ?? IconStatus.NONE
-        result.set(problem_nm, mergeIconStatus(current, status))
+        result.set(problem_nm, mergeIconStatus_Latest(current, status))
     }
     return result
 }
 
-function mergeIconStatus(current: IconStatus, status: SubmissionStatus): IconStatus {
+// NOTE(pauek): A bit of history... it turns out that:
+// - The exam.jutge.org site (in PHP), shows a status for exam problems which is "the best until the moment".
+//   This would allow a student who got an AC on a problem to try the problem again, to be able to verify
+//   some variation, and even if it gets WA, it would still cound as AC
+// - So, even if you have a WA as the latest submissions, if you got an AC before, it will show as AC.
+// - BUT!!! Later on, correctors download submissions choosing, typically, to get only **the last submission**!!
+// - Result??? All professors say in class, "during the exam", that the submission that counts is the LATEST.
+//
+// So, here we wanted to show that case, the fact that your status will be the one for the latest submission...
+//
+// -------- HOWEVER!!! ---------
+// The API is the one sending the "status", this does nothing.
+// In fact, the API itself does equally nothing, since the status comes from the database.
+// So the views in the database which compute status are the ones to blame about the situation.
+// Maybe we should be computing the verdict in the API??
+
+function mergeIconStatus_BestOfAll(current: IconStatus, status: SubmissionStatus): IconStatus {
+    // Here we get the best submission of all, so it is like the "maximum" of `current` and `status`.
     switch (current) {
         case IconStatus.NONE:
             return status2IconStatus[status]
@@ -993,4 +1010,9 @@ function mergeIconStatus(current: IconStatus, status: SubmissionStatus): IconSta
         default:
             return current
     }
+}
+
+function mergeIconStatus_Latest(current: IconStatus, status: SubmissionStatus): IconStatus {
+    // Just take the latest submission as the status: getting a WA after an AC shows a red light.
+    return status2IconStatus[status]
 }
