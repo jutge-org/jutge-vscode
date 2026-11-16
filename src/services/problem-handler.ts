@@ -233,8 +233,9 @@ export class ProblemHandler extends Logger {
 
             let allPassed = true
             for (let index = 1; index <= testcases.length; index++) {
-                allPassed =
-                    allPassed && (await this.runTestcaseByIndex(index, { saveFirst: false }))
+                if (!(await this.runTestcaseByIndex(index, { saveFirst: false }))) {
+                    allPassed = false
+                }
             }
 
             if (this.panel_.customTestcases) {
