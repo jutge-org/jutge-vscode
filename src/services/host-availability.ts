@@ -32,7 +32,9 @@ export class HostAvailabilityService extends StaticLogger {
         const entries = await Promise.all(
             SIGN_IN_MODES.map(async (mode) => {
                 const devMode = isDevelopmentMode() ? "development" : "production"
-                const available = await this.probeHost_(JutgeService.URLTable[devMode][mode])
+                const apiURL = new URL(JutgeService.URLTable[devMode][mode])
+                const hostURL = new URL("/", apiURL.toString())
+                const available = await this.probeHost_(hostURL.toString())
                 return [mode, available] as const
             })
         )
@@ -44,7 +46,7 @@ export class HostAvailabilityService extends StaticLogger {
     private static async probeHost_(url: string): Promise<boolean> {
         try {
             const response = await fetch(url, {
-                method: "HEAD",
+                method: "GET",
                 redirect: "follow",
                 signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
             })
